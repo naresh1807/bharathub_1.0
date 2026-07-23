@@ -34,7 +34,9 @@ class VendorRegistrationView(TemplateView):
         form = VendorRegistrationForm(request.POST, request.FILES)
         if form.is_valid():
             user, profile = form.save()
-            login(request, user)
+            # auto-login చేయడం లేదు -- accounts/views.py లోని
+            # EmployeeRegistrationView కామెంట్ చూడండి (login page bypass
+            # అవ్వకుండా ఉండటానికి).
             send_bharathub_id_email(user, profile.vendor_id, "Vendor ID")
             context = self.get_context_data(form=VendorRegistrationForm())
             context["registered_id"] = profile.vendor_id

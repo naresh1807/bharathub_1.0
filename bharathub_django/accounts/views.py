@@ -44,11 +44,16 @@ class EmployeeRegistrationView(TemplateView):
         form = EmployeeRegistrationForm(request.POST, request.FILES)
         if form.is_valid():
             user, profile = form.save()
-            # రిజిస్టర్ అయిన వెంటనే ఆటోమేటిక్‌గా లాగిన్ చేసేయడం
-            # (register + auto-login అనేది మంచి UX ప్రాక్టీస్) --
-            # login() కాల్ చేయడం వల్ల Django ఒక సెషన్ కుకీ యూజర్
-            # బ్రౌజర్ కి పంపిస్తుంది.
-            login(request, user)
+            # ఇక్కడ auto-login చేయడం లేదు -- రిజిస్ట్రేషన్ అయిన వెంటనే
+            # సెషన్ లాగిన్ చేసేస్తే, popup లోని "Continue to Login" బటన్
+            # నొక్కినప్పుడు యూజర్ ఇప్పటికే authenticated గా ఉంటారు, దాంతో
+            # ProfileCompletionMiddleware వెంటనే వాళ్ళని లాగిన్ పేజీ నుండి
+            # నేరుగా "Complete Your Profile" ఫారమ్ కి పంపించేస్తుంది --
+            # యూజర్ తన లాగిన్ ఐడీ/పాస్‌వర్డ్ తో నిజంగా లాగిన్ అవ్వకుండానే.
+            # దాన్ని నివారించడానికి, రిజిస్ట్రేషన్ తర్వాత సెషన్ ని
+            # అన్‌అథెంటికేటెడ్ గానే ఉంచుతాం -- "Continue to Login" నొక్కి,
+            # అసలైన లాగిన్ ఫారమ్ లో ఐడీ/పాస్‌వర్డ్ ఇచ్చాకే ప్రొఫైల్
+            # ఫారమ్ కి వెళ్తారు.
             send_bharathub_id_email(user, profile.bharathub_id, "BharatHub ID")
             # redirect చేయకుండా, ఇదే పేజీని (ఖాళీ ఫారమ్ తో, వెనుక) +
             # registered_id popup తో రెండరింగ్ చేస్తాం -- popup లోని
@@ -200,7 +205,8 @@ class EmployerRegistrationView(TemplateView):
         form = EmployerRegistrationForm(request.POST)
         if form.is_valid():
             user, profile = form.save()
-            login(request, user)
+            # auto-login చేయడం లేదు -- కారణం EmployeeRegistrationView లో
+            # ఇచ్చిన కామెంట్ చూడండి (login page bypass అవ్వకుండా).
             send_bharathub_id_email(user, profile.employer_id, "Employer ID")
             context = self.get_context_data(form=EmployerRegistrationForm())
             context["registered_id"] = profile.employer_id
