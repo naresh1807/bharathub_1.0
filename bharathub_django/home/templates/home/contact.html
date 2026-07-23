@@ -1,0 +1,152 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact Us — BharatHub</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="{% static 'home/css/contact.css' %}">
+</head>
+<body>
+<header class="header">
+  <a href="{% url 'home:bharathub_home' %}" class="logo">
+    <div class="logo-icon">BH</div>
+    <span class="logo-name">Bharat<span>Hub</span></span>
+  </a>
+  <a href="{% url 'home:bharathub_home' %}" class="back-btn">← Back to Home</a>
+</header>
+
+<div class="hero">
+  <h1>Contact <span>Us</span></h1>
+  <p>We're here to help. Reach out to our team for any questions, feedback, or support needs.</p>
+</div>
+
+<div class="content">
+  <div class="grid">
+
+    {% comment %} CONTACT INFO {% endcomment %}
+    <div class="card">
+      <h2>📞 Get In Touch</h2>
+      <div class="contact-item">
+        <div class="contact-icon">📧</div>
+        <div>
+          <div class="contact-label">General Support</div>
+          <div class="contact-value">support@bharathub.in</div>
+          <div class="contact-sub">Response within 24 hours</div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon">🏢</div>
+        <div>
+          <div class="contact-label">Employer Support</div>
+          <div class="contact-value">employers@bharathub.in</div>
+          <div class="contact-sub">For company registration & job posting queries</div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon">🛍️</div>
+        <div>
+          <div class="contact-label">Vendor Support</div>
+          <div class="contact-value">vendors@bharathub.in</div>
+          <div class="contact-sub">For marketplace & order related queries</div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon">🔒</div>
+        <div>
+          <div class="contact-label">Privacy & Legal</div>
+          <div class="contact-value">legal@bharathub.in</div>
+          <div class="contact-sub">Data requests & compliance</div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon">📱</div>
+        <div>
+          <div class="contact-label">Helpline</div>
+          <div class="contact-value">1800-BH-INDIA (Toll Free)</div>
+          <div class="contact-sub">Mon–Sat, 9 AM – 7 PM IST</div>
+        </div>
+      </div>
+
+      <h2 style="margin-top:28px;">🏙️ Our Offices</h2>
+      <div class="offices-grid">
+        <div class="office-card">
+          <div class="office-city">🏙️ Hyderabad</div>
+          <div class="office-addr">HQ — HITEC City<br>Telangana 500081</div>
+        </div>
+        <div class="office-card">
+          <div class="office-city">🌆 Bangalore</div>
+          <div class="office-addr">Koramangala<br>Karnataka 560034</div>
+        </div>
+        <div class="office-card">
+          <div class="office-city">🌃 Mumbai</div>
+          <div class="office-addr">BKC<br>Maharashtra 400051</div>
+        </div>
+      </div>
+    </div>
+
+    {% comment %} CONTACT FORM {% endcomment %}
+    {% comment %} ఇది ఇప్పుడు నిజమైన Django <form> — method="post" అంటే డేటా URL లో
+       కనిపించకుండా (GET లా కాక) సురక్షితంగా request body లో వెళ్తుంది. {% endcomment %}
+    <div class="card">
+      <h2>✍️ Send Us a Message</h2>
+
+      {% comment %} Django messages framework ద్వారా వచ్చే success/error మెసేజ్‌లు
+         (views.py లోని messages.success() ఇక్కడ కనిపిస్తుంది) {% endcomment %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="success-msg" style="display:block;">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% comment %} csrf_token: ప్రతి POST ఫారమ్ లోనూ ఇది తప్పనిసరి.
+           ఇది లేకుండా ఫారమ్ సబ్మిట్ చేస్తే Django 403 Forbidden ఇస్తుంది.
+           ఎందుకు కావాలి? -> CSRF (Cross-Site Request Forgery) దాడుల నుండి
+           రక్షణ కోసం: వేరే వెబ్‌సైట్ నుండి ఎవరైనా మన యూజర్ బ్రౌజర్ ద్వారా
+           రహస్యంగా మన సర్వర్ కి ఫేక్ POST రిక్వెస్ట్ పంపకుండా ఆపుతుంది.
+           ఈ టోకెన్ ప్రతి యూజర్ సెషన్ కి unique గా ఉంటుంది, సర్వర్ దీన్ని
+           వెరిఫై చేసిన తర్వాతే రిక్వెస్ట్ ని అంగీకరిస్తుంది. {% endcomment %}
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label class="form-label" for="{{ form.name.id_for_label }}">Your Name *</label>
+          {{ form.name }}
+          {% if form.name.errors %}<div class="input-hint" style="color:#dc2626;">{{ form.name.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.email.id_for_label }}">Email Address *</label>
+          {{ form.email }}
+          {% if form.email.errors %}<div class="input-hint" style="color:#dc2626;">{{ form.email.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.sender_type.id_for_label }}">I am a *</label>
+          {{ form.sender_type }}
+          {% if form.sender_type.errors %}<div class="input-hint" style="color:#dc2626;">{{ form.sender_type.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.subject.id_for_label }}">Subject *</label>
+          {{ form.subject }}
+          {% if form.subject.errors %}<div class="input-hint" style="color:#dc2626;">{{ form.subject.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.message.id_for_label }}">Message *</label>
+          {{ form.message }}
+          {% if form.message.errors %}<div class="input-hint" style="color:#dc2626;">{{ form.message.errors.0 }}</div>{% endif %}
+        </div>
+        <button type="submit" class="submit-btn">🚀 Send Message</button>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<footer class="footer">
+  <p>© 2026 BharatHub Technologies Pvt. Ltd. | <a href="{% url 'home:about' %}">About</a> · <a href="{% url 'home:privacy' %}">Privacy</a> · <a href="{% url 'home:terms' %}">Terms</a> · <a href="{% url 'home:help' %}">Help</a></p>
+</footer>
+
+
+</body>
+</html>

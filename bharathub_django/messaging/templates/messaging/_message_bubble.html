@@ -1,0 +1,55 @@
+{% comment %}
+messaging/_message_bubble.html
+ఒక్క సందేశం బబుల్. chat.js లో ఇదే మార్కప్ ని JS స్ట్రింగ్ గా కూడా
+తయారు చేస్తుంది (renderBubble() చూడండి) -- కొత్త మెసేజ్‌లు/ఎడిట్‌లు
+WebSocket ద్వారా వచ్చినప్పుడు పేజీ రీలోడ్ లేకుండా అదే లుక్ తో
+కనిపించడానికి. ఏదైనా ఇక్కడ మార్చితే chat.js లోనూ అదే మార్చాలి.
+{% endcomment %}
+{% if m.message_type == "system" %}
+<div class="bh-bubble" data-message-id="{{ m.pk }}" style="align-self:center;color:#888;font-size:12px;background:#eee;padding:5px 12px;border-radius:10px;">
+  {{ m.body }}
+</div>
+{% else %}
+<div class="bh-bubble" data-message-id="{{ m.pk }}" data-sender-id="{{ m.sender_id }}"
+     style="max-width:65%;{% if m.sender_id == current_user_id %}align-self:flex-end;background:var(--primary);color:#fff;{% else %}align-self:flex-start;background:#fff;border:1px solid var(--border);{% endif %}padding:9px 13px;border-radius:14px;font-size:14px;position:relative;{% if active_conversation.chat_type == "group" and m.sender_id != current_user_id %}margin-left:30px;{% endif %}">
+
+  {% if active_conversation.chat_type == "group" and m.sender_id != current_user_id %}
+    <div class="bh-bubble__avatar" style="position:absolute;left:-30px;bottom:0;width:24px;height:24px;border-radius:50%;overflow:hidden;background:var(--primary);color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;">
+      {% if m.sender_avatar_url %}<img src="{{ m.sender_avatar_url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
+      {% else %}{{ m.sender.first_name|default:m.sender.username|first|upper }}{% endif %}
+    </div>
+    <div style="font-size:11px;font-weight:700;opacity:0.8;">{{ m.sender.get_full_name|default:m.sender.username }}</div>
+  {% endif %}
+
+  <div class="bh-bubble__body">
+    {% if m.is_deleted %}<em style="opacity:0.7;">This message was deleted</em>
+    {% elif m.message_type == "image" and m.attachment %}<img src="{{ m.attachment.url }}" alt="{{ m.attachment_name }}" style="max-width:220px;border-radius:8px;display:block;margin-bottom:4px;">
+    {% elif m.attachment %}<a href="{{ m.attachment.url }}" target="_blank" style="color:inherit;">📎 {{ m.attachment_name }}</a>
+    {% else %}{{ m.body }}{% endif %}
+  </div>
+
+  <div class="bh-bubble__reactions" style="display:flex;gap:2px;margin-top:2px;">
+    {% for r in m.reactions.all %}<span title="">{{ r.emoji }}</span>{% endfor %}
+  </div>
+
+  <div style="font-size:10px;opacity:0.7;margin-top:3px;display:flex;gap:4px;align-items:center;">
+    <span>{{ m.created_at|date:"h:i A" }}</span>
+    {% if m.is_edited and not m.is_deleted %}<span>· Edited</span>{% endif %}
+    {% if m.sender_id == current_user_id and not m.is_deleted %}
+      <span class="bh-bubble__tick">{% if m.is_read_by_others %}<span style="color:#4fc3f7;">✓✓</span>{% elif m.is_delivered_to_others %}✓✓{% else %}✓{% endif %}</span>
+    {% endif %}
+  </div>
+
+  {% if m.sender_id == current_user_id and not m.is_deleted %}
+    <div class="bh-bubble__menu" style="position:absolute;top:4px;right:-6px;display:flex;gap:4px;">
+      <button type="button" class="bh-edit-btn" data-id="{{ m.pk }}" title="Edit" style="border:none;background:transparent;cursor:pointer;font-size:11px;">✏️</button>
+      <button type="button" class="bh-delete-btn" data-id="{{ m.pk }}" title="Delete" style="border:none;background:transparent;cursor:pointer;font-size:11px;">🗑️</button>
+    </div>
+  {% endif %}
+  {% if not m.is_deleted %}
+    <div class="bh-bubble__react-btn" style="position:absolute;bottom:-10px;{% if m.sender_id == current_user_id %}left:-6px;{% else %}right:-6px;{% endif %}">
+      <button type="button" class="bh-react-btn" data-id="{{ m.pk }}" title="React" style="border:none;background:#fff;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.2);">😊</button>
+    </div>
+  {% endif %}
+</div>
+{% endif %}

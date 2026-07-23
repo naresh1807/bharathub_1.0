@@ -1,0 +1,320 @@
+{% extends "accounts/employer_base.html" %}
+{% load static %}
+
+{% block title %}BharatHub — Employer Secure Login{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'accounts/css/employer_login.css' %}">
+{% endblock %}
+
+{% block header_links %}
+<a href="{% url 'accounts:employee_login' %}">Employee Login</a>
+<a href="{% url 'accounts:employer_registration' %}" class="top-bar__register">Register Company →</a>
+{% endblock %}
+
+{% block content %}
+{% comment %} ORBS {% endcomment %}
+<div class="orb"></div>
+<div class="orb"></div>
+<div class="orb"></div>
+
+{% comment %} MAIN LAYOUT {% endcomment %}
+<div class="login-layout">
+
+  {% comment %} LEFT INFO PANEL {% endcomment %}
+  <div class="info-panel">
+    <div>
+      <div class="info-panel__badge">🏢 EMPLOYER PORTAL</div>
+      <h1 style="margin-top:12px;">Hire India's<br><span>Best Talent</span></h1>
+      <p style="margin-top:10px;">Log in to the BharatHub Employer Portal — post jobs, shortlist candidates, and build your team.</p>
+    </div>
+
+    <div class="info-features">
+      <div class="info-feature">
+        <div class="info-feature__icon">💼</div>
+        <div>
+          <div class="info-feature__title">Smart Job Posting</div>
+          <div class="info-feature__sub">Post jobs → AI automatically sends them to skill-matched candidates</div>
+        </div>
+      </div>
+      <div class="info-feature">
+        <div class="info-feature__icon">👥</div>
+        <div>
+          <div class="info-feature__title">Candidate Management</div>
+          <div class="info-feature__sub">Review applications, shortlist, and schedule interviews</div>
+        </div>
+      </div>
+      <div class="info-feature">
+        <div class="info-feature__icon">🛍️</div>
+        <div>
+          <div class="info-feature__title">B2B Marketplace</div>
+          <div class="info-feature__sub">Purchase office supplies, software, and services from verified vendors</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-stats">
+      <div class="info-stat">
+        <div class="info-stat__num">5.8L+</div>
+        <div class="info-stat__label">Job Seekers</div>
+      </div>
+      <div class="info-stat">
+        <div class="info-stat__num">12K+</div>
+        <div class="info-stat__label">Companies</div>
+      </div>
+      <div class="info-stat">
+        <div class="info-stat__num">1.2L+</div>
+        <div class="info-stat__label">Placements</div>
+      </div>
+    </div>
+  </div>
+
+  {% comment %} RIGHT LOGIN CARD {% endcomment %}
+  <div class="login-card">
+
+    {% comment %} ══════════════════════════
+         PANEL 1: LOGIN
+    ══════════════════════════ {% endcomment %}
+    <div class="panel active" id="panel-login">
+      <div class="card-header">
+        <div class="card-header__badge">🔐 SECURE CORPORATE LOGIN</div>
+        <h2>Employer Login</h2>
+        <p>Login to your BharatHub Employer account</p>
+      </div>
+
+      <div class="card-body">
+
+        {% comment %} Django messages -- views.py లోని EmployerLoginView వాస్తవంగా
+           authenticate() చేసిన తర్వాతే ఈ ఎర్రర్ కనిపిస్తుంది. {% endcomment %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert--success{% else %}alert--error{% endif %}" style="display:block;">
+              {% if message.tags == 'success' %}✅{% else %}⚠️{% endif %} {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="post">
+        {% csrf_token %}
+
+        {% comment %} EMPLOYER ID / CORPORATE EMAIL {% endcomment %}
+        <div class="form-group">
+          <label class="form-label">Employer ID / Corporate Email <span style="color:var(--error)">*</span></label>
+          <div class="input-wrap">
+            <span class="input-icon">🏢</span>
+            <input type="text" class="form-input" id="loginId" name="login_id" placeholder="EMP20261001 or hr@company.com">
+          </div>
+          <div class="form-hint">💡 Use the Employer ID or corporate email assigned after registration</div>
+        </div>
+
+        {% comment %} PASSWORD {% endcomment %}
+        <div class="form-group">
+          <label class="form-label">Password <span style="color:var(--error)">*</span></label>
+          <div class="input-wrap">
+            <span class="input-icon">🔑</span>
+            <input type="password" class="form-input" id="loginPwd" name="password" placeholder="Enter your password">
+            <button type="button" class="eye-btn" onclick="togglePwd('loginPwd',this)">👁️</button>
+          </div>
+        </div>
+
+        {% comment %} REMEMBER + FORGOT {% endcomment %}
+        <div class="options-row">
+          <label class="remember-label">
+            <input type="checkbox" id="rememberMe" name="remember_me"> Remember Me
+          </label>
+          <button type="button" class="link-btn" onclick="showPanel('panel-forgot')">Forgot Password?</button>
+        </div>
+
+        {% comment %} 2-STEP VERIFICATION INFO {% endcomment %}
+        <div class="twofa-box">
+          <div class="twofa-box__info">
+            <div class="twofa-box__title">🛡️ 2-Step Verification (2FA)</div>
+            <div class="twofa-box__sub">An OTP will be sent to your registered corporate email when you click Login</div>
+          </div>
+        </div>
+
+        {% comment %} reCAPTCHA -- దృశ్యపరంగా (UI) మాత్రమే; నిజమైన Google
+           reCAPTCHA కీలు ఇంకా అనుసంధానం చేయలేదు. {% endcomment %}
+        <div class="captcha-box">
+          <input type="checkbox" id="loginCaptcha" onchange="onCaptcha()">
+          <label for="loginCaptcha">I'm not a robot</label>
+          <div class="recaptcha-logo">
+            <span style="font-size:22px;">🔒</span>
+            <span>reCAPTCHA</span>
+            <span>Privacy · Terms</span>
+          </div>
+        </div>
+
+        {% comment %} LOGIN BUTTON -- type="submit": ఇది EmployerLoginView.post()
+           కి నిజమైన POST రిక్వెస్ట్ పంపుతుంది. {% endcomment %}
+        <button type="submit" class="btn-main" id="loginBtn">
+          🚀 Secure Login
+        </button>
+        </form>
+
+        <div class="divider">
+          <div class="divider__line"></div>
+          <div class="divider__text">New Employer?</div>
+          <div class="divider__line"></div>
+        </div>
+
+        <div class="reg-prompt">
+          Company not registered yet? <a href="{% url 'accounts:employer_registration' %}">Register Company Free →</a>
+        </div>
+
+      </div>
+    </div>
+
+    {% comment %} ══════════════════════════
+         PANEL 2: FORGOT PASSWORD
+         Step 1 → Verify
+         Step 2 → OTP
+         Step 3 → New Password
+         Step 4 → Success
+    ══════════════════════════ {% endcomment %}
+    <div class="panel" id="panel-forgot">
+      <div class="card-header">
+        <div class="card-header__badge">🔓 PASSWORD RECOVERY</div>
+        <h2>Forgot Password?</h2>
+        <p>Reset securely with 3-step verification</p>
+      </div>
+
+      <div class="card-body">
+
+        {% comment %} STEP DOTS {% endcomment %}
+        <div class="step-dots">
+          <div class="step-dot active" id="fd1"></div>
+          <div class="step-dot" id="fd2"></div>
+          <div class="step-dot" id="fd3"></div>
+          <div class="step-dot" id="fd4"></div>
+        </div>
+
+        {% comment %} STEP 1: 3-WAY VERIFY {% endcomment %}
+        <div id="fstep1">
+          <div class="verify-box">
+            <div class="verify-box__icon">🛡️</div>
+            <div>To verify identity, <strong>Corporate Email, Mobile, and Employer ID</strong> — all three must match exactly.</div>
+          </div>
+
+          <div class="alert alert--error" id="verifyAlert">
+            ⚠️ <span>Details did not match. Please check.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Registered Corporate Email <span style="color:var(--error)">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon">📧</span>
+              <input type="email" class="form-input" id="fEmail" placeholder="hr@yourcompany.com">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Registered Mobile <span style="color:var(--error)">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon">📱</span>
+              <input type="tel" class="form-input" id="fMobile" placeholder="+91 98765 43210">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Employer ID <span style="color:var(--error)">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon">🆔</span>
+              <input type="text" class="form-input" id="fEmpId" placeholder="EMP20261001">
+            </div>
+          </div>
+
+          <button class="btn-main" style="margin-top:4px;" onclick="verifyIdentity()">
+            🔍 Verify My Identity
+          </button>
+
+          <div class="reg-prompt" style="margin-top:8px;">
+            <button class="link-btn" onclick="showPanel('panel-login')">← Back to Login</button>
+          </div>
+        </div>
+
+        {% comment %} STEP 2: OTP VERIFY {% endcomment %}
+        <div id="fstep2" style="display:none;">
+          <div class="verify-box">
+            <div class="verify-box__icon">📧</div>
+            <div>A secure token OTP valid for only <strong>10 minutes</strong> has been sent to your corporate email.</div>
+          </div>
+
+          <div class="alert alert--error" id="otpAlert">
+            ⚠️ <span>Incorrect OTP. Please try again.</span>
+          </div>
+
+          <div class="otp-row" id="forgotOtpRow">
+            <input type="text" class="otp-digit" maxlength="1" oninput="moveFOtp(this,1)">
+            <input type="text" class="otp-digit" maxlength="1" oninput="moveFOtp(this,2)">
+            <input type="text" class="otp-digit" maxlength="1" oninput="moveFOtp(this,3)">
+            <input type="text" class="otp-digit" maxlength="1" oninput="moveFOtp(this,4)">
+            <input type="text" class="otp-digit" maxlength="1" oninput="moveFOtp(this,5)">
+            <input type="text" class="otp-digit" maxlength="1" oninput="moveFOtp(this,6)">
+          </div>
+
+          <div class="otp-timer">
+            Token expires in: <strong id="fOtpTimer">10:00</strong>
+          </div>
+
+          <button class="btn-main" onclick="verifyForgotOTP()">✅ Verify OTP</button>
+
+          <div class="otp-resend">Didn't receive OTP? <span onclick="resendForgotOTP()">Resend OTP</span></div>
+        </div>
+
+        {% comment %} STEP 3: NEW PASSWORD {% endcomment %}
+        <div id="fstep3" style="display:none;">
+          <div class="verify-box">
+            <div class="verify-box__icon">🔑</div>
+            <div>Set a new strong password — Uppercase, Number, and Special character are required.</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">New Password <span style="color:var(--error)">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon">🔒</span>
+              <input type="password" class="form-input" id="newPwd" placeholder="New strong password" oninput="checkPwdStr(this.value)">
+              <button class="eye-btn" onclick="togglePwd('newPwd',this)">👁️</button>
+            </div>
+            <div class="pwd-bar"><div class="pwd-fill" id="newPwdBar"></div></div>
+            <div class="pwd-label" id="newPwdLbl"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Confirm New Password <span style="color:var(--error)">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon">🔒</span>
+              <input type="password" class="form-input" id="confPwd" placeholder="Confirm password" oninput="checkPwdMatch()">
+              <button class="eye-btn" onclick="togglePwd('confPwd',this)">👁️</button>
+            </div>
+            <div class="pwd-match" id="pwdMatchMsg"></div>
+          </div>
+
+          <button class="btn-main" onclick="resetPassword()">🔐 Reset Password</button>
+        </div>
+
+        {% comment %} STEP 4: SUCCESS {% endcomment %}
+        <div id="fstep4" style="display:none;">
+          <div class="success-screen">
+            <div class="success-circle">✅</div>
+            <h3>Password Reset Successful!</h3>
+            <p>Your Employer account password has been reset successfully. Login with your new password.</p>
+            <button class="btn-main" onclick="showPanel('panel-login')">🚀 Login Now →</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>{% comment %} end login-card {% endcomment %}
+</div>{% comment %} end login-layout {% endcomment %}
+
+{% comment %} NOTE: ఇంతకుముందు ఇక్కడ ఉన్న "2FA OTP MODAL" తీసివేశాం -- అది
+   doLogin() ద్వారా మాత్రమే తెరుచుకునేది, లాగిన్ బటన్ ఇప్పుడు నిజమైన
+   type="submit" (EmployerLoginView.post() కి నేరుగా POST) కాబట్టి
+   doLogin() ఇక కాల్ కాదు (dead code). {% endcomment %}
+{% endblock %}
+
+{% block page_js %}
+<script src="{% static 'accounts/js/employer_login.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "accounts/employee_base.html" %}
+{% load static %}
+
+{% block title %}BharatHub — Employee Registration{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'accounts/css/employee_registration.css' %}">
+{% endblock %}
+
+{% comment %} ══════════════════════════════════════════════════════════════════
+   accounts/employee_registration.html -- SIMPLIFIED (single page, 7
+   fields only). ఇంతకుముందు ఇది 4-స్టెప్ విజార్డ్ (Personal/Academic/
+   Work-Experience/Security), CAPTCHA, స్క్రోల్-లాక్డ్ Terms/Privacy
+   మోడల్స్, ఫోటో అప్‌లోడ్ -- అన్నీ కలిపి రిజిస్ట్రేషన్ చాలా కష్టంగా
+   ఉండేది. Academic/Work-Experience స్టెప్‌లు అసలు సర్వర్ ఫారమ్ లో
+   భాగం కూడా కావు (దేన్నీ సేవ్ చేసేవి కాదు) -- కేవలం UI మాత్రమే.
+
+   ఇప్పుడు ఇక్కడ కేవలం ఖాతా క్రియేట్ చేయడానికి కావాల్సిన కనీస
+   వివరాలే అడుగుతాం. ప్రొఫైల్ ఫోటో, స్కిల్స్, విద్యార్హతలు, పని
+   అనుభవం వంటివి లాగిన్ అయిన తర్వాత "Complete Your Profile" దశలో
+   నింపుకోవచ్చు (candidates:complete_profile). ══════════════════ {% endcomment %}
+{% block header %}
+<header class="header">
+  <a href="{% url 'home:bharathub_home' %}" class="logo">
+    <div class="logo-icon">BH</div>
+    <span class="logo-name">Bharat<span>Hub</span></span>
+  </a>
+  <a href="{% url 'accounts:employee_login' %}" class="back-link">← Back to Login</a>
+</header>
+{% endblock %}
+
+{% block content %}
+<form method="post" enctype="multipart/form-data">
+{% csrf_token %}
+<div class="page-wrap" style="max-width:640px;">
+  <div class="page-title">
+    <h1>Employee <span>Registration</span></h1>
+    <p>Just a few details to get started — you can complete the rest after logging in.</p>
+  </div>
+
+  {% if form.non_field_errors %}
+  <div class="alert-box" style="display:block;background:#fee2e2;color:#991b1b;padding:12px 16px;border-radius:8px;margin-bottom:16px;">
+    ⚠️ {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="fcard">
+    <div class="fcard__body">
+      <div class="row">
+        <div class="fg"><label class="lbl">Full Name <span class="req">*</span></label><input type="text" class="inp{% if form.full_name.errors %} error{% endif %}" name="full_name" value="{{ form.full_name.value|default:'' }}" placeholder="Your full name">{% if form.full_name.errors %}<div class="field-error">⚠️ {{ form.full_name.errors.0 }}</div>{% endif %}</div>
+        <div class="fg"><label class="lbl">Father's Name <span class="req">*</span></label><input type="text" class="inp{% if form.father_name.errors %} error{% endif %}" name="father_name" value="{{ form.father_name.value|default:'' }}" placeholder="Father's name">{% if form.father_name.errors %}<div class="field-error">⚠️ {{ form.father_name.errors.0 }}</div>{% endif %}</div>
+      </div>
+      <div class="row">
+        <div class="fg"><label class="lbl">Gender <span class="req">*</span></label>
+          <select class="sel{% if form.gender.errors %} error{% endif %}" name="gender">
+            <option value="">-- Select Gender --</option>
+            <option value="male" {% if form.gender.value == "male" %}selected{% endif %}>Male</option>
+            <option value="female" {% if form.gender.value == "female" %}selected{% endif %}>Female</option>
+            <option value="other" {% if form.gender.value == "other" %}selected{% endif %}>Other</option>
+          </select>
+          {% if form.gender.errors %}<div class="field-error">⚠️ {{ form.gender.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="fg"><label class="lbl">Marital Status <span class="req">*</span></label>
+          <select class="sel{% if form.marital_status.errors %} error{% endif %}" name="marital_status">
+            <option value="unmarried" {% if form.marital_status.value == "unmarried" %}selected{% endif %}>Unmarried</option>
+            <option value="married" {% if form.marital_status.value == "married" %}selected{% endif %}>Married</option>
+          </select>
+          {% if form.marital_status.errors %}<div class="field-error">⚠️ {{ form.marital_status.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="row">
+        <div class="fg"><label class="lbl">Mobile Number <span class="req">*</span></label><input type="tel" class="inp{% if form.mobile_number.errors %} error{% endif %}" name="mobile_number" value="{{ form.mobile_number.value|default:'' }}" placeholder="98765 43210" maxlength="10">{% if form.mobile_number.errors %}<div class="field-error">⚠️ {{ form.mobile_number.errors.0 }}</div>{% endif %}</div>
+        <div class="fg"><label class="lbl">Email Address <span class="req">*</span></label><input type="email" class="inp{% if form.email.errors %} error{% endif %}" name="email" value="{{ form.email.value|default:'' }}" placeholder="your@email.com">{% if form.email.errors %}<div class="field-error">⚠️ {{ form.email.errors.0 }}</div>{% endif %}</div>
+      </div>
+      <div class="row">
+        <div class="fg"><label class="lbl">Date of Birth <span class="req">*</span></label><input type="date" class="inp{% if form.date_of_birth.errors %} error{% endif %}" name="date_of_birth" value="{{ form.date_of_birth.value|default:'' }}" max="2007-01-01">{% if form.date_of_birth.errors %}<div class="field-error">⚠️ {{ form.date_of_birth.errors.0 }}</div>{% endif %}</div>
+      </div>
+
+      <div class="sdiv"><div class="sdiv__line"></div><div class="sdiv__lbl">🔑 Set Password</div><div class="sdiv__line"></div></div>
+      <div class="row">
+        <div class="fg"><label class="lbl">Password <span class="req">*</span></label><div class="pwd-wrap"><input type="password" class="inp{% if form.password1.errors %} error{% endif %}" id="f_p1" name="password1" placeholder="Strong password"><button class="eye" onclick="togPwd('f_p1',this)" type="button">👁️</button></div>{% if form.password1.errors %}<div class="field-error">⚠️ {{ form.password1.errors.0 }}</div>{% endif %}</div>
+        <div class="fg"><label class="lbl">Confirm Password <span class="req">*</span></label><div class="pwd-wrap"><input type="password" class="inp{% if form.password2.errors %} error{% endif %}" id="f_p2" name="password2" placeholder="Confirm password"><button class="eye" onclick="togPwd('f_p2',this)" type="button">👁️</button></div>{% if form.password2.errors %}<div class="field-error">⚠️ {{ form.password2.errors.0 }}</div>{% endif %}</div>
+      </div>
+
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#4b5563;margin:16px 0;">
+        <input type="checkbox" required> I agree to the <a href="#" style="color:var(--primary);">Terms of Service</a> and <a href="#" style="color:var(--primary);">Privacy Policy</a>
+      </label>
+
+      <button type="submit" class="btn-sub" style="width:100%;">✅ Complete Registration</button>
+    </div>
+  </div>
+</div>
+</form>
+
+{% if form.errors %}
+<script>document.addEventListener('DOMContentLoaded', function(){ var e=document.querySelector('.inp.error,.sel.error'); if(e) e.scrollIntoView({behavior:'smooth',block:'center'}); });</script>
+{% endif %}
+{% include "accounts/_registration_success_modal.html" with id_label="BharatHub ID" id_value=registered_id login_url_name="accounts:employee_login" %}
+{% endblock %}
+
+{% block page_js %}
+<script>
+function togPwd(id, btn) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+  btn.textContent = el.type === 'password' ? '👁️' : '🙈';
+}
+</script>
+{% endblock %}

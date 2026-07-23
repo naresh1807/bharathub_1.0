@@ -1,0 +1,126 @@
+{% comment %} ══════════════════════════════════════════════════════════════════
+   jobs/_applications_body.html
+   Real "Applications" content -- driven by JobApplication records
+   (jobs/models.py), not hardcoded candidate cards. job/status filters
+   are real GET params handled by jobs/views.py::ApplicationsView;
+   status-change buttons are real POST forms to
+   ApplicationStatusUpdateView (ownership-checked server-side).
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+    <div class="section-page active" id="section-applications">
+      <div class="page-header">
+        <div><h1>📩 Applications Received</h1><p>Review and shortlist candidates</p></div>
+        <form method="get" style="display:flex;gap:8px;">
+          <select name="job" class="form-select" style="width:180px;padding:8px 12px;font-size:13px;" onchange="this.form.submit()">
+            <option value="">All Jobs</option>
+            {% for j in jobs %}
+              <option value="{{ j.pk }}" {% if job_filter == j.pk|stringformat:"s" %}selected{% endif %}>{{ j.title }}</option>
+            {% endfor %}
+          </select>
+          <select name="status" class="form-select" style="width:150px;padding:8px 12px;font-size:13px;" onchange="this.form.submit()">
+            <option value="">All Status</option>
+            {% for value, label in status_choices %}
+              <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </form>
+      </div>
+
+      {% comment %} STATS (real counts across ALL of this employer's applications) {% endcomment %}
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;">
+        <div class="stat-card clickable" onclick="scrollToCandidates()"><div class="stat-card__icon">📩</div><div class="stat-card__num">{{ total_count }}</div><div class="stat-card__label">Total Applications</div></div>
+        <div class="stat-card stat-card--green clickable" onclick="scrollToCandidates()"><div class="stat-card__icon">✅</div><div class="stat-card__num">{{ shortlisted_count }}</div><div class="stat-card__label">Shortlisted</div></div>
+        <div class="stat-card stat-card--purple clickable" onclick="scrollToCandidates()"><div class="stat-card__icon">📅</div><div class="stat-card__num">{{ interview_count }}</div><div class="stat-card__label">Interviews Scheduled</div></div>
+        <div class="stat-card stat-card--accent clickable" onclick="scrollToCandidates()"><div class="stat-card__icon">🆕</div><div class="stat-card__num">{{ new_count }}</div><div class="stat-card__label">New</div></div>
+      </div>
+
+      {% comment %} CANDIDATE GRID {% endcomment %}
+      <div class="card">
+        <div class="card__header">
+          <div class="card__title">👥 Candidates{% if job_filter or status_filter %} (filtered){% endif %}</div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn--sm btn--outline" onclick="switchView('grid')">⊞ Grid</button>
+            <button class="btn btn--sm btn--primary" onclick="switchView('table')">☰ Table</button>
+          </div>
+        </div>
+        <div class="card__body" id="candidateView">
+
+          {% comment %} GRID VIEW (default) {% endcomment %}
+          <div id="gridView" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;">
+            {% for application in applications %}
+              {% with candidate=application.candidate %}
+              <div class="candidate-card">
+                <div class="candidate-card__top">
+                  <div class="candidate-avatar">{{ candidate.user.first_name|default:candidate.user.username|slice:":2"|upper }}</div>
+                  <div style="flex:1;">
+                    <div class="candidate-name">{{ candidate.user.get_full_name|default:candidate.user.username }}</div>
+                    <div class="candidate-role">{{ candidate.qualification|default:"—" }} · {{ candidate.get_experience_level_display }}</div>
+                    <div class="candidate-id">{{ candidate.user.employee_profile.bharathub_id }}</div>
+                  </div>
+                  <span class="status-badge badge--{{ application.status }}">{{ application.get_status_display }}</span>
+                </div>
+                <div class="candidate-skills">
+                  {% for skill in candidate.skills_list|slice:":3" %}<span class="skill-chip">{{ skill }}</span>{% endfor %}
+                </div>
+                <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Applied for: <strong style="color:var(--primary);">{{ application.job.title }}</strong></div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <form method="post" action="{% url 'jobs:application_status_update' application.pk %}">
+                    {% csrf_token %}<input type="hidden" name="status" value="shortlisted">
+                    <button type="submit" class="btn btn--sm btn--success">✅ Shortlist</button>
+                  </form>
+                  <form method="post" action="{% url 'jobs:application_status_update' application.pk %}">
+                    {% csrf_token %}<input type="hidden" name="status" value="interview">
+                    <button type="submit" class="btn btn--sm btn--primary">📅 Interview</button>
+                  </form>
+                  <a class="btn btn--sm btn--outline" href="{% url 'messaging:employer_messages' %}">💬 Chat</a>
+                  <form method="post" action="{% url 'jobs:application_status_update' application.pk %}">
+                    {% csrf_token %}<input type="hidden" name="status" value="rejected">
+                    <button type="submit" class="btn btn--sm btn--danger">❌</button>
+                  </form>
+                </div>
+              </div>
+              {% endwith %}
+            {% empty %}
+              <p style="color:var(--muted);">ఇంకా ఏ అప్లికేషన్స్ రాలేదు.</p>
+            {% endfor %}
+          </div>
+
+          {% comment %} TABLE VIEW (hidden) {% endcomment %}
+          <div id="tableView" style="display:none;overflow-x:auto;">
+            <table class="app-table">
+              <thead>
+                <tr><th>Candidate</th><th>BH ID</th><th>Job Applied</th><th>Qualification</th><th>Skills</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                {% for application in applications %}
+                  {% with candidate=application.candidate %}
+                  <tr>
+                    <td><strong>{{ candidate.user.get_full_name|default:candidate.user.username }}</strong></td>
+                    <td style="color:var(--accent);font-weight:600;">{{ candidate.user.employee_profile.bharathub_id }}</td>
+                    <td>{{ application.job.title }}</td>
+                    <td>{{ candidate.qualification|default:"—" }}</td>
+                    <td>{% for skill in candidate.skills_list|slice:":2" %}<span class="skill-chip">{{ skill }}</span> {% endfor %}</td>
+                    <td><span class="status-badge badge--{{ application.status }}">{{ application.get_status_display }}</span></td>
+                    <td>
+                      <div style="display:flex;gap:4px;">
+                        <form method="post" action="{% url 'jobs:application_status_update' application.pk %}">
+                          {% csrf_token %}<input type="hidden" name="status" value="shortlisted">
+                          <button type="submit" class="btn btn--sm btn--success">✅</button>
+                        </form>
+                        <form method="post" action="{% url 'jobs:application_status_update' application.pk %}">
+                          {% csrf_token %}<input type="hidden" name="status" value="rejected">
+                          <button type="submit" class="btn btn--sm btn--danger">❌</button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endwith %}
+                {% empty %}
+                  <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;">ఇంకా ఏ అప్లికేషన్స్ రాలేదు.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>

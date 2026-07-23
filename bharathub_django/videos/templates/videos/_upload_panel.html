@@ -1,0 +1,82 @@
+{% comment %} ══════════════════════════════════════════════════════════════════
+   videos/_upload_panel.html
+   Employer డాష్‌బోర్డ్ లోని "Videos" ట్యాబ్ లో మాత్రమే {% include %}
+   అయ్యే భాగం -- వీడియో అప్‌లోడ్ ఫారమ్ + ఆ కంపెనీ సొంతంగా పోస్ట్ చేసిన
+   వీడియోల గ్రిడ్ (ఎడిట్ కాకపోయినా, డిలీట్ అయితే పనిచేస్తుంది).
+   అవసరమైన కాంటెక్స్ట్: `form` (VideoUploadForm), `my_videos` (queryset).
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+<div class="vf-scope">
+
+  {% if form.errors %}
+  <div class="alert alert--error" style="display:block;margin-bottom:16px;">
+    ⚠️ వీడియో అప్‌లోడ్ లో లోపం — దిగువ ఫారమ్ చెక్ చేయండి.
+  </div>
+  {% endif %}
+
+  <div class="vf-upload-card">
+    <form method="post" action="{% url 'videos:upload_video' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="vf-dropzone" onclick="document.getElementById('vfVideoInput').click()">
+        {{ form.video_file }}
+        <div class="vf-dropzone__icon">🎬</div>
+        <div class="vf-dropzone__title">Upload MP4 / MOV / AVI / WebM Video</div>
+        <div class="vf-dropzone__sub">Drag & Drop or Click · Max 500MB</div>
+        <div class="vf-dropzone__file" id="vfSelectedFileName"></div>
+        <button type="button" class="vf-btn vf-btn--outline" style="margin-top:14px;" onclick="event.stopPropagation();document.getElementById('vfVideoInput').click();">📁 Choose File</button>
+      </div>
+      {% if form.video_file.errors %}<div style="color:var(--vf-error);font-size:12px;margin-top:6px;">{{ form.video_file.errors|join:", " }}</div>{% endif %}
+
+      <div id="vfUploadForm" style="{% if not form.errors %}display:none;{% endif %}">
+        <div class="vf-field-row">
+          <div class="vf-field">
+            <label>Video Title *</label>
+            {{ form.title }}
+            {% if form.title.errors %}<div style="color:var(--vf-error);font-size:12px;margin-top:4px;">{{ form.title.errors|join:", " }}</div>{% endif %}
+          </div>
+          <div class="vf-field">
+            <label>Category</label>
+            {{ form.category }}
+          </div>
+        </div>
+        <div class="vf-field">
+          <label>Description / Caption</label>
+          {{ form.caption }}
+        </div>
+        <div class="vf-btn-row">
+          <button type="submit" class="vf-btn vf-btn--accent">🌐 Publish to Feed</button>
+          <button type="button" class="vf-btn vf-btn--outline" onclick="document.getElementById('vfUploadForm').style.display='none';">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="vf-upload-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:15px;font-weight:700;color:var(--vf-primary);">📺 Your Published Videos</div>
+      <span style="font-size:12.5px;color:var(--vf-muted);">{{ my_videos|length }} video{{ my_videos|length|pluralize }}</span>
+    </div>
+    <div class="vf-my-grid">
+      {% for video in my_videos %}
+      <div class="vf-my-card">
+        <video controls preload="metadata"><source src="{{ video.video_file.url }}"></video>
+        <div class="vf-my-card__body">
+          <div class="vf-my-card__title">{{ video.title }}</div>
+          <div class="vf-my-card__meta"><span>👁️ {{ video.view_count }} views</span><span>{{ video.created_at|timesince }} ago</span></div>
+          <div class="vf-my-card__meta"><span>👍 {{ video.like_count }}</span><span>💬 {{ video.comment_count }}</span></div>
+        </div>
+        <div class="vf-my-card__actions">
+          <form method="post" action="{% url 'videos:delete_video' video.pk %}" onsubmit="return confirm('డిలీట్ చేయాలా?');">
+            {% csrf_token %}
+            <button type="submit" class="vf-btn vf-btn--outline" style="width:100%;color:var(--vf-error);border-color:var(--vf-error);">🗑️ Delete</button>
+          </form>
+        </div>
+      </div>
+      {% empty %}
+      <div class="vf-empty" style="grid-column:1/-1;">ఇంకా మీరు ఏ వీడియో అప్‌లోడ్ చేయలేదు — పైన ఫారమ్ వాడి మొదటి వీడియో పోస్ట్ చేయండి.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div style="margin:22px 0 12px;font-size:15px;font-weight:700;color:var(--vf-primary);">🌐 Company Culture Feed — All Companies</div>
+  {% include "videos/_feed.html" %}
+</div>

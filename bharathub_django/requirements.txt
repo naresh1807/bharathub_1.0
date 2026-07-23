@@ -1,0 +1,40 @@
+Django>=4.2,<5.0
+
+# ImageField (profile photo uploads in accounts/candidates apps) needs
+# Pillow to validate that an uploaded file is actually a real image.
+Pillow>=10.0
+
+# messaging app: Chat సందేశాలు DB లో save అయ్యే ముందు encrypt
+# చేయడానికి (Fernet symmetric encryption) -- messaging/fields.py చూడండి.
+cryptography>=42.0
+
+# ── Real-time chat (WebSockets) ──────────────────────────────────
+# Django Channels: HTTP పాటు WebSocket ప్రోటోకాల్ ని కూడా Django
+# ద్వారా హ్యాండిల్ చేయడానికి. daphne ఒక ASGI సర్వర్ (runserver ని
+# ఆటోమేటిక్‌గా ASGI మోడ్ లోకి మారుస్తుంది, dev కి ఇది సరిపోతుంది;
+# production లో daphne/uvicorn ప్రత్యేకంగా రన్ చేయాలి).
+channels>=4.0
+daphne>=4.1
+# channels-redis: బహుళ సర్వర్ ప్రాసెస్‌ల మధ్య (లేదా బహుళ workers
+# మధ్య) WebSocket గ్రూప్ మెసేజ్‌లని బ్రాడ్‌కాస్ట్ చేయడానికి Redis ని
+# "channel layer" గా వాడతాం. లోకల్ dev లో Redis లేకపోతే settings.py
+# ఆటోమేటిక్‌గా InMemoryChannelLayer కి fallback అవుతుంది (కానీ అది
+# ఒకే ప్రాసెస్ లోపలే పని చేస్తుంది -- production కి REDIS_URL అవసరం).
+channels-redis>=4.2
+redis>=5.0
+
+# ── Background tasks (offline notification emails) ──────────────
+celery>=5.4
+
+# ── Web Push notifications (browser desktop notifications) ──────
+# offline యూజర్‌కి కొత్త మెసేజ్ వచ్చినప్పుడు, ఈమెయిల్ తో పాటు బ్రౌజర్
+# push నోటిఫికేషన్ కూడా పంపడానికి (VAPID కీలు అవసరం -- settings.py
+# లోని VAPID_* కామెంట్లు చూడండి).
+pywebpush>=2.0
+
+# Uncomment when connecting to PostgreSQL in production:
+# psycopg2-binary>=2.9
+
+# Uncomment when connecting to MySQL instead of the default SQLite:
+# mysqlclient>=2.2
+

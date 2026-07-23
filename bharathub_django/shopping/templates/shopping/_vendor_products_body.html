@@ -1,0 +1,97 @@
+{% comment %} ══════════════════════════════════════════════════════════════════
+   shopping/_vendor_products_body.html
+   వెండర్ యొక్క "My Products & Services" catalog page -- ఇప్పుడు
+   పూర్తిగా DB (shopping.Product model) నుండి రియల్ డేటాతో పనిచేస్తుంది.
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+    <div class="section-page active" id="section-products">
+      <div class="page-header">
+        <div><h1>📦 My Products & Services</h1><p>Manage your catalog — displayed on the employer marketplace</p></div>
+        <button class="btn btn--accent" type="button" onclick="toggleAddProduct()">➕ Add New Product</button>
+      </div>
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="{% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}" style="padding:10px 14px;border-radius:8px;margin-bottom:12px;background:{% if message.tags == 'error' %}rgba(220,38,38,0.08){% else %}rgba(22,163,74,0.08){% endif %};color:{% if message.tags == 'error' %}#dc2626{% else %}#16a34a{% endif %};font-size:13px;font-weight:600;">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+
+      {% comment %} ADD PRODUCT FORM -- real Django ModelForm, POSTs to this same URL {% endcomment %}
+      <form method="post" enctype="multipart/form-data" action="{% url 'shopping:vendor_products' %}">
+        {% csrf_token %}
+        <div class="add-product-form" id="addProductForm">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div style="font-size:15px;font-weight:700;color:var(--primary);">➕ New Product / Service</div>
+            <button class="btn btn--sm btn--outline" type="button" onclick="toggleAddProduct()">✕ Cancel</button>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Product / Service Name *</label>
+              {{ form.name }}
+            </div>
+            <div class="form-group">
+              <label class="form-label">Category *</label>
+              {{ form.category }}
+            </div>
+          </div>
+          <div class="form-row form-row--3">
+            <div class="form-group">
+              <label class="form-label">Price (₹) *</label>
+              {{ form.price }}
+            </div>
+            <div class="form-group">
+              <label class="form-label">Unit</label>
+              {{ form.unit }}
+            </div>
+            <div class="form-group">
+              <label class="form-label">Stock / Availability</label>
+              {{ form.stock }}
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            {{ form.description }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Product Image</label>
+            {{ form.image }}
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn--accent" type="submit" name="action" value="publish">🌐 Publish to Marketplace</button>
+            <button class="btn btn--outline" type="submit" name="action" value="draft">💾 Save Draft</button>
+          </div>
+        </div>
+      </form>
+
+      {% comment %} PRODUCT GRID -- real products from DB {% endcomment %}
+      <div class="product-grid" id="productGrid">
+        {% for product in products %}
+        <div class="product-card">
+          <div class="product-thumb">
+            {% if product.category == 'hardware' %}💻{% elif product.category == 'software' %}🛡️{% elif product.category == 'training' %}📊{% elif product.category == 'catering' %}🍽️{% elif product.category == 'office_supply' %}🖨️{% else %}🔧{% endif %}
+            {% if product.is_published %}<span class="product-status product-status--live">🟢 Live</span>{% else %}<span class="product-status product-status--draft">📝 Draft</span>{% endif %}
+          </div>
+          <div class="product-card__body">
+            <div class="product-name">{{ product.name }}</div>
+            <div class="product-cat">{{ product.get_category_display }} · {{ product.get_unit_display }}</div>
+            <div class="product-price">₹{{ product.price|floatformat:0 }}{% if product.unit == 'per_month' %}/month{% elif product.unit == 'per_hour' %}/hr{% elif product.unit == 'per_day' %}/day{% endif %}</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Stock: {{ product.stock }}</div>
+            <div class="product-actions">
+              <form method="post" action="{% url 'shopping:vendor_product_delete' product.pk %}" onsubmit="return confirm('ఈ ప్రొడక్ట్ ని తొలగించాలా?');" style="display:inline;">
+                {% csrf_token %}
+                <button class="btn btn--sm btn--danger" type="submit">🗑️</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <p style="color:var(--muted);grid-column:1/-1;">ఇంకా ఏ ప్రొడక్ట్ యాడ్ చేయలేదు — పైన "Add New Product" నొక్కి మొదటిది జోడించండి.</p>
+        {% endfor %}
+
+        <div class="product-card" id="addProductCard" style="border:2px dashed rgba(26,54,93,0.2);cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:200px;" onclick="toggleAddProduct()">
+          <div style="text-align:center;color:var(--muted);">
+            <div style="font-size:40px;margin-bottom:8px;">➕</div>
+            <div style="font-size:13px;font-weight:600;">Add New Product</div>
+          </div>
+        </div>
+      </div>
+    </div>

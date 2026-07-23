@@ -1,0 +1,294 @@
+{% extends "accounts/employee_base.html" %}
+{% load static %}
+
+{% block title %}BharatHub — Employee Login{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'accounts/css/employee_login.css' %}">
+{% endblock %}
+
+{% comment %} Login page only ADDS a "Register" + "Help" link next to the shared
+   Home link -- the logo/Home link itself comes from employee_base.html. {% endcomment %}
+{% block header_links %}
+<a href="{% url 'accounts:employee_registration' %}">Register</a>
+<a href="mailto:support@bharathub.in">Help</a>
+{% endblock %}
+
+{% block content %}
+{% comment %} BG SHAPES {% endcomment %}
+<div class="bg-shape"></div>
+<div class="bg-shape"></div>
+<div class="bg-shape"></div>
+
+{% comment %} CARD WRAPPER {% endcomment %}
+<div class="card-wrapper">
+
+  {% comment %} ══════════════════════════════
+       PANEL 1: LOGIN
+  ══════════════════════════════ {% endcomment %}
+  <div class="panel active" id="panel-login">
+    <div class="glass-card">
+
+      <div class="glass-card__header">
+        <div class="glass-card__header-badge">🔐 SECURE LOGIN</div>
+        <h2>Welcome Back!</h2>
+        <p>Login to your BharatHub account</p>
+      </div>
+
+      <div class="glass-card__body">
+
+        {% comment %} Django messages (views.py లోని messages.error("Invalid
+           credentials...") ఇక్కడ కనిపిస్తుంది -- ఇది సర్వర్ నిజంగా
+           authenticate() చేసిన తర్వాతే వచ్చే ఎర్రర్, JS ఫేక్ ఎర్రర్ కాదు). {% endcomment %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert--success{% else %}alert--error{% endif %}" style="display:block;">
+              {% if message.tags == 'success' %}✅{% else %}⚠️{% endif %} {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        {% comment %} method="post": లాగిన్ ఐడీ/పాస్‌వర్డ్ ఎప్పుడూ GET లో (URL లో)
+           పంపకూడదు -- URL browser history/server logs లో save
+           అవుతుంది, పాస్‌వర్డ్ అలా బయటపడకూడదు. {% endcomment %}
+        <form method="post">
+        {% csrf_token %}
+        {% comment %} GET లో ?next=... వచ్చిందంటే (ఉదా: లాగిన్ కాకుండా
+           dashboard URL ని నేరుగా తెరవడానికి ప్రయత్నించినప్పుడు
+           LoginRequiredMixin ఇక్కడికి పంపిస్తుంది), దాన్ని ఒక హిడెన్
+           ఫీల్డ్ లో పెట్టి POST తో పాటు పంపిస్తాం -- లేకపోతే login
+           అయ్యాక ఎప్పుడూ డిఫాల్ట్ dashboard కే వెళ్తుంది, యూజర్
+           అసలు చూడాలనుకున్న పేజీ కి కాదు. {% endcomment %}
+        {% if request.GET.next %}
+          <input type="hidden" name="next" value="{{ request.GET.next }}">
+        {% endif %}
+
+        {% comment %} BharatHub ID / Email {% endcomment %}
+        <div class="form__group">
+          <label class="form__label">BharatHub ID / Email <span style="color:#dc2626">*</span></label>
+          <div class="form__input-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" class="form__input" id="loginId" name="login_id" placeholder="BH20261001 or email@example.com">
+          </div>
+          <div class="input-hint">💡 Use the ID or email assigned after registration</div>
+        </div>
+
+        {% comment %} Password {% endcomment %}
+        <div class="form__group">
+          <label class="form__label">Password <span style="color:#dc2626">*</span></label>
+          <div class="form__input-wrap">
+            <span class="input-icon">🔑</span>
+            <input type="password" class="form__input" id="loginPwd" name="password" placeholder="Enter your password">
+            <button type="button" class="input-eye" onclick="togglePwd('loginPwd',this)" title="Show/Hide">👁️</button>
+          </div>
+        </div>
+
+        {% comment %} Remember + Forgot {% endcomment %}
+        <div class="form__options">
+          <label class="remember-label">
+            <input type="checkbox" id="rememberMe" name="remember_me">
+            Remember Me
+          </label>
+          <span class="forgot-link" onclick="showPanel('panel-forgot')">Forgot Password?</span>
+        </div>
+
+        {% comment %} 2FA OTP INFO {% endcomment %}
+        <div class="twofa-row">
+          <div class="twofa-row__info">
+            <div class="twofa-row__title">🛡️ 2-Step Verification (2FA)</div>
+            <div class="twofa-row__sub">An OTP will be sent to your email/mobile when you click Login</div>
+          </div>
+        </div>
+
+        {% comment %} reCAPTCHA -- ఇది ఇప్పటికీ దృశ్యపరంగా (UI) మాత్రమే; నిజమైన
+           Google reCAPTCHA site-key/secret-key ఇంటిగ్రేషన్ ఈ ప్రాజెక్ట్
+           లో ప్రస్తుతం లేదు. {% endcomment %}
+        <div class="captcha-box">
+          <input type="checkbox" id="loginCaptcha" onchange="onCaptchaChange()">
+          <label for="loginCaptcha" class="captcha-box__label">I'm not a robot</label>
+          <div class="captcha-recaptcha">
+            <span style="font-size:22px;">🔒</span>
+            <span>reCAPTCHA</span>
+            <span>Privacy · Terms</span>
+          </div>
+        </div>
+
+        {% comment %} Login Button -- type="submit" కాబట్టి ఇది నిజంగానే పైన ఉన్న
+           <form> ని POST చేసి, accounts/views.py లోని EmployeeLoginView.post()
+           కి పంపుతుంది. {% endcomment %}
+        <button type="submit" class="btn-main" id="loginBtn">
+          🚀 Secure Login
+        </button>
+        </form>
+
+        <div class="divider">
+          <div class="divider__line"></div>
+          <div class="divider__text">New to BharatHub?</div>
+          <div class="divider__line"></div>
+        </div>
+
+        <div class="register-prompt">
+          Don't have an account? <a href="{% url 'accounts:employee_registration' %}">Register for Free →</a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  {% comment %} ══════════════════════════════
+       PANEL 2: FORGOT PASSWORD
+       Step 1: 3-Way Verification
+       Step 2: OTP
+       Step 3: New Password
+       Step 4: Success
+  ══════════════════════════════ {% endcomment %}
+  <div class="panel" id="panel-forgot">
+    <div class="glass-card">
+
+      <div class="glass-card__header">
+        <div class="glass-card__header-badge">🔓 PASSWORD RECOVERY</div>
+        <h2>Forgot Password?</h2>
+        <p>Reset securely with 3-step verification</p>
+      </div>
+
+      <div class="glass-card__body">
+
+        {% comment %} Step Dots {% endcomment %}
+        <div class="step-indicator">
+          <div class="step-dot active" id="dot1"></div>
+          <div class="step-dot" id="dot2"></div>
+          <div class="step-dot" id="dot3"></div>
+          <div class="step-dot" id="dot4"></div>
+        </div>
+
+        {% comment %} ── FORGOT STEP 1: 3-WAY VERIFY ── {% endcomment %}
+        <div id="forgot-step1">
+          <div class="verify-info">
+            <div class="verify-info__icon">🛡️</div>
+            <div>To verify your identity, <strong>Email, Mobile, Date of Birth</strong> — all three must match correctly.</div>
+          </div>
+
+          <div class="alert alert--error" id="verifyError">⚠️ <span>Details did not match. Please check.</span></div>
+
+          <div class="form__group">
+            <label class="form__label">Registered Email <span style="color:#dc2626">*</span></label>
+            <div class="form__input-wrap">
+              <span class="input-icon">📧</span>
+              <input type="email" class="form__input" id="forgotEmail" placeholder="your@email.com">
+            </div>
+          </div>
+
+          <div class="form__group">
+            <label class="form__label">Registered Mobile Number <span style="color:#dc2626">*</span></label>
+            <div class="form__input-wrap">
+              <span class="input-icon">📱</span>
+              <input type="tel" class="form__input" id="forgotMobile" placeholder="+91 98765 43210">
+            </div>
+          </div>
+
+          <div class="form__group">
+            <label class="form__label">Date of Birth <span style="color:#dc2626">*</span></label>
+            <div class="form__input-wrap">
+              <span class="input-icon">🎂</span>
+              <input type="date" class="form__input" id="forgotDOB">
+            </div>
+          </div>
+
+          <button class="btn-main" onclick="verifyIdentity()">
+            🔍 Verify My Identity
+          </button>
+
+          <div class="register-prompt" style="margin-top:4px;">
+            <span class="forgot-link" onclick="showPanel('panel-login')">← Back to Login</span>
+          </div>
+        </div>
+
+        {% comment %} ── FORGOT STEP 2: OTP ── {% endcomment %}
+        <div id="forgot-step2" style="display:none;">
+          <div class="verify-info">
+            <div class="verify-info__icon">📧</div>
+            <div>An OTP valid for only <strong>10 minutes</strong> has been sent to your registered email.</div>
+          </div>
+
+          <div class="otp-inputs" style="margin-bottom:16px;">
+            <input type="text" class="otp-input" maxlength="1" oninput="moveForgotOtp(this,1)">
+            <input type="text" class="otp-input" maxlength="1" oninput="moveForgotOtp(this,2)">
+            <input type="text" class="otp-input" maxlength="1" oninput="moveForgotOtp(this,3)">
+            <input type="text" class="otp-input" maxlength="1" oninput="moveForgotOtp(this,4)">
+            <input type="text" class="otp-input" maxlength="1" oninput="moveForgotOtp(this,5)">
+            <input type="text" class="otp-input" maxlength="1" oninput="moveForgotOtp(this,6)">
+          </div>
+
+          <div class="otp-timer">
+            OTP expires in: <strong id="otpCountdown">10:00</strong>
+          </div>
+
+          <div class="alert alert--error" id="otpError">⚠️ <span>Incorrect OTP. Please try again.</span></div>
+
+          <button class="btn-main" onclick="verifyForgotOTP()">✅ Verify OTP</button>
+
+          <div class="register-prompt" style="margin-top:4px;">
+            Didn't receive OTP? <span class="forgot-link" onclick="resendOTP()">Resend OTP</span>
+          </div>
+        </div>
+
+        {% comment %} ── FORGOT STEP 3: NEW PASSWORD ── {% endcomment %}
+        <div id="forgot-step3" style="display:none;">
+          <div class="verify-info">
+            <div class="verify-info__icon">🔑</div>
+            <div>Set a strong password — combine Uppercase, Number, and Special characters.</div>
+          </div>
+
+          <div class="form__group">
+            <label class="form__label">New Password <span style="color:#dc2626">*</span></label>
+            <div class="form__input-wrap">
+              <span class="input-icon">🔒</span>
+              <input type="password" class="form__input" id="newPwd" placeholder="New strong password" oninput="checkNewPwdStrength(this.value)">
+              <button class="input-eye" onclick="togglePwd('newPwd',this)">👁️</button>
+            </div>
+            <div class="pwd-strength-bar"><div class="pwd-strength-fill" id="newPwdBar"></div></div>
+            <div class="pwd-strength-label" id="newPwdLabel"></div>
+          </div>
+
+          <div class="form__group">
+            <label class="form__label">Confirm New Password <span style="color:#dc2626">*</span></label>
+            <div class="form__input-wrap">
+              <span class="input-icon">🔒</span>
+              <input type="password" class="form__input" id="confirmPwd" placeholder="Confirm password" oninput="checkPwdMatch()">
+              <button class="input-eye" onclick="togglePwd('confirmPwd',this)">👁️</button>
+            </div>
+            <div class="pwd-match" id="pwdMatchMsg"></div>
+          </div>
+
+          <button class="btn-main" onclick="resetPassword()">🔐 Reset Password</button>
+        </div>
+
+        {% comment %} ── FORGOT STEP 4: SUCCESS ── {% endcomment %}
+        <div id="forgot-step4" style="display:none;">
+          <div class="success-screen">
+            <div class="success-screen__circle">✅</div>
+            <h3>Password Reset Successful!</h3>
+            <p>Your password has been reset successfully.<br>Login with your new password.</p>
+            <button class="btn-main" onclick="showPanel('panel-login')">
+              🚀 Login Now →
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>{% comment %} end card-wrapper {% endcomment %}
+
+{% comment %} NOTE: ఇంతకుముందు ఇక్కడ ఉన్న "2FA OTP MODAL (Login)" తీసివేశాం.
+   అది doLogin() JS ఫంక్షన్ ద్వారా మాత్రమే తెరుచుకునేది, కానీ లాగిన్
+   బటన్ ఇప్పుడు నిజమైన type="submit" (నేరుగా EmployeeLoginView.post()
+   కి POST అవుతుంది) కాబట్టి doLogin() ఇక ఏ బటన్ నుండి కూడా కాల్ కాదు
+   -- ఈ మోడల్ dead code. {% endcomment %}
+
+{% endblock %}
+
+{% block page_js %}
+<script src="{% static 'accounts/js/employee_login.js' %}"></script>
+{% endblock %}

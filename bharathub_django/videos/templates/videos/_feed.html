@@ -1,0 +1,96 @@
+{% load static %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   videos/_feed.html
+   ఒక్కసారే రాసిన Facebook-style వీడియో ఫీడ్ కాంపోనెంట్ -- మూడు చోట్ల
+   {% include "videos/_feed.html" %} తో వాడతాం:
+     - home/templates/home/bharathub_home.html   (అందరికీ కనిపిస్తుంది)
+     - employers/templates/employers/employer_dashboard.html ("Videos" ట్యాబ్)
+     - candidates/templates/candidates/candidate_dashboard.html ("Videos" ట్యాబ్)
+
+   కాలర్ ఇవ్వాల్సిన కాంటెక్స్ట్ వేరియబుల్: `videos` (videos/utils.py లోని
+   published_videos_for() తిరిగిచ్చిన లిస్ట్). CSS (`.vf-` క్లాసులు) మరియు
+   JS ఫంక్షన్లు (vfToggleLike మొదలైనవి) ఈ ఫైల్ ఒక్కసారి ఏ పేజీలో
+   {% include %} అయినా సరిపోయేలా self-contained గా videos/video_feed.css
+   మరియు videos/video_feed.js లో ఉన్నాయి -- host page ఆ రెండిటినీ
+   {% block page_css %} / {% block page_js %} లో ఒక్కసారి లోడ్ చేసుకోవాలి.
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+<div class="vf-scope">
+  <div class="vf-feed">
+    {% for video in videos %}
+    <article class="vf-card">
+      <header class="vf-card__header">
+        <div class="vf-card__logo" style="background:{{ video.employer_color }};">{{ video.employer.company_name|slice:":2"|upper }}</div>
+        <div class="vf-card__info">
+          <div class="vf-card__company">{{ video.employer.company_name }}</div>
+          <div class="vf-card__meta">{{ video.created_at|timesince }} ago · {{ video.get_category_display }}</div>
+        </div>
+        {% if request.user.is_authenticated and request.user.employer_profile.id == video.employer_id %}
+        <form method="post" action="{% url 'videos:delete_video' video.pk %}" onsubmit="return confirm('ఈ వీడియో ని శాశ్వతంగా తీసేయాలా?');">
+          {% csrf_token %}
+          <button type="submit" class="vf-card__delete" title="Delete video">🗑️</button>
+        </form>
+        {% endif %}
+      </header>
+
+      <div class="vf-card__body">
+        <video class="vf-video" controls preload="metadata">
+          <source src="{{ video.video_file.url }}">
+          మీ బ్రౌజర్ వీడియో ప్లేబ్యాక్ ని సపోర్ట్ చేయడం లేదు.
+        </video>
+      </div>
+
+      {% if video.title or video.caption %}
+      <div class="vf-card__caption">
+        {% if video.title %}<strong>{{ video.title }}</strong>{% endif %}
+        {% if video.caption %} — {{ video.caption }}{% endif %}
+      </div>
+      {% endif %}
+
+      <div class="vf-card__actions">
+        <div class="vf-like-wrap">
+          <button class="vf-action-btn{% if video.user_reaction %} vf-liked{% endif %}"
+                  data-video-id="{{ video.pk }}"
+                  data-authenticated="{{ request.user.is_authenticated|yesno:'1,0' }}"
+                  onclick="vfToggleLike(this,'{{ video.user_reaction|default:'like' }}')">
+            <span class="vf-reaction-icon">{{ video.user_reaction_emoji }}</span>
+            Like · <span class="vf-like-count">{{ video.like_count }}</span>
+          </button>
+          <div class="vf-reaction-popup">
+            <span title="Like" onclick="vfToggleLike(this,'like')">👍</span>
+            <span title="Love" onclick="vfToggleLike(this,'love')">❤️</span>
+            <span title="Clap" onclick="vfToggleLike(this,'clap')">👏</span>
+            <span title="Support" onclick="vfToggleLike(this,'support')">🤝</span>
+            <span title="Celebrate" onclick="vfToggleLike(this,'celebrate')">🎉</span>
+          </div>
+        </div>
+        <button class="vf-action-btn" onclick="vfToggleComments(this)">
+          💬 Comment · <span class="vf-comment-count">{{ video.comment_count }}</span>
+        </button>
+      </div>
+
+      <div class="vf-comments" data-video-id="{{ video.pk }}">
+        {% for comment in video.comments.all %}
+        <div class="vf-comment">
+          <div class="vf-comment__avatar">{{ comment.display_initials }}</div>
+          <div class="vf-comment__bubble">
+            <div class="vf-comment__name">{{ comment.display_name }}</div>
+            {{ comment.text }}
+          </div>
+        </div>
+        {% endfor %}
+
+        {% if request.user.is_authenticated %}
+        <form class="vf-comment-form" onsubmit="return vfSubmitComment(event, this);">
+          <input type="text" name="text" maxlength="500" placeholder="Write a comment..." required>
+          <button type="submit">Send</button>
+        </form>
+        {% else %}
+        <button type="button" class="vf-comment-login-btn" onclick="vfRequireLogin()">🔐 Login to comment</button>
+        {% endif %}
+      </div>
+    </article>
+    {% empty %}
+    <div class="vf-empty">🎬 ఇంకా వీడియోలు ఏవీ పోస్ట్ కాలేదు — తొలి వీడియో మీరే పోస్ట్ చేయండి!</div>
+    {% endfor %}
+  </div>
+</div>

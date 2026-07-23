@@ -1,0 +1,41 @@
+{% load static %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   employer_base.html
+   Shared shell for every EMPLOYER facing auth page -- currently
+   employer_login.html and employer_registration.html. Same idea as
+   accounts/employee_base.html: one copy of the <head>/<body>
+   skeleton; the header default matches the login page and the
+   registration page overrides it with its own markup. See
+   employee_base.html for the full explanation of each block.
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}BharatHub — Employer{% endblock %}</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  {% block page_css %}{% endblock %}
+</head>
+<body>
+
+{% block header %}
+<div class="top-bar">
+  <a href="{% url 'home:bharathub_home' %}" class="top-bar__logo">
+    <div class="top-bar__icon">BH</div>
+    <span class="top-bar__name">Bharat<span>Hub</span></span>
+  </a>
+  <div class="top-bar__links">
+    <a href="{% url 'home:bharathub_home' %}">Home</a>
+    {% block header_links %}{% endblock %}
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}{% endblock %}
+
+{% block page_js %}{% endblock %}
+</body>
+</html>

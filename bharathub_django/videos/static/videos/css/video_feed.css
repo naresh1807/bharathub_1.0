@@ -1,0 +1,181 @@
+/* ============================================================================
+   videos/static/videos/css/video_feed.css
+   ఎందుకు ప్రత్యేక CSS ఫైల్: ఈ ఫీడ్ కార్డ్ మూడు వేర్వేరు పేజీల్లో కనిపిస్తుంది
+   (Home, Employer Dashboard, Candidate Dashboard) -- ఆ మూడు పేజీలకీ వేర్వేరు
+   CSS variable పేర్లు ఉన్నాయి (Home: --primary-color/--accent-color,
+   Dashboards: --primary/--accent) మరియు కొన్ని క్లాస్ పేర్లు ఇప్పటికే వేరే
+   అర్థంతో వాడుతున్నారు (ఉదా: dashboard's .card__header). కాబట్టి ఈ కాంపోనెంట్
+   `.vf-` ప్రిఫిక్స్ తో పూర్తిగా స్వతంత్రంగా (self-contained, ఏ host page
+   వేరియబుల్స్ మీద ఆధారపడకుండా) రాశాం -- ఇది ఎక్కడ {% include %} చేసినా
+   సరిగ్గా అదే విధంగా కనిపిస్తుంది (ఒకే "website style": Poppins ఫాంట్,
+   #1A365D navy + #FF9900 orange, 14px radius, soft shadow -- సైట్
+   మొత్తం వాడే అదే డిజైన్ భాష). ============================================================================ */
+
+.vf-scope {
+  --vf-primary: #1A365D;
+  --vf-accent: #FF9900;
+  --vf-muted: #6b7280;
+  --vf-border: rgba(26, 54, 93, 0.12);
+  --vf-light-bg: #F4F7F6;
+  --vf-radius: 14px;
+  --vf-shadow: 0 4px 20px rgba(26, 54, 93, 0.09);
+  --vf-shadow-lg: 0 8px 36px rgba(26, 54, 93, 0.15);
+  --vf-success: #16a34a;
+  --vf-error: #dc2626;
+  font-family: 'Poppins', sans-serif;
+  display: block;
+}
+.vf-scope * { box-sizing: border-box; }
+
+.vf-feed { display: flex; flex-direction: column; gap: 18px; }
+
+/* ── FEED CARD ────────────────────────────────────────── */
+.vf-card {
+  background: #fff;
+  border-radius: var(--vf-radius);
+  box-shadow: var(--vf-shadow);
+  overflow: hidden;
+  border: 1px solid var(--vf-border);
+}
+
+.vf-card__header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+}
+.vf-card__logo {
+  width: 42px; height: 42px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 800; font-size: 13px; flex-shrink: 0;
+}
+.vf-card__info { flex: 1; min-width: 0; }
+.vf-card__company {
+  font-weight: 700; font-size: 14px; color: var(--vf-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.vf-card__meta { font-size: 11.5px; color: var(--vf-muted); margin-top: 2px; }
+.vf-card__delete {
+  border: none; background: none; cursor: pointer; font-size: 15px;
+  opacity: 0.55; padding: 6px; border-radius: 8px;
+}
+.vf-card__delete:hover { opacity: 1; background: rgba(220, 38, 38, 0.08); }
+
+.vf-card__body { background: #000; }
+.vf-video { display: block; width: 100%; max-height: 480px; background: #000; }
+
+.vf-card__caption {
+  padding: 12px 16px; font-size: 13.5px; line-height: 1.55; color: #1a1a2e;
+}
+.vf-card__caption strong { color: var(--vf-primary); }
+
+.vf-card__actions {
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-top: 1px solid var(--vf-border);
+}
+.vf-like-wrap { position: relative; }
+.vf-action-btn {
+  border: none; background: none; cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: 600; color: var(--vf-muted);
+  padding: 10px 14px; border-radius: 8px; display: flex; align-items: center; gap: 6px;
+}
+.vf-action-btn:hover { background: var(--vf-light-bg); }
+.vf-action-btn.vf-liked { color: #e11d48; }
+.vf-reaction-icon { font-size: 15px; }
+
+.vf-reaction-popup {
+  position: absolute; bottom: 100%; left: 0; margin-bottom: 4px;
+  background: #fff; border-radius: 24px; box-shadow: var(--vf-shadow-lg);
+  padding: 6px 10px; display: flex; gap: 6px;
+  opacity: 0; visibility: hidden; transform: translateY(6px);
+  transition: all 0.15s ease; z-index: 5;
+}
+.vf-like-wrap:hover .vf-reaction-popup {
+  opacity: 1; visibility: visible; transform: translateY(0);
+}
+.vf-reaction-popup span { font-size: 20px; cursor: pointer; transition: transform 0.1s; }
+.vf-reaction-popup span:hover { transform: scale(1.3); }
+
+/* ── COMMENTS ─────────────────────────────────────────── */
+.vf-comments {
+  display: none; padding: 10px 16px 14px; border-top: 1px solid var(--vf-border);
+  background: var(--vf-light-bg);
+}
+.vf-comments.vf-open { display: block; }
+.vf-comment { display: flex; gap: 8px; margin-bottom: 10px; }
+.vf-comment__avatar {
+  width: 30px; height: 30px; border-radius: 50%; background: var(--vf-primary);
+  color: #fff; font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.vf-comment__bubble {
+  background: #fff; border-radius: 14px; padding: 8px 12px; font-size: 12.5px;
+  line-height: 1.5; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.vf-comment__name { font-weight: 700; color: var(--vf-primary); font-size: 12px; margin-bottom: 2px; }
+
+.vf-comment-form { display: flex; gap: 8px; margin-top: 6px; }
+.vf-comment-form input {
+  flex: 1; border: 1px solid var(--vf-border); border-radius: 20px;
+  padding: 8px 14px; font-size: 12.5px; font-family: inherit; outline: none;
+}
+.vf-comment-form input:focus { border-color: var(--vf-accent); }
+.vf-comment-form button {
+  border: none; background: var(--vf-primary); color: #fff; font-weight: 600;
+  font-size: 12px; padding: 8px 16px; border-radius: 20px; cursor: pointer;
+}
+.vf-comment-login-btn {
+  border: 1px dashed var(--vf-border); background: none; color: var(--vf-muted);
+  font-size: 12px; padding: 8px 14px; border-radius: 20px; cursor: pointer; width: 100%;
+}
+.vf-comment-login-btn:hover { border-color: var(--vf-accent); color: var(--vf-accent); }
+
+.vf-empty {
+  text-align: center; padding: 34px 16px; color: var(--vf-muted); font-size: 13px;
+  background: #fff; border-radius: var(--vf-radius); border: 1px dashed var(--vf-border);
+}
+
+/* ── UPLOAD PANEL (employer only) ────────────────────────── */
+.vf-upload-card {
+  background: #fff; border-radius: var(--vf-radius); box-shadow: var(--vf-shadow);
+  padding: 20px; margin-bottom: 20px; border: 1px solid var(--vf-border);
+}
+.vf-dropzone {
+  border: 2px dashed var(--vf-border); border-radius: var(--vf-radius);
+  text-align: center; padding: 36px 20px; cursor: pointer; transition: all 0.15s;
+}
+.vf-dropzone:hover { border-color: var(--vf-accent); background: rgba(255,153,0,0.04); }
+.vf-dropzone__icon { font-size: 42px; margin-bottom: 8px; }
+.vf-dropzone__title { font-size: 15px; font-weight: 700; color: var(--vf-primary); }
+.vf-dropzone__sub { font-size: 12.5px; color: var(--vf-muted); margin-top: 4px; }
+.vf-dropzone__file { font-size: 12.5px; color: var(--vf-success); font-weight: 600; margin-top: 10px; }
+
+.vf-field { margin-top: 14px; }
+.vf-field label { display: block; font-size: 12.5px; font-weight: 700; color: var(--vf-primary); margin-bottom: 6px; }
+.vf-field input[type="text"], .vf-field select, .vf-field textarea {
+  width: 100%; border: 1px solid var(--vf-border); border-radius: 10px;
+  padding: 10px 12px; font-size: 13px; font-family: inherit; outline: none;
+}
+.vf-field input:focus, .vf-field select:focus, .vf-field textarea:focus { border-color: var(--vf-accent); }
+.vf-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 640px) { .vf-field-row { grid-template-columns: 1fr; } }
+
+.vf-btn {
+  border: none; border-radius: 10px; padding: 10px 20px; font-size: 13px;
+  font-weight: 700; font-family: inherit; cursor: pointer;
+}
+.vf-btn--accent { background: var(--vf-accent); color: #fff; }
+.vf-btn--outline { background: none; border: 1.5px solid var(--vf-border); color: var(--vf-muted); }
+.vf-btn:hover { opacity: 0.9; }
+.vf-btn-row { display: flex; gap: 10px; margin-top: 16px; }
+
+.vf-my-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px;
+}
+.vf-my-card {
+  border: 1px solid var(--vf-border); border-radius: var(--vf-radius); overflow: hidden;
+  background: #fff;
+}
+.vf-my-card video { width: 100%; max-height: 150px; background: #000; display: block; }
+.vf-my-card__body { padding: 10px 12px; }
+.vf-my-card__title { font-size: 12.5px; font-weight: 700; color: var(--vf-primary); }
+.vf-my-card__meta { font-size: 11px; color: var(--vf-muted); margin-top: 4px; display: flex; justify-content: space-between; }
+.vf-my-card__actions { padding: 0 12px 12px; }

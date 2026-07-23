@@ -1,0 +1,33 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   shopping/shop.html
+   The B2B marketplace browsing page -- pulled OUT of the old giant
+   employer_dashboard.html (where it was a JS show/hide "section")
+   into its own real URL: /shop/shop.html (see shopping/urls.py).
+   Reuses employers/css/employer_dashboard.css so it looks identical
+   to the rest of the employer dashboard, and employers/_nav.html for
+   the same topnav+sidebar shell (active="shopping").
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+
+{% block title %}BharatHub — B2B Marketplace{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'employers/css/employer_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% include "employers/_nav.html" with active="shopping" %}
+
+  {% comment %} MAIN CONTENT {% endcomment %}
+  <main class="main">
+{% include "shopping/_shop_body.html" %}
+  </main>
+</div>
+
+{% endblock %}
+
+{% block page_js %}
+<script src="{% static 'shopping/js/buyer_shopping.js' %}"></script>
+{% endblock %}

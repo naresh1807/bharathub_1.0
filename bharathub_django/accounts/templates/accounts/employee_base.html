@@ -1,0 +1,77 @@
+{% load static %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   employee_base.html
+   Shared shell for every EMPLOYEE (job-seeker) facing auth page --
+   currently: employee_login.html and employee_registration.html.
+
+   WHY THIS FILE EXISTS
+   Both pages used to paste an identical <head> block (charset,
+   viewport, Google Fonts link, <body> opening tag) by hand. Any
+   change had to be made in every file -- easy to forget one. That
+   shared skeleton now lives HERE, once. Each page fills in only
+   what's different about it via the {% block %}s below.
+
+   THE HEADER SPECIFICALLY:
+   employee_login.html's top bar and employee_registration.html's
+   header use slightly different markup (a "Register" link on one,
+   a "Back to Login" link on the other), so {% block header %} below
+   ships a sensible DEFAULT (the login page's top-bar) that the
+   registration page overrides completely with its own header block.
+   Either way, both pages now reuse this file instead of duplicating
+   the surrounding <head>/<body> boilerplate.
+
+   HOW A CHILD PAGE USES THIS FILE
+     {% extends "accounts/employee_base.html" %}
+     {% block title %}...{% endblock %}
+     {% block page_css %}<link ... employee_login.css>{% endblock %}
+     {% block header %} ... (optional override) ... {% endblock %}
+     {% block content %} ... the page's own body markup ... {% endblock %}
+     {% block page_js %}<script ... employee_login.js></script>{% endblock %}
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% comment %} Every child page overrides this so the browser tab shows the
+     right title (e.g. "BharatHub — Employee Login"). {% endcomment %}
+  <title>{% block title %}BharatHub — Employee{% endblock %}</title>
+
+  {% comment %} Shared Google Font used by every page in the site. {% endcomment %}
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  {% comment %} Each child page links its OWN stylesheet here (they still each
+     have a dedicated .css file -- we're only removing the duplicate
+     <head>/header HTML, not merging unrelated page styles together). {% endcomment %}
+  {% block page_css %}{% endblock %}
+</head>
+<body>
+
+{% comment %} ── DEFAULT TOP NAVIGATION BAR ──────────────────────────────────
+   Matches employee_login.html's original markup exactly. A page
+   with a different header shape (employee_registration.html) simply
+   overrides this whole block with its own markup -- see that file. {% endcomment %}
+{% block header %}
+<div class="top-bar">
+  <a href="{% url 'home:bharathub_home' %}" class="top-bar__logo">
+    <div class="top-bar__icon">BH</div>
+    <span class="top-bar__name">Bharat<span>Hub</span></span>
+  </a>
+  <div class="top-bar__links">
+    <a href="{% url 'home:bharathub_home' %}">Home</a>
+    {% block header_links %}{% endblock %}
+  </div>
+</div>
+{% endblock %}
+
+{% comment %} ── PAGE-SPECIFIC BODY ──────────────────────────────────────────
+   Everything that makes the login page different from the
+   registration page (the form, the steps, background shapes, etc.)
+   is filled in here by the child template. {% endcomment %}
+{% block content %}{% endblock %}
+
+{% comment %} Each child page attaches its OWN behaviour script here (still one
+   dedicated .js file per page -- same reasoning as page_css above). {% endcomment %}
+{% block page_js %}{% endblock %}
+</body>
+</html>

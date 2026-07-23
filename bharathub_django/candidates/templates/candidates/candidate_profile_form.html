@@ -1,0 +1,261 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}BharatHub — Edit Candidate Profile{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'candidates/css/candidate_dashboard.css' %}">
+<style>
+  /* ఈ పేజీ కి మాత్రమే కావాల్సిన చిన్న అదనపు స్టైల్స్ -- మిగతావన్నీ
+     candidate_dashboard.css నుండే వస్తాయి (.card, .form-input,
+     .form-group, .btn-sm వంటివి), తద్వారా రెండు పేజీలు ఒకే
+     డిజైన్ లాంగ్వేజ్ ని పంచుకుంటాయి. */
+  .profile-form-wrap { max-width: 780px; margin: 32px auto; padding: 0 20px 60px; }
+  .profile-form-wrap .page-header { margin-bottom: 18px; }
+  .field-errors { color: var(--error); font-size: 12px; margin-top: 4px; }
+  .non-field-errors {
+    background: #fee2e2; color: #991b1b; padding: 12px 16px;
+    border-radius: 8px; margin-bottom: 16px; font-size: 13px;
+  }
+  .alert-success {
+    background: #dcfce7; color: #166534; padding: 12px 16px;
+    border-radius: 8px; margin-bottom: 16px; font-size: 13px;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .edu-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+    margin-bottom: 8px; font-size: 13px;
+  }
+  .back-link { font-size: 13px; color: var(--muted); text-decoration: none; }
+  .back-link:hover { color: var(--primary); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-form-wrap">
+
+  <p style="margin-bottom:14px;">
+    <a href="{% url 'candidates:candidate_dashboard' %}" class="back-link">← Back to Dashboard</a>
+  </p>
+
+  <div class="page-header">
+    <div>
+      <h1>✏️ Edit Candidate Profile</h1>
+      <p>ఈ పేజీ నిజమైన Django ఫారమ్ + CSRF రక్షణ తో పనిచేస్తుంది</p>
+    </div>
+  </div>
+
+  {% comment %} django.contrib.messages ఫ్రేమ్‌వర్క్ ద్వారా వచ్చే
+     one-time "flash" మెసేజ్‌లు (సేవ్ అయ్యిందని చెప్పే success
+     మెసేజ్ వంటివి) ఇక్కడ చూపిస్తాం. {% endcomment %}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert-success">✅ {{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  {% comment %} ═══════════════ PROFILE FORM ═══════════════
+     method="post" + enctype="multipart/form-data" -- రెజ్యూమ్ /
+     ప్రొఫైల్ ఫోటో ఫైల్ ఫీల్డ్స్ ఉన్నాయి కాబట్టి enctype తప్పనిసరి,
+     లేకపోతే ఫైల్ డేటా సర్వర్ కి అస్సలు చేరదు.
+
+     {% csrf_token %} -- ప్రతి POST ఫారమ్ లో ఇది తప్పనిసరి. ఇది ఒక
+     హిడెన్ టోకెన్ ఇన్‌పుట్ ని జోడిస్తుంది; సర్వర్ ఆ టోకెన్ ని
+     సెషన్‌తో సరిపోల్చి, రిక్వెస్ట్ నిజంగా ఈ సైట్ నుండే వచ్చిందా
+     (వేరే హానికరమైన సైట్ నుండి ఆటోమేటిక్‌గా సబ్‌మిట్ అయిన ఫేక్
+     ఫారమ్ కాదా) అని నిర్ధారించుకుంటుంది -- ఇది లేకపోతే Django
+     403 Forbidden ఇచ్చి రిక్వెస్ట్ ని తిరస్కరిస్తుంది (CSRF
+     మిడిల్‌వేర్ settings.py లో ఇప్పటికే ఆన్ చేయబడింది). {% endcomment %}
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="form_type" value="profile">
+
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card__header"><div class="card__title">👤 Basic & Professional Details</div></div>
+      <div class="card__body">
+
+        {% comment %} ఫారమ్-వైడ్ ఎర్రర్స్ (ఉదా: "Expected CTC, Current
+           CTC కన్నా తక్కువగా ఉండకూడదు" లాంటి clean() ఎర్రర్స్). {% endcomment %}
+        {% if form.non_field_errors %}
+        <div class="non-field-errors">
+          {% for error in form.non_field_errors %}<div>⚠️ {{ error }}</div>{% endfor %}
+        </div>
+        {% endif %}
+
+        {% comment %} ప్రతి ఫీల్డ్ ని మనమే మాన్యువల్‌గా లూప్ చేస్తున్నాం
+           ({{ form.as_p }} వాడకుండా) -- తద్వారా existing
+           .form-group / .form-input CSS క్లాసుల లేఅవుట్ ని పూర్తిగా
+           కంట్రోల్ చేయగలుగుతాం, కానీ ఫీల్డ్ HTML ({{ field }}) మాత్రం
+           ఎప్పుడూ Django ఫారమ్ నుండే వస్తుంది (వాలిడేషన్ + value
+           repopulation + auto-escaping అన్నీ ఆటోమేటిక్‌గా జరుగుతాయి). {% endcomment %}
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="{{ form.headline.id_for_label }}">{{ form.headline.label }}</label>
+            {{ form.headline }}
+            {% for error in form.headline.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label for="{{ form.location.id_for_label }}">{{ form.location.label }}</label>
+            {{ form.location }}
+            {% for error in form.location.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.about.id_for_label }}">{{ form.about.label }}</label>
+          {{ form.about }}
+          {% for error in form.about.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.skills.id_for_label }}">Skills (comma separated)</label>
+          {{ form.skills }}
+          {% for error in form.skills.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="{{ form.qualification.id_for_label }}">{{ form.qualification.label }}</label>
+            {{ form.qualification }}
+            {% for error in form.qualification.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label for="{{ form.experience_level.id_for_label }}">{{ form.experience_level.label }}</label>
+            {{ form.experience_level }}
+            {% for error in form.experience_level.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="{{ form.current_ctc_lpa.id_for_label }}">{{ form.current_ctc_lpa.label }}</label>
+            {{ form.current_ctc_lpa }}
+            {% for error in form.current_ctc_lpa.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label for="{{ form.expected_ctc_lpa.id_for_label }}">{{ form.expected_ctc_lpa.label }}</label>
+            {{ form.expected_ctc_lpa }}
+            {% for error in form.expected_ctc_lpa.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.hire_status.id_for_label }}">Job Status</label>
+          {{ form.hire_status }}
+          {% for error in form.hire_status.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="{{ form.linkedin_url.id_for_label }}">LinkedIn URL</label>
+            {{ form.linkedin_url }}
+            {% for error in form.linkedin_url.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label for="{{ form.portfolio_url.id_for_label }}">Portfolio URL</label>
+            {{ form.portfolio_url }}
+            {% for error in form.portfolio_url.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="{{ form.resume.id_for_label }}">Resume (PDF/DOC/DOCX, max 2MB)</label>
+            {{ form.resume }}
+            {% if profile.resume %}
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+                Current: <a href="{{ profile.resume.url }}" target="_blank" rel="noopener noreferrer">{{ profile.resume.name }}</a>
+              </div>
+            {% endif %}
+            {% for error in form.resume.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label for="{{ form.profile_photo.id_for_label }}">Profile Photo (max 2MB)</label>
+            {{ form.profile_photo }}
+            {% for error in form.profile_photo.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <button type="submit" class="btn-sm btn-sm--accent">💾 Save Profile</button>
+      </div>
+    </div>
+  </form>
+
+  {% comment %} ═══════════════ ACADEMIC HISTORY ═══════════════ {% endcomment %}
+  <div class="card">
+    <div class="card__header"><div class="card__title">🎓 Academic History</div></div>
+    <div class="card__body">
+
+      {% if education_entries %}
+        {% for edu in education_entries %}
+        <div class="edu-row">
+          <div>
+            <strong>{{ edu.degree_title }}</strong> — {{ edu.institution }}
+            <div style="color:var(--muted);font-size:11px;">
+              {{ edu.get_level_display }} · {{ edu.year_of_passing }}{% if edu.score %} · {{ edu.score }}{% endif %}
+            </div>
+          </div>
+          {% comment %} డిలీట్ ఎప్పుడూ POST ఫారమ్ ద్వారానే (GET లింక్
+             ద్వారా కాదు) -- CSRF token తో పాటు, view.py లో
+             profile__user=request.user ఓనర్‌షిప్ చెక్ కూడా ఉంది. {% endcomment %}
+          <form method="post" action="{% url 'candidates:candidate_education_delete' edu.pk %}"
+                onsubmit="return confirm('ఈ ఎంట్రీ ని తొలగించాలా?');">
+            {% csrf_token %}
+            <button type="submit" class="btn-sm btn-sm--outline">🗑️ Delete</button>
+          </form>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color:var(--muted);font-size:13px;">ఇంకా ఏ విద్యార్హత వివరాలు జోడించలేదు.</p>
+      {% endif %}
+
+      {% comment %} కొత్త ఎడ్యుకేషన్ ఎంట్రీ జోడించే చిన్న ఫారమ్ --
+         ఇదీ CSRF token తో రక్షించబడిన నిజమైన Django ModelForm. {% endcomment %}
+      <form method="post" style="margin-top:16px;border-top:1.5px solid var(--border);padding-top:16px;">
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="education">
+
+        {% if education_form.non_field_errors %}
+        <div class="non-field-errors">
+          {% for error in education_form.non_field_errors %}<div>⚠️ {{ error }}</div>{% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="{{ education_form.level.id_for_label }}">Level</label>
+            {{ education_form.level }}
+            {% for error in education_form.level.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label for="{{ education_form.degree_title.id_for_label }}">Degree / Course Title</label>
+            {{ education_form.degree_title }}
+            {% for error in education_form.degree_title.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="{{ education_form.institution.id_for_label }}">Institution</label>
+            {{ education_form.institution }}
+            {% for error in education_form.institution.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label for="{{ education_form.year_of_passing.id_for_label }}">Year of Passing</label>
+            {{ education_form.year_of_passing }}
+            {% for error in education_form.year_of_passing.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="{{ education_form.score.id_for_label }}">Score (CGPA / %)</label>
+          {{ education_form.score }}
+          {% for error in education_form.score.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+        </div>
+
+        <button type="submit" class="btn-sm btn-sm--primary">➕ Add Education</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

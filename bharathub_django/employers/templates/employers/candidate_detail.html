@@ -1,0 +1,117 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% comment %}
+employers/candidate_detail.html
+candidate_search.html నుండి వచ్చే, ఒక్క candidate యొక్క పూర్తి
+ప్రొఫైల్ పేజీ -- 💬 Chat మరియు 📨 Send Hire Request రెండు action లు
+ఇక్కడే.
+{% endcomment %}
+
+{% block title %}BharatHub — {{ candidate.user.get_full_name|default:candidate.user.username }}{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'employers/css/employer_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% include "employers/_nav.html" with active="candidates" %}
+
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <a href="{% url 'employers:candidate_search' %}" style="font-size:13px;color:var(--primary);text-decoration:none;">← Back to Search</a>
+        <h1 style="margin-top:6px;">{{ candidate.user.get_full_name|default:candidate.user.username }}</h1>
+        <p>{{ candidate.headline|default:"—" }}</p>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <form method="post" action="{% url 'employers:start_chat_with_candidate' candidate.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn--primary">💬 Chat</button>
+        </form>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;align-items:start;">
+
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;">
+          <h3 style="margin-top:0;">👤 Personal Details</h3>
+          <table style="width:100%;font-size:14px;">
+            <tr><td style="color:#888;padding:6px 0;width:40%;">Full Name</td><td>{{ candidate.user.get_full_name|default:candidate.user.username }}</td></tr>
+            <tr><td style="color:#888;padding:6px 0;">Father's Name</td><td>{{ candidate.user.employee_profile.father_name|default:"—" }}</td></tr>
+            <tr><td style="color:#888;padding:6px 0;">Gender</td><td>{{ candidate.user.employee_profile.get_gender_display|default:"—" }}</td></tr>
+            <tr><td style="color:#888;padding:6px 0;">Marital Status</td><td>{{ candidate.user.employee_profile.get_marital_status_display|default:"—" }}</td></tr>
+            <tr><td style="color:#888;padding:6px 0;">Date of Birth</td><td>{{ candidate.user.employee_profile.date_of_birth|default:"—" }}</td></tr>
+            <tr><td style="color:#888;padding:6px 0;">Mobile Number</td><td>{{ candidate.user.employee_profile.mobile_number|default:"—" }}</td></tr>
+            <tr><td style="color:#888;padding:6px 0;">Email</td><td>{{ candidate.user.email|default:"—" }}</td></tr>
+            <tr><td style="color:#888;padding:6px 0;">BharatHub ID</td><td style="color:var(--accent);font-weight:600;">{{ candidate.user.employee_profile.bharathub_id }}</td></tr>
+            <tr><td style="color:#888;padding:6px 0;">Location</td><td>{{ candidate.location|default:"—" }}</td></tr>
+          </table>
+        </div>
+
+        <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;">
+          <h3 style="margin-top:0;">💼 Professional Details</h3>
+          <table style="width:100%;font-size:14px;">
+            <tr><td style="color:#888;padding:6px 0;width:40%;">Qualification</td><td>{{ candidate.qualification|default:"—" }}</td></tr>
+            <tr><td style="color:#888;padding:6px 0;">Experience Level</td><td>{{ candidate.get_experience_level_display }}</td></tr>
+            <tr><td style="color:#888;padding:6px 0;">Current CTC</td><td>{{ candidate.current_ctc_lpa|default:"—" }} LPA</td></tr>
+            <tr><td style="color:#888;padding:6px 0;">Expected CTC</td><td>{{ candidate.expected_ctc_lpa|default:"—" }} LPA</td></tr>
+            <tr><td style="color:#888;padding:6px 0;">Hire Status</td><td>{{ candidate.get_hire_status_display }}</td></tr>
+          </table>
+          {% if candidate.skills %}
+            <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">
+              {% for skill in candidate.skills_list %}<span class="skill-chip">{{ skill }}</span>{% endfor %}
+            </div>
+          {% endif %}
+          {% if candidate.about %}<p style="margin-top:12px;color:#444;">{{ candidate.about }}</p>{% endif %}
+          <div style="margin-top:12px;display:flex;gap:14px;font-size:13px;">
+            {% if candidate.resume %}<a href="{{ candidate.resume.url }}" target="_blank">📄 Resume</a>{% endif %}
+            {% if candidate.linkedin_url %}<a href="{{ candidate.linkedin_url }}" target="_blank">🔗 LinkedIn</a>{% endif %}
+            {% if candidate.portfolio_url %}<a href="{{ candidate.portfolio_url }}" target="_blank">🌐 Portfolio</a>{% endif %}
+          </div>
+        </div>
+
+        {% if education_list %}
+        <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;">
+          <h3 style="margin-top:0;">🎓 Education</h3>
+          {% for edu in education_list %}
+            <div style="padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:14px;">
+              <strong>{{ edu.degree_title }}</strong> — {{ edu.institution }} ({{ edu.year_of_passing }}) · {{ edu.score }}
+            </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;">
+        <h3 style="margin-top:0;">📨 Send Hire Request</h3>
+        <form method="post" action="{% url 'employers:send_hire_request' candidate.pk %}">
+          {% csrf_token %}
+          <div style="margin-bottom:10px;">
+            <label style="font-size:12px;color:#888;">Job (optional)</label>
+            {{ hire_request_form.job }}
+          </div>
+          <div style="margin-bottom:10px;">
+            <label style="font-size:12px;color:#888;">Message</label>
+            {{ hire_request_form.message }}
+          </div>
+          <button type="submit" class="btn btn--accent" style="width:100%;">Send Hire Request</button>
+        </form>
+
+        {% if existing_hire_requests %}
+          <div style="margin-top:18px;">
+            <h4 style="font-size:13px;color:#888;">ఇంతకుముందు పంపిన రిక్వెస్ట్‌లు</h4>
+            {% for hr in existing_hire_requests %}
+              <div style="font-size:13px;padding:8px 0;border-top:1px solid #f0f0f0;">
+                {{ hr.job.title|default:"General interest" }} — <strong>{{ hr.get_status_display }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+</div>
+
+{% endblock %}

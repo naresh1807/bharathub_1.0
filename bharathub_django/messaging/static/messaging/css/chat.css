@@ -1,0 +1,155 @@
+/* ══════════════════════════════════════════════════════════════════
+   messaging/static/messaging/css/chat.css
+
+   ఇది messaging/_messages_body.html లో ఎక్కువ భాగం ఇప్పటికే ఇన్‌లైన్
+   స్టైల్స్ (dashboard CSS వేరియబుల్స్: var(--primary), var(--border)
+   వాడుతూ) రాయబడింది -- అది ఉద్దేశపూర్వకమే (మూడు dashboard లు మూడు
+   వేర్వేరు CSS ఫైళ్ళు లోడ్ చేస్తాయి, కానీ ఒకే వేరియబుల్ పేర్లు
+   share చేసుకుంటాయి). ఈ ఫైల్ కేవలం JS డైనమిక్‌గా క్రియేట్ చేసే
+   కొత్త elements (reaction popover, inline edit box) కి, మరియు
+   స్క్రాల్‌బార్/బబుల్ pointer వంటి "WhatsApp feel" ఇచ్చే చిన్న
+   పాలిష్ కి మాత్రమే.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* చాట్ థ్రెడ్ స్క్రోల్‌బార్ -- సన్నగా, WhatsApp డెస్క్‌టాప్ లో లాగే */
+#bh-message-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.18) transparent;
+}
+#bh-message-list::-webkit-scrollbar { width: 6px; }
+#bh-message-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 6px; }
+
+/* బబుల్ మీద hover అయినప్పుడు మాత్రమే edit/delete/react బటన్లు
+   కనిపించేలా (WhatsApp లో లాగే) -- default గా దాచిపెడతాం, ఎప్పుడూ
+   కనిపిస్తుంటే చిందరవందరగా ఉంటుంది. */
+.bh-bubble__menu, .bh-bubble__react-btn { opacity: 0; transition: opacity .12s ease; }
+.bh-bubble:hover .bh-bubble__menu, .bh-bubble:hover .bh-bubble__react-btn { opacity: 1; }
+
+/* ══════════════ REACTION POPOVER ══════════════
+   "React" (😊) బటన్ నొక్కితే తెరుచుకునే చిన్న ఎమోజీ ఎంపిక పట్టీ --
+   ఇంతకుముందు ఇది window.prompt() (బ్రౌజర్ డిఫాల్ట్ డైలాగ్) --
+   ఇప్పుడు నిజమైన WhatsApp-తరహా popover. */
+.bh-reaction-popover {
+  position: absolute;
+  bottom: 22px;
+  z-index: 20;
+  display: flex;
+  gap: 2px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 4px 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  border: 1px solid rgba(0,0,0,0.06);
+  animation: bhPopIn .12s ease-out;
+}
+.bh-reaction-popover__emoji {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 5px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform .1s ease, background .1s ease;
+}
+.bh-reaction-popover__emoji:hover {
+  background: rgba(0,0,0,0.06);
+  transform: scale(1.25);
+}
+@keyframes bhPopIn {
+  from { opacity: 0; transform: translateY(4px) scale(0.9); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ══════════════ INLINE EDIT BOX ══════════════
+   Edit (✏️) నొక్కితే బబుల్ టెక్స్ట్ స్థానంలోనే కనిపించే ఎడిటర్ --
+   ఇంతకుముందు ఇది కూడా window.prompt() -- ఇప్పుడు inline. */
+.bh-edit-box { margin-top: 4px; }
+.bh-edit-box__input {
+  width: 100%;
+  min-width: 180px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.15);
+  padding: 6px 8px;
+  resize: vertical;
+  min-height: 40px;
+  color: #1a1a1a;
+  background: #fff;
+}
+.bh-edit-box__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+.bh-edit-box__cancel, .bh-edit-box__save {
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bh-edit-box__cancel { background: rgba(0,0,0,0.08); color: #333; }
+.bh-edit-box__save { background: var(--accent, #ff8c1a); color: #fff; }
+.bh-edit-box__cancel:hover { background: rgba(0,0,0,0.14); }
+.bh-edit-box__save:hover { opacity: 0.9; }
+
+/* Typing indicator dots (subtle pulse, WhatsApp-ish) */
+#bh-typing-indicator:not(:empty)::before {
+  content: "";
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent, #ff8c1a);
+  margin-right: 6px;
+  animation: bhPulse 1s ease-in-out infinite;
+}
+@keyframes bhPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+@media (max-width: 720px) {
+  .msg-layout { flex-direction: column; height: auto !important; }
+  .msg-sidebar { width: 100% !important; max-height: 220px; }
+}
+
+/* ══════════════ MESSAGE INPUT BOX ══════════════
+   forms.py లోని MessageForm.body widget కి ఇచ్చిన క్లాస్ -- ఇది
+   ఇంతకుముందు ఎక్కడా స్టైల్ చేయలేదు (డిఫాల్ట్ బ్రౌజర్ textarea లుక్
+   వచ్చేది). WhatsApp తరహా pill-shaped ఇన్‌పుట్ గా మార్చాం. */
+.wa-input__box {
+  flex: 1;
+  resize: none;
+  border: 1px solid var(--border, #e0e0e0);
+  border-radius: 20px;
+  padding: 10px 16px;
+  font-family: inherit;
+  font-size: 14px;
+  max-height: 120px;
+  line-height: 1.4;
+  outline: none;
+  background: #fff;
+}
+.wa-input__box:focus { border-color: var(--accent, #ff8c1a); }
+
+/* Unread count badge next to "💬 Messages" heading/nav links */
+.bh-badge {
+  display: inline-block;
+  background: var(--error, #dc2626);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* Search results list + highlight */
+.bh-search-result:hover { background: #f0f2f5; }
+.bh-search-result mark, #bh-search-results mark { background: #ffe08a; padding: 0 1px; border-radius: 2px; }

@@ -1,0 +1,27 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   messaging/employer_messages.html
+   Real, DB-backed, encrypted-at-rest messaging -- shared body partial
+   (messaging/_messages_body.html) reused across Employer/Vendor/
+   Candidate dashboards; only the CSS + nav differ per role.
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+
+{% block title %}BharatHub — Messages{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'employers/css/employer_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'messaging/css/chat.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% include "employers/_nav.html" with active="messages" %}
+
+  {% comment %} MAIN CONTENT {% endcomment %}
+  <main class="main">
+{% include "messaging/_messages_body.html" %}
+  </main>
+</div>
+
+{% endblock %}
