@@ -1,0 +1,32 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   messaging/candidate_messages.html
+   Real, DB-backed, encrypted-at-rest messaging for the Employee
+   (candidate) side -- shares messaging/_messages_body.html with the
+   Employer/Vendor pages; only the top bar + CSS differ per role.
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+
+{% block title %}BharatHub — Messages{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'candidates/css/candidate_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'messaging/css/chat.css' %}">
+{% endblock %}
+
+{% block content %}
+<nav class="topnav">
+  <a href="{% url 'home:bharathub_home' %}" class="topnav__brand">
+    <div class="topnav__brand-icon">BH</div>
+    Bharat<span>Hub</span>
+  </a>
+  <div class="topnav__tabs">
+    <a class="topnav__tab" href="{% url 'candidates:candidate_dashboard' %}">🏠 Dashboard</a>
+    <a class="topnav__tab active" href="{% url 'messaging:candidate_messages' %}">💬 Messages</a>
+  </div>
+</nav>
+
+<main class="main" style="padding:24px;max-width:1100px;margin:0 auto;">
+{% include "messaging/_messages_body.html" %}
+</main>
+{% endblock %}

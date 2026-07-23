@@ -1,0 +1,157 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Help Center — BharatHub</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="{% static 'home/css/help.css' %}">
+</head>
+<body>
+<header class="header">
+  <a href="{% url 'home:bharathub_home' %}" class="logo">
+    <div class="logo-icon">BH</div>
+    <span class="logo-name">Bharat<span>Hub</span></span>
+  </a>
+  <a href="{% url 'home:bharathub_home' %}" class="back-btn">← Back to Home</a>
+</header>
+
+<div class="hero">
+  <h1>Help <span>Center</span></h1>
+  <div class="search-wrap">
+    <input type="text" class="search-input" id="helpSearch" placeholder="Search for help..." oninput="searchHelp(this.value)">
+    <button class="search-btn">🔍 Search</button>
+  </div>
+</div>
+
+<div class="content">
+
+  {% comment %} CATEGORIES {% endcomment %}
+  <div class="cats-grid" id="catGrid">
+    <div class="cat-card active" onclick="filterCat('all',this)">
+      <div class="cat-icon">📋</div>
+      <div class="cat-title">All Topics</div>
+      <div class="cat-count">24 articles</div>
+    </div>
+    <div class="cat-card" onclick="filterCat('account',this)">
+      <div class="cat-icon">👤</div>
+      <div class="cat-title">Account & Registration</div>
+      <div class="cat-count">6 articles</div>
+    </div>
+    <div class="cat-card" onclick="filterCat('login',this)">
+      <div class="cat-icon">🔐</div>
+      <div class="cat-title">Login & Security</div>
+      <div class="cat-count">5 articles</div>
+    </div>
+    <div class="cat-card" onclick="filterCat('jobs',this)">
+      <div class="cat-icon">💼</div>
+      <div class="cat-title">Jobs & Applications</div>
+      <div class="cat-count">7 articles</div>
+    </div>
+    <div class="cat-card" onclick="filterCat('marketplace',this)">
+      <div class="cat-icon">🛍️</div>
+      <div class="cat-title">B2B Marketplace</div>
+      <div class="cat-count">4 articles</div>
+    </div>
+    <div class="cat-card" onclick="filterCat('vendor',this)">
+      <div class="cat-icon">📦</div>
+      <div class="cat-title">Vendor Support</div>
+      <div class="cat-count">3 articles</div>
+    </div>
+  </div>
+
+  {% comment %} FAQs {% endcomment %}
+  <div class="faq-section" data-cat="account login">
+    <h2>👤 Account & Login</h2>
+    <div class="faq-item" data-cat="account">
+      <div class="faq-question" onclick="toggleFAQ(this)">How do I register on BharatHub?<span class="faq-arrow">▼</span></div>
+      <div class="faq-answer">Click on "Register Free" on the Home page. Select your role (Employee, Employer, or Vendor) and complete the 4-step registration form. You will need to verify your email with a 6-digit OTP to complete registration.</div>
+    </div>
+    <div class="faq-item" data-cat="account">
+      <div class="faq-question" onclick="toggleFAQ(this)">What is a BharatHub ID?<span class="faq-arrow">▼</span></div>
+      <div class="faq-answer">After successful registration, you receive a unique BharatHub ID: BH2026XXXX for employees, EMP2026XXXX for employers, and VND2026XXXX for vendors. This ID is permanent and is used for login and identification on the platform.</div>
+    </div>
+    <div class="faq-item" data-cat="login">
+      <div class="faq-question" onclick="toggleFAQ(this)">Why do I need OTP every time I login?<span class="faq-arrow">▼</span></div>
+      <div class="faq-answer">BharatHub uses mandatory Two-Factor Authentication (2FA) for all logins to protect your account. When you click Login, an OTP is automatically sent to your registered email or mobile. This ensures only you can access your account, even if your password is compromised.</div>
+    </div>
+    <div class="faq-item" data-cat="login">
+      <div class="faq-question" onclick="toggleFAQ(this)">I didn't receive the OTP. What should I do?<span class="faq-arrow">▼</span></div>
+      <div class="faq-answer">1. Check your spam/junk folder. 2. Wait 2 minutes and try Resend OTP. 3. Ensure the email address you entered matches your registered email. 4. If the problem persists, contact support@bharathub.in with your BharatHub ID.</div>
+    </div>
+    <div class="faq-item" data-cat="login">
+      <div class="faq-question" onclick="toggleFAQ(this)">How do I reset my forgotten password?<span class="faq-arrow">▼</span></div>
+      <div class="faq-answer">Click "Forgot Password?" on the login page. Enter your registered Email, Mobile number, and BharatHub ID for verification. An OTP will be sent to your email. After verification, you can set a new password.</div>
+    </div>
+    <div class="faq-item" data-cat="account">
+      <div class="faq-question" onclick="toggleFAQ(this)">Can I change my registered email address?<span class="faq-arrow">▼</span></div>
+      <div class="faq-answer">Yes. Go to Profile → Security Settings → Change Email. You will need to verify both your old and new email addresses with OTPs to complete the change.</div>
+    </div>
+  </div>
+
+  <div class="faq-section" data-cat="jobs">
+    <h2>💼 Jobs & Applications</h2>
+    <div class="faq-item" data-cat="jobs">
+      <div class="faq-question" onclick="toggleFAQ(this)">How does job matching work on BharatHub?<span class="faq-arrow">▼</span></div>
+      <div class="faq-answer">BharatHub uses AI-powered skill matching. When employers post jobs with required skills, our algorithm matches them with candidates who have listed those skills on their profiles. Jobs are displayed in the candidate dashboard based on match percentage.</div>
+    </div>
+    <div class="faq-item" data-cat="jobs">
+      <div class="faq-question" onclick="toggleFAQ(this)">How do I apply for a job?<span class="faq-arrow">▼</span></div>
+      <div class="faq-answer">Browse jobs in your dashboard and click on any job card to view full details. Click "Apply Now" to open the application form. Fill in your details, upload your resume (PDF/DOC, max 5MB), write a cover letter, and submit. Your application status will be tracked in "Applied Status" tab.</div>
+    </div>
+    <div class="faq-item" data-cat="jobs">
+      <div class="faq-question" onclick="toggleFAQ(this)">Can I apply for the same job twice?<span class="faq-arrow">▼</span></div>
+      <div class="faq-answer">No. Once you apply for a job, the Apply button changes to "Applied" and you cannot submit another application for the same position. If you need to update your application, contact the employer directly through the Chat system.</div>
+    </div>
+    <div class="faq-item" data-cat="jobs">
+      <div class="faq-question" onclick="toggleFAQ(this)">How do I track my job application status?<span class="faq-arrow">▼</span></div>
+      <div class="faq-answer">Go to your Candidate Dashboard → "Applied Status" tab. You will see all your applications with their current status: Applied, Under Review, Shortlisted, Interview Scheduled, or Rejected. You can also contact the employer directly through the Chat Gateway.</div>
+    </div>
+    <div class="faq-item" data-cat="jobs">
+      <div class="faq-question" onclick="toggleFAQ(this)">Is it free to apply for jobs on BharatHub?<span class="faq-arrow">▼</span></div>
+      <div class="faq-answer">Yes, applying for jobs on BharatHub is completely free for candidates. BharatHub's Terms of Service prohibit employers from charging candidates any fees for applying or interviewing. If any employer asks you to pay, report it immediately to support@bharathub.in.</div>
+    </div>
+  </div>
+
+  <div class="faq-section" data-cat="marketplace vendor">
+    <h2>🛍️ B2B Marketplace & Vendors</h2>
+    <div class="faq-item" data-cat="marketplace">
+      <div class="faq-question" onclick="toggleFAQ(this)">How do I purchase from the B2B Marketplace?<span class="faq-arrow">▼</span></div>
+      <div class="faq-answer">Only verified employers can access the B2B Marketplace. Go to Employer Dashboard → Shopping. Browse products by category, set quantity, and click "Add to Cart" or "Buy Now". Review your cart and proceed to checkout. Your order will be tracked in "My Orders".</div>
+    </div>
+    <div class="faq-item" data-cat="marketplace">
+      <div class="faq-question" onclick="toggleFAQ(this)">How do I track my B2B order?<span class="faq-arrow">▼</span></div>
+      <div class="faq-answer">After checkout, go to Employer Dashboard → My Orders. You will see all your orders with a 4-step status tracker: Order Placed → Vendor Confirmed → Shipped → Delivered. You can also cancel orders or reorder from the same page.</div>
+    </div>
+    <div class="faq-item" data-cat="vendor">
+      <div class="faq-question" onclick="toggleFAQ(this)">How do I register as a vendor on BharatHub?<span class="faq-arrow">▼</span></div>
+      <div class="faq-answer">Click "Register your Business" on the Vendor Login page. Complete the 4-step vendor registration: Business Details → Location & Shop Photo (mandatory) → Product Catalog → Security Verification. You must verify both your email and mobile OTPs to complete registration.</div>
+    </div>
+    <div class="faq-item" data-cat="vendor">
+      <div class="faq-question" onclick="toggleFAQ(this)">How long does vendor verification take?<span class="faq-arrow">▼</span></div>
+      <div class="faq-answer">After submitting your registration, our team reviews your GST/PAN documents and shop front photo within 2-3 business days. You will receive an email confirmation once your vendor account is approved and your products go live on the marketplace.</div>
+    </div>
+  </div>
+
+  {% comment %} STILL NEED HELP {% endcomment %}
+  <div class="still-help">
+    <h2>Still Need Help?</h2>
+    <p>Our support team is available Monday to Saturday, 9 AM to 7 PM IST</p>
+    <div class="still-help-btns">
+      <a href="{% url 'home:contact' %}" class="still-help-btn" style="background:var(--accent);color:#fff;">📧 Contact Support</a>
+      <a href="mailto:support@bharathub.in" class="still-help-btn" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);">✉️ Email Us</a>
+    </div>
+  </div>
+
+</div>
+
+<footer class="footer">
+  <p>© 2026 BharatHub Technologies Pvt. Ltd. | <a href="{% url 'home:about' %}">About</a> · <a href="{% url 'home:privacy' %}">Privacy</a> · <a href="{% url 'home:terms' %}">Terms</a> · <a href="{% url 'home:contact' %}">Contact</a></p>
+</footer>
+
+
+<script src="{% static 'home/js/help.js' %}"></script>
+</body>
+</html>

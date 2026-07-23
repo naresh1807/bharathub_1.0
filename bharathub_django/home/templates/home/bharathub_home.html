@@ -1,0 +1,282 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BharatHub - Premium Professional Ecosystem</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="{% static 'home/css/bharathub_home.css' %}">
+<link rel="stylesheet" href="{% static 'videos/css/video_feed.css' %}">
+</head>
+<body>
+
+{% comment %} ═══ HEADER ═══ {% endcomment %}
+<header class="header">
+  <div class="header__inner">
+    <a href="{% url 'home:bharathub_home' %}" class="header__logo">
+      <div class="header__logo-icon">BH</div>
+      <span class="header__brand">Bharat<span>Hub</span></span>
+    </a>
+    <div class="header__actions">
+      <a href="{% url 'accounts:employee_login' %}" class="btn btn--outline">Login</a>
+      <a href="{% url 'accounts:employee_registration' %}" class="btn btn--accent">Register Free</a>
+    </div>
+  </div>
+</header>
+
+{% comment %} ═══ SUB-HEADER ═══ {% endcomment %}
+<div class="sub-header">
+  <div class="sub-header__inner">
+    <span class="sub-header__label">I am a:</span>
+    <button class="btn btn--employer" onclick="window.location.href='{% url 'accounts:employer_login' %}'">🏢 I am Employer</button>
+    <button class="btn btn--vendor" onclick="window.location.href='{% url 'vendor:vendor_login' %}'">🛍️ I am Vendor</button>
+    <div class="sub-header__spacer"></div>
+    <div class="sub-header__search">
+      <svg width="15" height="15" fill="none" stroke="#9ca3af" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" placeholder="Search jobs, companies, vendors...">
+    </div>
+  </div>
+</div>
+
+{% comment %} ═══ HERO BANNER ═══ {% endcomment %}
+<div class="hero-banner">
+  <div class="hero-banner__inner">
+    <div class="hero-banner__text">
+      <h1>India's <span>Premium</span><br>Professional Ecosystem</h1>
+      <p>Connecting students, job seekers, and professionals with smart profiles and verified branding.</p>
+      <div class="hero-banner__actions">
+        <button class="btn btn--accent">🚀 Get Started Free</button>
+        <button class="btn btn--outline">Watch Demo</button>
+      </div>
+    </div>
+    <div class="hero-banner__stats">
+      <div class="hero-stat"><div class="hero-stat__num">{{ stat_employers }}</div><div class="hero-stat__label">Companies</div></div>
+      <div class="hero-stat"><div class="hero-stat__num">{{ stat_employees }}</div><div class="hero-stat__label">Job Seekers</div></div>
+      <div class="hero-stat"><div class="hero-stat__num">{{ stat_vendors }}</div><div class="hero-stat__label">Vendors</div></div>
+    </div>
+  </div>
+</div>
+
+{% comment %} ═══ MAIN CONTENT ═══ {% endcomment %}
+<div class="main-container">
+
+  {% comment %} 70% FEED {% endcomment %}
+  <div class="feed-section">
+
+    <h2>🎬 Company Achievements & Culture Feed</h2>
+
+    {% comment %} 🎬 REAL VIDEO FEED -- videos యాప్ లోని Video మోడల్ నుండి
+       వచ్చే నిజమైన కంపెనీ కల్చర్/అచీవ్‌మెంట్ వీడియోలు (ఏ Employer అయినా
+       తమ డాష్‌బోర్డ్ నుండి అప్‌లోడ్ చేయగలరు) -- ఇంతకుముందు ఇక్కడ TCS/Wipro
+       పేర్లతో 2 hardcoded మాక్ కార్డులు ఉండేవి. {% endcomment %}
+    {% include "videos/_feed.html" with videos=feed_videos %}
+
+
+  </div>
+
+  {% comment %} 30% RIGHT PANEL {% endcomment %}
+  <div class="right-panel">
+
+    {% comment %} JOB TICKER {% endcomment %}
+    <div class="widget">
+      <div class="widget__header">
+        <div class="live-dot"></div>
+        🔔 Live Job Exchange
+      </div>
+      <div class="ticker-container">
+        <div class="ticker-list" id="tickerList">
+          {% for job in latest_jobs %}
+          <div class="ticker-item" onclick="showJobLoginPrompt('{{ job.title|escapejs }}','{{ job.employer.company_name|escapejs }} · {{ job.location|escapejs }}','{{ job.salary_display|escapejs }}')">
+            <div>
+              <div class="ticker-item__role">{{ job.title }}</div>
+              <div class="ticker-item__company">{{ job.employer.company_name }} · {{ job.location }}</div>
+              <div class="ticker-item__meta">{{ job.salary_display }} · {{ job.created_at|timesince }} ago</div>
+            </div>
+            {% if job.is_new %}<div class="ticker-item__badge">NEW</div>{% endif %}
+          </div>
+          {% empty %}
+          <div class="ticker-item">
+            <div>
+              <div class="ticker-item__role">ఇంకా active job postings ఏమీ లేవు</div>
+              <div class="ticker-item__company">తాజా ఉద్యోగాల కోసం మళ్ళీ చెక్ చేయండి</div>
+            </div>
+          </div>
+          {% endfor %}
+          {% comment %} duplicate the same DB job list once more so the CSS
+             tickerScroll animation (translateY(-50%), bharathub_home.css)
+             loops seamlessly -- only when there's real data, so the
+             empty-state message above doesn't render twice. {% endcomment %}
+          {% if latest_jobs %}
+          {% for job in latest_jobs %}
+          <div class="ticker-item" onclick="showJobLoginPrompt('{{ job.title|escapejs }}','{{ job.employer.company_name|escapejs }} · {{ job.location|escapejs }}','{{ job.salary_display|escapejs }}')">
+            <div>
+              <div class="ticker-item__role">{{ job.title }}</div>
+              <div class="ticker-item__company">{{ job.employer.company_name }} · {{ job.location }}</div>
+              <div class="ticker-item__meta">{{ job.salary_display }} · {{ job.created_at|timesince }} ago</div>
+            </div>
+            {% if job.is_new %}<div class="ticker-item__badge">NEW</div>{% endif %}
+          </div>
+          {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% comment %} LIVE ANALYTICS {% endcomment %}
+    <div class="widget">
+      <div class="widget__header">
+        <div class="live-dot"></div>
+        📊 Live BharatHub Analytics
+      </div>
+      <div class="analytics-widget">
+        <div class="live-counter">
+          <div class="live-counter__number" id="viewerCount">1,240</div>
+          <div class="live-counter__label">Professionals Currently Watching</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:rgba(26,54,93,0.06);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:20px;font-weight:800;color:var(--primary-color);">{{ stat_employers }}</div>
+            <div style="font-size:11px;color:var(--muted);">Active Employers</div>
+          </div>
+          <div style="background:rgba(255,153,0,0.08);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:20px;font-weight:800;color:var(--accent-color);">{{ stat_active_jobs }}</div>
+            <div style="font-size:11px;color:var(--muted);">Active Job Postings</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% comment %} QUICK ACTIONS {% endcomment %}
+    <div class="widget" style="padding:18px;">
+      <div class="section-title" style="margin-bottom:14px;font-size:14px;">Quick Actions</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn--accent" style="justify-content:flex-start;gap:10px;">🔍 Search Jobs</button>
+        <button class="btn btn--primary" style="justify-content:flex-start;gap:10px;">📝 Upload Resume</button>
+        <button class="btn btn--outline" style="justify-content:flex-start;gap:10px;border-color:rgba(26,54,93,0.2);color:var(--primary-color);">📊 View Dashboard</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% comment %} ═══ ECOSYSTEM SECTION ═══ {% endcomment %}
+<div class="ecosystem-section">
+
+  {% comment %} COMPANY SLIDER (70%) {% endcomment %}
+  <div class="company-slider-widget">
+    <div class="section-title">🏢 Joined Premium Companies</div>
+    <div class="slider-track-wrapper">
+      <div class="slider-track" id="sliderTrack">
+        {% for chip in employer_chips %}
+        <div class="company-logo-chip"><div class="company-logo-chip__icon" style="background:{{ chip.color }};">{{ chip.initials }}</div><span class="company-logo-chip__name">{{ chip.name }}</span></div>
+        {% empty %}
+        <div class="company-logo-chip"><span class="company-logo-chip__name">ఇంకా కంపెనీలు ఎవరూ చేరలేదు — మీరే మొదటి వారు అవ్వండి!</span></div>
+        {% endfor %}
+        {% comment %} duplicate the same DB company list once more so the CSS
+           slideLeft animation (translateX(-50%), bharathub_home.css) loops
+           seamlessly -- only when there's real data. {% endcomment %}
+        {% if employer_chips %}
+        {% for chip in employer_chips %}
+        <div class="company-logo-chip"><div class="company-logo-chip__icon" style="background:{{ chip.color }};">{{ chip.initials }}</div><span class="company-logo-chip__name">{{ chip.name }}</span></div>
+        {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% comment %} REGISTRY STATS (30%) {% endcomment %}
+  <div class="stats-panel">
+    <div class="stats-panel__title">📊 Live BharatHub Registry</div>
+    <div class="stats-panel__subtitle">Real-time ecosystem statistics</div>
+
+    <div class="stat-item">
+      <div class="stat-item__icon">🏢</div>
+      <div class="stat-item__info">
+        <div class="stat-item__number" id="stat-companies">{{ stat_employers }}</div>
+        <div class="stat-item__label">Total Companies Registered</div>
+      </div>
+    </div>
+
+    <div class="stat-item">
+      <div class="stat-item__icon">👨‍💼</div>
+      <div class="stat-item__info">
+        <div class="stat-item__number" id="stat-seekers">{{ stat_employees }}</div>
+        <div class="stat-item__label">Job Seekers & Professionals</div>
+      </div>
+    </div>
+
+    <div class="stat-item">
+      <div class="stat-item__icon">🛍️</div>
+      <div class="stat-item__info">
+        <div class="stat-item__number" id="stat-vendors">{{ stat_vendors }}</div>
+        <div class="stat-item__label">Verified Vendors</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;padding:12px;background:rgba(255,153,0,0.12);border-radius:10px;border:1px solid rgba(255,153,0,0.25);">
+      <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px;">🟢 Platform Status</div>
+      <div style="font-size:13px;font-weight:600;color:var(--accent-color);">All Systems Operational</div>
+    </div>
+  </div>
+
+</div>
+
+{% comment %} ═══ FOOTER ═══ {% endcomment %}
+<footer class="footer">
+  <div class="footer__inner">
+    <div class="footer__brand">
+      <div class="footer__logo">BH</div>
+      <span class="footer__brand-name">Bharat<span>Hub</span></span>
+    </div>
+    <div class="footer__links">
+      <a href="{% url 'home:about' %}">About Us</a>
+      <a href="{% url 'home:privacy' %}">Privacy Policy</a>
+      <a href="{% url 'home:terms' %}">Terms of Service</a>
+      <a href="{% url 'home:contact' %}">Contact</a>
+      <a href="{% url 'home:help' %}">Help Center</a>
+    </div>
+  </div>
+  <div class="footer__copy">
+    © 2026 BharatHub. Built by Naresh Goud. All Rights Reserved.
+  </div>
+</footer>
+
+
+{% comment %} JOB LOGIN PROMPT MODAL {% endcomment %}
+<div class="login-prompt-overlay" id="loginPromptOverlay">
+  <div class="login-prompt-modal">
+    <button class="login-prompt-modal__close" onclick="closeJobLoginPrompt()">✕</button>
+    <div class="login-prompt-modal__icon">🔐</div>
+    <h3>Login to Apply</h3>
+    <div class="login-prompt-modal__job">
+      <div class="login-prompt-modal__role" id="lpJobRole">Python Developer</div>
+      <div class="login-prompt-modal__company" id="lpJobCompany">TCS · Hyderabad</div>
+      <div style="font-size:13px;color:#FF9900;font-weight:600;margin-top:4px;" id="lpJobSalary">₹8-12 LPA</div>
+    </div>
+    <p>Please login to your BharatHub account to view full job details and apply for this position.</p>
+    <div class="login-prompt-modal__btns">
+      <button class="lp-btn-primary" onclick="window.location.href='{% url 'accounts:employee_login' %}'">🚀 Login & Apply Now</button>
+      <div class="lp-divider">
+        <div class="lp-divider__line"></div>
+        <div class="lp-divider__text">New to BharatHub?</div>
+        <div class="lp-divider__line"></div>
+      </div>
+      <button class="lp-btn-secondary" onclick="window.location.href='{% url 'accounts:employee_registration' %}'">📝 Create Free Account</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  window.bharathubRealStats = {
+    employers: {{ stat_employers }},
+    employees: {{ stat_employees }},
+    vendors: {{ stat_vendors }}
+  };
+</script>
+<script src="{% static 'home/js/bharathub_home.js' %}"></script>
+<script src="{% static 'videos/js/video_feed.js' %}"></script>
+</body>
+</html>

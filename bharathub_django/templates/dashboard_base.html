@@ -1,0 +1,48 @@
+{% load static %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   dashboard_base.html   (project-level shared template)
+   Shared shell for the three logged-in dashboards:
+     - candidates/candidate_dashboard.html
+     - employers/employer_dashboard.html
+     - vendor/vendor_dashboard.html
+
+   WHY IT LIVES HERE (not inside one app's templates/ folder):
+   All three dashboard apps need it, and no single one of them should
+   "own" a file the other two depend on. Django is told about this
+   folder via TEMPLATES -> DIRS in bharathub/settings.py, so
+   {% extends "dashboard_base.html" %} works from any app.
+
+   WHAT IS SHARED vs WHAT EACH DASHBOARD KEEPS:
+   The <head> boilerplate (charset, viewport, page title, Google Font)
+   is identical across all three and lives here once. The dashboards
+   themselves (top nav tabs, sidebar menu, every section-page, the
+   mobile bottom nav, any modals) are each role-specific -- a
+   candidate's sidebar has completely different menu items than an
+   employer's -- so that whole body is still supplied by each child
+   template via {% block content %}. This still removes the 6 lines
+   of duplicated <head> markup from 3 files and gives every dashboard
+   ONE place to add something that should appear on all of them
+   (e.g. a shared security/session-timeout banner) in future.
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}BharatHub — Dashboard{% endblock %}</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  {% block page_css %}{% endblock %}
+</head>
+<body>
+
+{% comment %} The dashboard's own top nav + sidebar + section-pages + mobile
+   nav + any modals all live in the child template's content block --
+   see candidate_dashboard.html / employer_dashboard.html /
+   vendor_dashboard.html. {% endcomment %}
+{% block content %}{% endblock %}
+
+{% block page_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,126 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About Us — BharatHub</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="{% static 'home/css/about.css' %}">
+</head>
+<body>
+<header class="header">
+  <a href="{% url 'home:bharathub_home' %}" class="logo">
+    <div class="logo-icon">BH</div>
+    <span class="logo-name">Bharat<span>Hub</span></span>
+  </a>
+  <a href="{% url 'home:bharathub_home' %}" class="back-btn">← Back to Home</a>
+</header>
+
+<div class="hero">
+  <h1>About <span>BharatHub</span></h1>
+  <p>India's most trusted professional ecosystem connecting employees, employers, and vendors through smart technology and verified branding.</p>
+</div>
+
+<div class="content">
+
+  {% comment %} STATS {% endcomment %}
+  <div class="stats-grid">
+    <div class="stat-box"><div class="stat-num">1.2M+</div><div class="stat-label">Registered Professionals</div></div>
+    <div class="stat-box"><div class="stat-num">45K+</div><div class="stat-label">Verified Companies</div></div>
+    <div class="stat-box"><div class="stat-num">3K+</div><div class="stat-label">Verified Vendors</div></div>
+    <div class="stat-box"><div class="stat-num">28</div><div class="stat-label">States & UTs Covered</div></div>
+  </div>
+
+  {% comment %} MISSION {% endcomment %}
+  <div class="section">
+    <h2>🎯 Our Mission</h2>
+    <p>BharatHub was founded with one clear mission — to bridge the gap between talent and opportunity across India. We believe every professional deserves a fair chance, and every employer deserves access to the best talent without barriers.</p>
+    <p>We are building a comprehensive professional ecosystem that serves three key stakeholders: job seekers and employees who want to showcase their skills, employers who want to hire verified talent efficiently, and vendors who want to grow their B2B business.</p>
+  </div>
+
+  {% comment %} STORY {% endcomment %}
+  <div class="section">
+    <h2>📖 Our Story</h2>
+    <p>BharatHub was born in 2024 out of frustration with the fragmented professional landscape in India. Job seekers struggled to get noticed, employers spent weeks filtering unverified applications, and B2B vendors had no trusted marketplace to reach corporate buyers.</p>
+    <p>We built BharatHub to solve all three problems in one integrated platform. With AI-powered job matching, verified company profiles, and a secure B2B marketplace, we are transforming how professional India connects.</p>
+    <p>Today, BharatHub serves professionals across all 28 states and union territories, with particular strength in the technology, manufacturing, healthcare, and services sectors.</p>
+  </div>
+
+  {% comment %} VALUES {% endcomment %}
+  <div class="section">
+    <h2>💎 Our Core Values</h2>
+    <div class="values-grid">
+      <div class="value-card">
+        <div class="value-icon">🔒</div>
+        <div class="value-title">Trust & Verification</div>
+        <div class="value-desc">Every profile, company, and vendor on BharatHub goes through rigorous verification to ensure authenticity.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">⚡</div>
+        <div class="value-title">Speed & Efficiency</div>
+        <div class="value-desc">AI-powered matching ensures the right people connect with the right opportunities faster than ever before.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">🤝</div>
+        <div class="value-title">Fair Opportunity</div>
+        <div class="value-desc">We believe skills and merit should determine success — not connections or geography.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">🌍</div>
+        <div class="value-title">India First</div>
+        <div class="value-desc">Built specifically for the Indian professional ecosystem, understanding local nuances and requirements.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">📊</div>
+        <div class="value-title">Data Security</div>
+        <div class="value-desc">Your personal and professional data is protected with enterprise-grade security and encryption.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">🚀</div>
+        <div class="value-title">Continuous Innovation</div>
+        <div class="value-desc">We constantly evolve our platform based on user feedback and emerging technology trends.</div>
+      </div>
+    </div>
+  </div>
+
+  {% comment %} TEAM {% endcomment %}
+  <div class="section">
+    <h2>👥 Leadership Team</h2>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-avatar" style="background:#1A365D;">RK</div>
+        <div class="team-name">Rajesh Kumar</div>
+        <div class="team-role">Founder & CEO</div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar" style="background:#FF9900;">PS</div>
+        <div class="team-name">Priya Sharma</div>
+        <div class="team-role">Co-Founder & CTO</div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar" style="background:#16a34a;">AM</div>
+        <div class="team-name">Arjun Mehta</div>
+        <div class="team-role">Head of Product</div>
+      </div>
+    </div>
+  </div>
+
+  {% comment %} CONTACT CTA {% endcomment %}
+  <div class="section" style="text-align:center;background:linear-gradient(135deg,var(--primary),#2a4a7f);color:#fff;">
+    <h2 style="color:#fff;justify-content:center;">🤝 Join BharatHub Today</h2>
+    <p style="color:rgba(255,255,255,.75);max-width:500px;margin:0 auto 24px;">Be part of India's fastest growing professional ecosystem. Whether you're looking for a job, hiring talent, or growing your B2B business — BharatHub is your platform.</p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+      <a href="{% url 'accounts:employee_registration' %}" style="background:var(--accent);color:#fff;text-decoration:none;padding:13px 28px;border-radius:10px;font-weight:700;font-size:15px;">Get Started Free →</a>
+      <a href="{% url 'home:contact' %}" style="background:rgba(255,255,255,.15);color:#fff;text-decoration:none;padding:13px 28px;border-radius:10px;font-weight:700;font-size:15px;border:1px solid rgba(255,255,255,.3);">Contact Us</a>
+    </div>
+  </div>
+
+</div>
+
+<footer class="footer">
+  <p>© 2026 BharatHub — Built with ❤️ for India | <a href="{% url 'home:bharathub_home' %}">Home</a> · <a href="{% url 'home:privacy' %}">Privacy Policy</a> · <a href="{% url 'home:terms' %}">Terms of Service</a> · <a href="{% url 'home:contact' %}">Contact</a></p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   shopping/vendor_orders.html
+   The vendor's "Orders & Leads" page -- pulled OUT of
+   vendor_dashboard.html into its own real URL:
+   /shop/vendor_orders.html (see shopping/urls.py).
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+
+{% block title %}BharatHub — Orders & Leads{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'vendor/css/vendor_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% include "vendor/_nav.html" with active="orders" %}
+
+  {% comment %} MAIN CONTENT {% endcomment %}
+  <main class="main">
+{% include "shopping/_vendor_orders_body.html" %}
+  </main>
+</div>
+
+{% endblock %}
+
+{% block page_js %}
+<script src="{% static 'shopping/js/vendor_orders.js' %}"></script>
+{% endblock %}

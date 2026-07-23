@@ -1,0 +1,139 @@
+{% extends "accounts/employer_base.html" %}
+{% load static %}
+
+{% block title %}BharatHub — Employer Registration{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'accounts/css/employer_registration.css' %}">
+{% endblock %}
+
+{% block header_links %}
+<a href="{% url 'accounts:employer_login' %}">← Back to Login</a>
+{% endblock %}
+
+{% comment %} ══════════════════════════════════════════════════════════════════
+   accounts/employer_registration.html -- SIMPLIFIED (single page, 9
+   fields only). PAN/GST/CIN/HQ-State document uploads etc. moved to
+   "Complete Your Profile" after first login (employers app). ══════ {% endcomment %}
+{% block content %}
+<form method="post">
+{% csrf_token %}
+<div class="page-wrapper" style="max-width:640px;margin:40px auto;">
+  <div class="page-title">
+    <h1>Employer <span>Registration</span></h1>
+    <p>Just a few details to get started — you can complete the rest after logging in.</p>
+  </div>
+
+  {% if form.non_field_errors %}
+  <div class="alert-box" style="display:block;background:#fee2e2;color:#991b1b;padding:12px 16px;border-radius:8px;margin-bottom:16px;">
+    ⚠️ {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="form__row">
+    <div class="form__group">
+      <label class="form__label">Company Name <span class="req">*</span></label>
+      <input type="text" class="form__input{% if form.company_name.errors %} invalid{% endif %}" name="company_name" value="{{ form.company_name.value|default:'' }}" placeholder="Registered company name">
+      {% if form.company_name.errors %}<div class="form__hint error">⚠️ {{ form.company_name.errors.0 }}</div>{% endif %}
+    </div>
+    <div class="form__group">
+      <label class="form__label">Company Type <span class="req">*</span></label>
+      <select class="form__input{% if form.company_type.errors %} invalid{% endif %}" name="company_type">
+        <option value="">-- Select --</option>
+        {% for value, label in form.fields.company_type.choices %}
+          <option value="{{ value }}" {% if form.company_type.value == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      {% if form.company_type.errors %}<div class="form__hint error">⚠️ {{ form.company_type.errors.0 }}</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="form__row">
+    <div class="form__group">
+      <label class="form__label">Industry Sector <span class="req">*</span></label>
+      <input type="text" class="form__input{% if form.industry_sector.errors %} invalid{% endif %}" name="industry_sector" value="{{ form.industry_sector.value|default:'' }}" placeholder="e.g. IT Services, Manufacturing...">
+      {% if form.industry_sector.errors %}<div class="form__hint error">⚠️ {{ form.industry_sector.errors.0 }}</div>{% endif %}
+    </div>
+    <div class="form__group">
+      <label class="form__label">HR / Contact Person <span class="req">*</span></label>
+      <input type="text" class="form__input{% if form.contact_person.errors %} invalid{% endif %}" name="contact_person" value="{{ form.contact_person.value|default:'' }}" placeholder="Full name">
+      {% if form.contact_person.errors %}<div class="form__hint error">⚠️ {{ form.contact_person.errors.0 }}</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="form__row">
+    <div class="form__group">
+      <label class="form__label">Mobile Number <span class="req">*</span></label>
+      <input type="tel" class="form__input{% if form.mobile_number.errors %} invalid{% endif %}" name="mobile_number" value="{{ form.mobile_number.value|default:'' }}" placeholder="98765 43210" maxlength="10">
+      {% if form.mobile_number.errors %}<div class="form__hint error">⚠️ {{ form.mobile_number.errors.0 }}</div>{% endif %}
+    </div>
+    <div class="form__group">
+      <label class="form__label">Email <span class="req">*</span></label>
+      <input type="email" class="form__input{% if form.corporate_email.errors %} invalid{% endif %}" name="corporate_email" value="{{ form.corporate_email.value|default:'' }}" placeholder="hr@company.com">
+      {% if form.corporate_email.errors %}<div class="form__hint error">⚠️ {{ form.corporate_email.errors.0 }}</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="form__row form__row--1">
+    <div class="form__group">
+      <label class="form__label">Address <span class="req">*</span></label>
+      <textarea class="form__input{% if form.address.errors %} invalid{% endif %}" name="address" rows="2" placeholder="Registered office address">{{ form.address.value|default:'' }}</textarea>
+      {% if form.address.errors %}<div class="form__hint error">⚠️ {{ form.address.errors.0 }}</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="form__row form__row--1">
+    <div class="form__group">
+      <label class="form__label">Other Branch Location(s)</label>
+      <input type="text" class="form__input" name="other_branch_location" value="{{ form.other_branch_location.value|default:'' }}" placeholder="(optional) e.g. Hyderabad, Bengaluru">
+    </div>
+  </div>
+
+  <div class="section-divider">
+    <div class="section-divider__line"></div>
+    <div class="section-divider__label">🔑 Set Password</div>
+    <div class="section-divider__line"></div>
+  </div>
+
+  <div class="form__row">
+    <div class="form__group">
+      <label class="form__label">Password <span class="req">*</span></label>
+      <div class="pwd-wrap">
+        <input type="password" class="form__input{% if form.password1.errors %} invalid{% endif %}" id="empPwd1" name="password1" placeholder="Strong password">
+        <button type="button" class="eye-btn" onclick="togPwd('empPwd1',this)">👁️</button>
+      </div>
+      {% if form.password1.errors %}<div class="form__hint error">⚠️ {{ form.password1.errors.0 }}</div>{% endif %}
+    </div>
+    <div class="form__group">
+      <label class="form__label">Confirm Password <span class="req">*</span></label>
+      <div class="pwd-wrap">
+        <input type="password" class="form__input{% if form.password2.errors %} invalid{% endif %}" id="empPwd2" name="password2" placeholder="Confirm password">
+        <button type="button" class="eye-btn" onclick="togPwd('empPwd2',this)">👁️</button>
+      </div>
+      {% if form.password2.errors %}<div class="form__hint error">⚠️ {{ form.password2.errors.0 }}</div>{% endif %}
+    </div>
+  </div>
+
+  <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#4b5563;margin:16px 0;">
+    <input type="checkbox" required> I agree to the <a href="#" style="color:var(--primary);">Terms of Service</a> and <a href="#" style="color:var(--primary);">Privacy Policy</a>
+  </label>
+
+  <button type="submit" class="btn-sub" style="width:100%;padding:12px;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:15px;font-weight:700;cursor:pointer;">✅ Complete Registration</button>
+</div>
+</form>
+
+{% if form.errors %}
+<script>document.addEventListener('DOMContentLoaded', function(){ var e=document.querySelector('.invalid'); if(e) e.scrollIntoView({behavior:'smooth',block:'center'}); });</script>
+{% endif %}
+{% include "accounts/_registration_success_modal.html" with id_label="Employer ID" id_value=registered_id login_url_name="accounts:employer_login" %}
+{% endblock %}
+
+{% block page_js %}
+<script>
+function togPwd(id, btn) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+  btn.textContent = el.type === 'password' ? '👁️' : '🙈';
+}
+</script>
+{% endblock %}

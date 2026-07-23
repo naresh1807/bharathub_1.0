@@ -1,0 +1,138 @@
+{% extends "vendor/vendor_base.html" %}
+{% load static %}
+
+{% block title %}BharatHub — Vendor Registration{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'vendor/css/vendor_registration.css' %}">
+{% endblock %}
+
+{% block header_links %}
+<a href="{% url 'vendor:vendor_login' %}">← Back to Login</a>
+{% endblock %}
+
+{% comment %} ══════════════════════════════════════════════════════════════════
+   vendor/vendor_registration.html -- SIMPLIFIED (single page, 9
+   fields only). Mobile/category/working-days/shop-photo moved to
+   "Complete Your Profile" after first login. ══════════════════════ {% endcomment %}
+{% block content %}
+<form method="post" enctype="multipart/form-data">
+{% csrf_token %}
+<div class="page-wrapper" style="max-width:640px;">
+  <div class="page-title">
+    <h1>Vendor <span>Registration</span></h1>
+    <p>Just a few details to get started — you can complete the rest after logging in.</p>
+  </div>
+
+  {% if form.non_field_errors %}
+  <div class="alert-box" style="display:block;background:#fee2e2;color:#991b1b;padding:12px 16px;border-radius:8px;margin-bottom:16px;">
+    ⚠️ {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="form__row">
+    <div class="form__group">
+      <label class="form__label">Business / Shop Name <span class="req">*</span></label>
+      <input type="text" class="form__input{% if form.shop_name.errors %} invalid{% endif %}" name="shop_name" value="{{ form.shop_name.value|default:'' }}" placeholder="Your shop/business name">
+      {% if form.shop_name.errors %}<div class="form__hint error">⚠️ {{ form.shop_name.errors.0 }}</div>{% endif %}
+    </div>
+    <div class="form__group">
+      <label class="form__label">Owner Name <span class="req">*</span></label>
+      <input type="text" class="form__input{% if form.owner_name.errors %} invalid{% endif %}" name="owner_name" value="{{ form.owner_name.value|default:'' }}" placeholder="Owner's full name">
+      {% if form.owner_name.errors %}<div class="form__hint error">⚠️ {{ form.owner_name.errors.0 }}</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="form__row">
+    <div class="form__group">
+      <label class="form__label">Business Type <span class="req">*</span></label>
+      <select class="form__input{% if form.business_type.errors %} invalid{% endif %}" name="business_type">
+        <option value="">-- Select --</option>
+        {% for value, label in form.fields.business_type.choices %}
+          <option value="{{ value }}" {% if form.business_type.value == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      {% if form.business_type.errors %}<div class="form__hint error">⚠️ {{ form.business_type.errors.0 }}</div>{% endif %}
+    </div>
+    <div class="form__group">
+      <label class="form__label">Year of Establishment <span class="req">*</span></label>
+      <input type="number" class="form__input{% if form.year_established.errors %} invalid{% endif %}" name="year_established" value="{{ form.year_established.value|default:'' }}" placeholder="e.g. 2015" min="1900" max="2100">
+      {% if form.year_established.errors %}<div class="form__hint error">⚠️ {{ form.year_established.errors.0 }}</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="form__row form__row--1">
+    <div class="form__group">
+      <label class="form__label">Email <span class="req">*</span></label>
+      <input type="email" class="form__input{% if form.vendor_email.errors %} invalid{% endif %}" name="vendor_email" value="{{ form.vendor_email.value|default:'' }}" placeholder="your@business.com">
+      {% if form.vendor_email.errors %}<div class="form__hint error">⚠️ {{ form.vendor_email.errors.0 }}</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="form__row">
+    <div class="form__group">
+      <label class="form__label">GST Number</label>
+      <input type="text" class="form__input" name="gst_number" value="{{ form.gst_number.value|default:'' }}" placeholder="(optional) 27AAAAA0000A1Z5" style="text-transform:uppercase;">
+    </div>
+    <div class="form__group">
+      <label class="form__label">PAN Number</label>
+      <input type="text" class="form__input" name="pan_number" value="{{ form.pan_number.value|default:'' }}" placeholder="(optional) ABCDE1234F" style="text-transform:uppercase;">
+    </div>
+  </div>
+
+  <div class="form__row form__row--1">
+    <div class="form__group">
+      <label class="form__label">Address <span class="req">*</span></label>
+      <textarea class="form__input{% if form.address.errors %} invalid{% endif %}" name="address" rows="2" placeholder="Shop / business address">{{ form.address.value|default:'' }}</textarea>
+      {% if form.address.errors %}<div class="form__hint error">⚠️ {{ form.address.errors.0 }}</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="section-divider">
+    <div class="section-divider__line"></div>
+    <div class="section-divider__label">🔑 Set Password</div>
+    <div class="section-divider__line"></div>
+  </div>
+
+  <div class="form__row">
+    <div class="form__group">
+      <label class="form__label">Password <span class="req">*</span></label>
+      <div class="pwd-wrap">
+        <input type="password" class="form__input{% if form.password1.errors %} invalid{% endif %}" id="vndPwd1" name="password1" placeholder="Strong password">
+        <button type="button" class="eye-btn" onclick="togPwd('vndPwd1',this)">👁️</button>
+      </div>
+      {% if form.password1.errors %}<div class="form__hint error">⚠️ {{ form.password1.errors.0 }}</div>{% endif %}
+    </div>
+    <div class="form__group">
+      <label class="form__label">Confirm Password <span class="req">*</span></label>
+      <div class="pwd-wrap">
+        <input type="password" class="form__input{% if form.password2.errors %} invalid{% endif %}" id="vndPwd2" name="password2" placeholder="Confirm password">
+        <button type="button" class="eye-btn" onclick="togPwd('vndPwd2',this)">👁️</button>
+      </div>
+      {% if form.password2.errors %}<div class="form__hint error">⚠️ {{ form.password2.errors.0 }}</div>{% endif %}
+    </div>
+  </div>
+
+  <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#4b5563;margin:16px 0;">
+    <input type="checkbox" required> I agree to the <a href="#" style="color:var(--primary);">Terms of Service</a> and <a href="#" style="color:var(--primary);">Privacy Policy</a>
+  </label>
+
+  <button type="submit" class="btn-sub" style="width:100%;padding:12px;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:15px;font-weight:700;cursor:pointer;">✅ Complete Registration</button>
+</div>
+</form>
+
+{% if form.errors %}
+<script>document.addEventListener('DOMContentLoaded', function(){ var e=document.querySelector('.invalid'); if(e) e.scrollIntoView({behavior:'smooth',block:'center'}); });</script>
+{% endif %}
+{% include "accounts/_registration_success_modal.html" with id_label="Vendor ID" id_value=registered_id login_url_name="vendor:vendor_login" %}
+{% endblock %}
+
+{% block page_js %}
+<script>
+function togPwd(id, btn) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+  btn.textContent = el.type === 'password' ? '👁️' : '🙈';
+}
+</script>
+{% endblock %}

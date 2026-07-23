@@ -1,0 +1,187 @@
+{% load static %}
+{% load employer_extras %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   employers/_nav.html
+   The employer dashboard's top nav bar + left sidebar, factored out
+   into ONE shared partial so it isn't copy-pasted into every page
+   that needs it.
+
+   HOW TO USE:
+     {% include "employers/_nav.html" with active="shopping" %}
+
+   Two kinds of nav items, handled differently on purpose:
+     - Home / Post a Job / Upload Video / Chat / Mail still live
+       TOGETHER as JS show/hide tabs inside employer_dashboard.html
+       (they haven't been split into their own apps yet), so their
+       buttons always call showSection(...) via onclick -- exactly
+       like before. Clicking one only works if you're already on
+       employer_dashboard.html; from a standalone page these buttons
+       navigate back there first.
+     - Applications / Shopping / My Orders are now real, separate
+       pages (jobs app / shopping app), so those are always plain
+       <a href> links to their own URL, never onclick=showSection().
+
+   `active` tells this partial which single item to highlight as the
+   current page/tab. Recognised values: home, postjob, videos,
+   applications, chat, mail, shopping, myorders.
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+<nav class="topnav">
+  <a href="{% url 'home:bharathub_home' %}" class="topnav__brand">
+    <div class="topnav__brand-icon">BH</div>
+    Bharat<span>Hub</span>
+  </a>
+
+  <div class="topnav__tabs">
+    {% comment %} -- JS-tab group: only works as a same-page tab switch while
+       you're actually on employer_dashboard.html. From any other
+       page these fall back to a normal link to the dashboard --
+       ఇక్కడ ?section=... query param కూడా జోడించాం, ఎందుకంటే ఇంతకుముందు
+       మూడు లింకులు (Home/Post a Job/Upload Video) ఒకే URL
+       (employer_dashboard.html, ఏ query param లేకుండా) కి పాయింట్
+       చేసేవి -- కాబట్టి "Upload Video" ఎక్కడి నుండి క్లిక్ చేసినా (ఉదా:
+       Applications పేజీ నుండి) ఎప్పుడూ Home ట్యాబ్ నే తెరిచేది, Upload
+       Video ట్యాబ్ కాదు. ఇప్పుడు employer_dashboard.html లోని JS
+       (దిగువ చూడండి) పేజీ లోడ్ అయ్యాక ఈ query param ని చదివి సరైన
+       ట్యాబ్ ని ఆటోమేటిక్‌గా తెరుస్తుంది. -- {% endcomment %}
+    {% if active == "home" %}
+      <button class="topnav__tab active" onclick="showSection('home',this)">🏠 Dashboard</button>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'employers:employer_dashboard' %}?section=home">🏠 Dashboard</a>
+    {% endif %}
+
+    {% if active == "postjob" %}
+      <button class="topnav__tab active" onclick="showSection('postjob',this)">💼 Post a Job</button>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'employers:employer_dashboard' %}?section=postjob">💼 Post a Job</a>
+    {% endif %}
+
+    {% if active == "videos" %}
+      <button class="topnav__tab active" onclick="showSection('videos',this)">🎥 Videos</button>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'employers:employer_dashboard' %}?section=videos">🎥 Videos</a>
+    {% endif %}
+
+    {% comment %} -- Real standalone page: always a link, never showSection(). -- {% endcomment %}
+    {% new_applications_count request.user as new_apps_count %}
+    {% pending_orders_count request.user as pending_orders_count %}
+    {% if active == "applications" %}
+      <span class="topnav__tab active">📩 Applications{% if new_apps_count %} <span class="badge">{{ new_apps_count }}</span>{% endif %}</span>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'jobs:applications' %}">📩 Applications{% if new_apps_count %} <span class="badge">{{ new_apps_count }}</span>{% endif %}</a>
+    {% endif %}
+
+    {% if active == "candidates" %}
+      <span class="topnav__tab active">🔍 Search Candidates</span>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'employers:candidate_search' %}">🔍 Search Candidates</a>
+    {% endif %}
+
+    {% comment %} Chat + Mail used to be two separate JS tabs; they are now ONE
+       real page (messaging app) covering both, since they share a
+       lot of UI/behaviour (contacts list, the "new group" modal). {% endcomment %}
+    {% if active == "messages" %}
+      <span class="topnav__tab active">💬 Messages{% if unread_message_count %} <span class="badge">{{ unread_message_count }}</span>{% endif %}</span>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'messaging:employer_messages' %}">💬 Messages{% if unread_message_count %} <span class="badge">{{ unread_message_count }}</span>{% endif %}</a>
+    {% endif %}
+
+    {% if active == "shopping" %}
+      <span class="topnav__tab active">🛍️ Shopping</span>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'shopping:shop' %}">🛍️ Shopping</a>
+    {% endif %}
+
+    {% if active == "myorders" %}
+      <span class="topnav__tab active">📦 My Orders{% if pending_orders_count %} <span class="badge">{{ pending_orders_count }}</span>{% endif %}</span>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'shopping:my_orders' %}">📦 My Orders{% if pending_orders_count %} <span class="badge">{{ pending_orders_count }}</span>{% endif %}</a>
+    {% endif %}
+  </div>
+
+  <div class="topnav__right">
+    <div class="topnav__company">
+      <div class="topnav__logo">{{ request.user.employer_profile.company_name|slice:":2"|upper }}</div>
+      <div class="topnav__company-info">
+        <div class="topnav__company-name">{{ request.user.employer_profile.company_name }}</div>
+        <div class="topnav__company-id">{{ request.user.employer_profile.employer_id }}</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+{% comment %} ══ LAYOUT ══ (caller closes this </div> after their own <main>) {% endcomment %}
+<div class="layout">
+
+  {% comment %} SIDEBAR {% endcomment %}
+  <aside class="sidebar">
+    <div class="sidebar__company">
+      <div class="sidebar__logo">{{ request.user.employer_profile.company_name|slice:":2"|upper }}</div>
+      <div class="sidebar__name">{{ request.user.employer_profile.company_name }}</div>
+      <div class="sidebar__id">{{ request.user.employer_profile.employer_id }}</div>
+      {% if request.user.employer_profile.industry_sector %}
+        <div class="sidebar__type">{{ request.user.employer_profile.industry_sector }}</div>
+      {% endif %}
+    </div>
+
+    <div class="sidebar__section-label">Main Menu</div>
+    <nav class="sidebar__nav">
+      {% if active == "home" %}
+        <button class="sidebar__item active" onclick="showSection('home',null,this)"><span class="nav-icon">🏠</span> Dashboard</button>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'employers:employer_dashboard' %}?section=home"><span class="nav-icon">🏠</span> Dashboard</a>
+      {% endif %}
+
+      {% if active == "postjob" %}
+        <button class="sidebar__item active" onclick="showSection('postjob',null,this)"><span class="nav-icon">💼</span> Post a Job</button>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'employers:employer_dashboard' %}?section=postjob"><span class="nav-icon">💼</span> Post a Job</a>
+      {% endif %}
+
+      {% if active == "videos" %}
+        <button class="sidebar__item active" onclick="showSection('videos',null,this)"><span class="nav-icon">🎥</span> Videos</button>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'employers:employer_dashboard' %}?section=videos"><span class="nav-icon">🎥</span> Videos</a>
+      {% endif %}
+
+      {% if active == "applications" %}
+        <span class="sidebar__item active"><span class="nav-icon">📩</span> Applications{% if new_apps_count %} <span class="nav-badge">{{ new_apps_count }}</span>{% endif %}</span>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'jobs:applications' %}"><span class="nav-icon">📩</span> Applications{% if new_apps_count %} <span class="nav-badge">{{ new_apps_count }}</span>{% endif %}</a>
+      {% endif %}
+
+      {% if active == "candidates" %}
+        <span class="sidebar__item active"><span class="nav-icon">🔍</span> Search Candidates</span>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'employers:candidate_search' %}"><span class="nav-icon">🔍</span> Search Candidates</a>
+      {% endif %}
+
+
+      {% if active == "messages" %}
+        <span class="sidebar__item active"><span class="nav-icon">💬</span> Messages{% if unread_message_count %} <span class="nav-badge">{{ unread_message_count }}</span>{% endif %}</span>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'messaging:employer_messages' %}"><span class="nav-icon">💬</span> Messages{% if unread_message_count %} <span class="nav-badge">{{ unread_message_count }}</span>{% endif %}</a>
+      {% endif %}
+
+      <div class="sidebar__section-label">B2B</div>
+
+      {% if active == "shopping" %}
+        <span class="sidebar__item active"><span class="nav-icon">🛍️</span> Shopping</span>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'shopping:shop' %}"><span class="nav-icon">🛍️</span> Shopping</a>
+      {% endif %}
+
+      {% if active == "myorders" %}
+        <span class="sidebar__item active"><span class="nav-icon">📦</span> My Orders{% if pending_orders_count %} <span class="nav-badge" style="background:var(--accent);color:white;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:auto;">{{ pending_orders_count }}</span>{% endif %}</span>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'shopping:my_orders' %}"><span class="nav-icon">📦</span> My Orders{% if pending_orders_count %} <span class="nav-badge" style="background:var(--accent);color:white;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:auto;">{{ pending_orders_count }}</span>{% endif %}</a>
+      {% endif %}
+
+      <div class="sidebar__section-label">Account</div>
+      <form method="post" action="{% url 'accounts:logout' %}" style="display:contents;">
+        {% csrf_token %}
+        <button type="submit" class="sidebar__item" onclick="return confirm('Do you want to logout?');">
+          <span class="nav-icon">🚪</span> Logout
+        </button>
+      </form>
+    </nav>
+  </aside>

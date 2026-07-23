@@ -1,0 +1,572 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}BharatHub — Candidate Dashboard{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'candidates/css/candidate_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'videos/css/video_feed.css' %}">
+{% endblock %}
+
+{% block content %}
+{% comment %} ══ TOP NAV ══ {% endcomment %}
+<nav class="topnav">
+  <a href="{% url 'home:bharathub_home' %}" class="topnav__brand">
+    <div class="topnav__brand-icon">BH</div>
+    Bharat<span>Hub</span>
+  </a>
+
+  <div class="topnav__tabs">
+    <button class="topnav__tab active" onclick="showSection('home',this)">🏠 Home</button>
+    <button class="topnav__tab" onclick="showSection('profile',this)">👤 Profile</button>
+    <button class="topnav__tab" onclick="showSection('videos',this)">🎥 Videos</button>
+    <a class="topnav__tab" href="{% url 'jobs:my_applications' %}">
+      📊 Job Applied Status
+    </a>
+    <a class="topnav__tab" href="{% url 'messaging:candidate_messages' %}">
+      💬 Messages{% if unread_message_count %}<span class="bh-badge" style="background:var(--error,#dc2626);color:#fff;font-size:10px;border-radius:9px;padding:1px 6px;margin-left:4px;">{{ unread_message_count }}</span>{% endif %}
+    </a>
+  </div>
+
+  <div class="topnav__right">
+    <div class="topnav__user">
+      <div class="topnav__avatar">
+        {% if employee_profile.profile_photo %}
+          <img src="{{ employee_profile.profile_photo.url }}" alt="{{ full_name }}">
+        {% else %}
+          {{ avatar_initials }}
+        {% endif %}
+      </div>
+      <div class="topnav__userinfo">
+        <div class="topnav__username">{{ full_name }}</div>
+        <div class="topnav__userid">{{ employee_profile.bharathub_id }}</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+{% comment %} ══ LAYOUT ══ {% endcomment %}
+<div class="layout">
+
+  {% comment %} SIDEBAR {% endcomment %}
+  <aside class="sidebar">
+    <div class="sidebar__profile">
+      <div class="sidebar__avatar">
+        {% if employee_profile.profile_photo %}
+          <img src="{{ employee_profile.profile_photo.url }}" alt="{{ full_name }}" style="width:100%;height:100%;object-fit:cover;">
+        {% else %}
+          {{ avatar_initials }}
+        {% endif %}
+      </div>
+      <div class="sidebar__name">{{ full_name }}</div>
+      <div class="sidebar__id">{{ employee_profile.bharathub_id }}</div>
+      <div class="sidebar__role">{{ candidate_profile.headline|default:"Add your headline in Edit Profile" }}</div>
+
+      {% comment %} HIRE STATUS TOGGLE {% endcomment %}
+      <div class="hire-toggle">
+        {% if candidate_profile.hire_status == "hired" %}
+          <div class="hire-toggle__label" id="hireLabel" style="color:var(--error);">🔴 Hired</div>
+          <div class="toggle-pill" id="hirePill" onclick="toggleHireStatus()"></div>
+        {% else %}
+          <div class="hire-toggle__label" id="hireLabel" style="color:var(--success);">🟢 For Hire</div>
+          <div class="toggle-pill on" id="hirePill" onclick="toggleHireStatus()"></div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% comment %} PROFILE COMPLETION {% endcomment %}
+    <div class="profile-completion">
+      <div class="profile-completion__label">
+        <span>Profile Strength</span>
+        <span style="color:var(--accent);">{{ profile_completion }}%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:{{ profile_completion }}%"></div></div>
+    </div>
+
+    <nav class="sidebar__nav">
+      <button class="sidebar__nav-item active" onclick="showSection('home',null,this)">
+        <span class="nav-icon">🏠</span> Dashboard
+      </button>
+      <button class="sidebar__nav-item" onclick="showSection('profile',null,this)">
+        <span class="nav-icon">👤</span> My Profile
+      </button>
+      <button class="sidebar__nav-item" onclick="showSection('videos',null,this)">
+        <span class="nav-icon">🎥</span> Videos
+      </button>
+      <a class="sidebar__nav-item" href="{% url 'messaging:candidate_messages' %}" style="text-decoration:none;">
+        <span class="nav-icon">⚡</span> Chat
+        {% if unread_message_count %}<span class="nav-badge">{{ unread_message_count }}</span>{% endif %}
+      </a>
+      <button class="sidebar__nav-item" onclick="showSection('mail',null,this)">
+        <span class="nav-icon">📧</span> Mail
+      </button>
+      <a class="sidebar__nav-item" href="{% url 'jobs:job_browse' %}">
+        <span class="nav-icon">💼</span> Job Matches
+      </a>
+      <a class="sidebar__nav-item" href="{% url 'jobs:my_applications' %}">
+        <span class="nav-icon">📊</span> My Applications
+        {% if applications_total_count %}<span class="nav-badge">{{ applications_total_count }}</span>{% endif %}
+      </a>
+      <form method="post" action="{% url 'accounts:logout' %}" style="display:contents;">
+        {% csrf_token %}
+        <button type="submit" class="sidebar__nav-item" style="margin-top:auto;color:var(--error);" onclick="return confirm('Do you want to logout?');">
+          <span class="nav-icon">🚪</span> Logout
+        </button>
+      </form>
+    </nav>
+  </aside>
+
+  {% comment %} MAIN {% endcomment %}
+  <main class="main">
+
+    {% comment %} Django messages (login success, profile updated, etc.)
+       -- ఇక్కడ చూపించి వెంటనే "read" గా మార్క్ చేస్తుంది, కాబట్టి ఇది
+       మళ్ళీ వేరే పేజీ (ఉదా: Login పేజీ) లో పొరపాటున కనిపించదు. {% endcomment %}
+    {% if messages %}
+      <div style="margin-bottom:16px;">
+        {% for message in messages %}
+          <div class="alert {% if message.tags == 'error' %}alert--error{% else %}alert--success{% endif %}" style="display:block;">
+            {% if message.tags == 'error' %}⚠️{% else %}✅{% endif %} {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% comment %} ══════════════ HOME ══════════════ {% endcomment %}
+    <div class="section-page active" id="section-home">
+
+      <div class="page-header">
+        <div>
+          <h1>Welcome, {{ first_name_only }}! 👋</h1>
+          <p>Your BharatHub dashboard — check today's updates</p>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <a class="btn-sm btn-sm--accent" href="{% url 'jobs:job_browse' %}">🔍 Find Jobs</a>
+        </div>
+      </div>
+
+      {% comment %} STAT CARDS {% endcomment %}
+      <div class="stat-grid">
+        <a class="stat-card clickable" href="{% url 'jobs:my_applications' %}">
+          <div class="stat-card__icon">📨</div>
+          <div class="stat-card__num">{{ applications_total_count }}</div>
+          <div class="stat-card__label">Jobs Applied</div>
+        </a>
+        <div class="stat-card stat-card--accent" title="ప్రొఫైల్ వ్యూస్ ట్రాకింగ్ ఫీచర్ ఇంకా అందుబాటులో లేదు">
+          <div class="stat-card__icon">👀</div>
+          <div class="stat-card__num">—</div>
+          <div class="stat-card__label">Profile Views</div>
+        </div>
+        <a class="stat-card stat-card--green clickable" href="{% url 'jobs:my_applications' %}">
+          <div class="stat-card__icon">✅</div>
+          <div class="stat-card__num">{{ applications_shortlisted_count }}</div>
+          <div class="stat-card__label">Shortlisted</div>
+        </a>
+        <a class="stat-card clickable" href="{% url 'messaging:candidate_messages' %}" style="text-decoration:none;">
+          <div class="stat-card__icon">💬</div>
+          <div class="stat-card__num">{{ unread_message_count }}</div>
+          <div class="stat-card__label">New Messages</div>
+        </a>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+        {% comment %} RECOMMENDED JOBS PREVIEW {% endcomment %}
+        <div class="card">
+          <div class="card__header">
+            <div class="card__title">⭐ Recommended Jobs</div>
+            <a class="btn-sm btn-sm--outline" href="{% url 'jobs:job_browse' %}">View All</a>
+          </div>
+          <div class="card__body" style="padding:14px;">
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              {% for job in recommended_jobs %}
+              <a href="{% url 'jobs:job_detail' job.pk %}" style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;background:rgba(26,54,93,0.04);text-decoration:none;color:inherit;">
+                <div style="width:36px;height:36px;border-radius:8px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;flex-shrink:0;">
+                  {{ job.employer.company_name|slice:":3"|upper }}
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:13px;font-weight:600;color:var(--primary);">{{ job.title }}</div>
+                  <div style="font-size:11px;color:var(--muted);">{{ job.employer.company_name }} · {{ job.location }} · {{ job.salary_display }}</div>
+                </div>
+              </a>
+              {% empty %}
+              <p style="color:var(--muted);font-size:13px;">ప్రస్తుతం మ్యాచింగ్ జాబులు లేవు — <a href="{% url 'jobs:job_browse' %}">అన్ని జాబులు చూడండి</a>.</p>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        {% comment %} 📨 HIRE REQUESTS RECEIVED -- ఏదైనా కంపెనీ (employer)
+        ఈ candidate ని headhunting ద్వారా (ఏ job కి apply చేయకపోయినా)
+        నేరుగా సంప్రదించి ఉంటే, ఆ రిక్వెస్ట్‌లు ఇక్కడ కనిపిస్తాయి
+        (employers/candidate_detail.html: SendHireRequestView చూడండి). {% endcomment %}
+        {% if hire_requests_received %}
+        <div class="card">
+          <div class="card__header">
+            <div class="card__title">📨 Hire Requests</div>
+          </div>
+          <div class="card__body" style="padding:14px;">
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              {% for hr in hire_requests_received %}
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;">
+                <div>
+                  <div style="font-size:13px;font-weight:600;">{{ hr.employer.company_name }}</div>
+                  <div style="font-size:12px;color:var(--muted);">{{ hr.job.title|default:"General interest" }}{% if hr.message %} — {{ hr.message|truncatechars:60 }}{% endif %}</div>
+                </div>
+                {% if hr.status == "sent" or hr.status == "viewed" %}
+                <div style="display:flex;gap:6px;flex-shrink:0;">
+                  <form method="post" action="{% url 'candidates:hire_request_respond' hr.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="accept">
+                    <button type="submit" class="btn btn--sm btn--accent">Accept</button>
+                  </form>
+                  <form method="post" action="{% url 'candidates:hire_request_respond' hr.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="decline">
+                    <button type="submit" class="btn btn--sm btn--outline">Decline</button>
+                  </form>
+                </div>
+                {% else %}
+                <span style="font-size:12px;font-weight:600;color:{% if hr.status == 'accepted' %}var(--success){% else %}var(--muted){% endif %};">{{ hr.get_status_display }}</span>
+                {% endif %}
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% comment %} RECENT ACTIVITY {% endcomment %}
+        <div class="card">
+          <div class="card__header">
+            <div class="card__title">🕐 Recent Activity</div>
+          </div>
+          <div class="card__body" style="padding:14px;">
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              {% for app in recent_applications %}
+              <div style="display:flex;gap:10px;align-items:flex-start;">
+                <div style="width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0;background:{% if app.status == 'shortlisted' %}var(--success){% elif app.status == 'interview' %}#6366f1{% elif app.status == 'rejected' %}var(--error){% elif app.status == 'offered' %}var(--accent){% else %}var(--primary){% endif %};"></div>
+                <div>
+                  <div style="font-size:13px;font-weight:500;">
+                    {% if app.status == "new" %}Application submitted to {{ app.job.employer.company_name }}
+                    {% else %}{{ app.job.employer.company_name }} — {{ app.get_status_display }}{% endif %}
+                  </div>
+                  <div style="font-size:11px;color:var(--muted);">{{ app.updated_at|timesince }} ago</div>
+                </div>
+              </div>
+              {% empty %}
+              <p style="color:var(--muted);font-size:13px;">ఇంకా యాక్టివిటీ లేదు — <a href="{% url 'jobs:job_browse' %}">జాబులకి అప్లై చేయడం మొదలుపెట్టండి</a>.</p>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    {% comment %} ══════════════ MAIL (GMAIL STYLE) ══════════════ {% endcomment %}
+    <div class="section-page" id="section-mail">
+      <div class="page-header">
+        <div><h1>📧 Mail</h1><p>Formal correspondence with employers</p></div>
+      </div>
+
+      <div class="gm-wrap">
+        {% comment %} LEFT: GMAIL SIDEBAR (desktop only) {% endcomment %}
+        <div class="gm-sidebar">
+          <button class="gm-compose-btn" onclick="openComposeModal()">✏️ Compose</button>
+          <div class="gm-folder active" onclick="switchFolder('inbox',this)"><span>📥</span> Inbox <span class="gm-folder__count" id="gmCountInbox">2</span></div>
+          <div class="gm-folder" onclick="switchFolder('starred',this)"><span>⭐</span> Starred <span class="gm-folder__count" id="gmCountStarred">0</span></div>
+          <div class="gm-folder" onclick="switchFolder('sent',this)"><span>📤</span> Sent</div>
+          <div class="gm-folder" onclick="switchFolder('drafts',this)"><span>📝</span> Drafts</div>
+          <div class="gm-folder" onclick="switchFolder('trash',this)"><span>🗑️</span> Trash <span class="gm-folder__count" id="gmCountTrash">0</span></div>
+        </div>
+
+        {% comment %} RIGHT: GMAIL MAIN {% endcomment %}
+        <div class="gm-main">
+          {% comment %} Mobile top bar {% endcomment %}
+          <div class="gm-mobile-topbar">
+            <button class="gm-mobile-topbar__menu" onclick="openMailDrawer()">☰</button>
+            <div class="gm-mobile-topbar__search"><span>🔍</span> Search in mail</div>
+            <div class="gm-mobile-avatar">RK</div>
+          </div>
+          {% comment %} Desktop toolbar {% endcomment %}
+          <div class="gm-toolbar gm-desktop-toolbar">
+            <div class="gm-search"><span>🔍</span><input type="text" placeholder="Search mail" oninput="searchMail(this.value)"></div>
+          </div>
+
+          {% comment %} EMAIL LIST (rendered by JS) {% endcomment %}
+          <div class="gm-list" id="mailContent"></div>
+
+          {% comment %} READING VIEW {% endcomment %}
+          <div class="gm-reading" id="gmReading">
+            <div class="gm-reading__toolbar">
+              <button class="gm-reading__back" onclick="backToInbox()">←</button>
+              <div class="gm-reading__toolbar-right">
+                <span style="cursor:pointer;" onclick="deleteCurrentReadingEmail()" title="Delete">🗑️</span>
+                <span title="Archive">📥</span>
+                <span title="Mark unread">✉️</span>
+              </div>
+            </div>
+            <div class="gm-reading__body">
+              <div class="gm-reading__subject" id="gmSubject">Offer Letter — Django Backend Engineer</div>
+              <div class="gm-reading__meta">
+                <div class="gm-reading__avatar" id="gmAvatar" style="background:#4a148c;">W</div>
+                <div style="flex:1;">
+                  <div class="gm-reading__from" id="gmFrom">Wipro HR</div>
+                  <div class="gm-reading__to">to me</div>
+                </div>
+                <div class="gm-reading__date" id="gmDate">Today, 2:30 PM</div>
+              </div>
+              <div class="gm-reading__content" id="gmContent">Dear Ravi,
+
+We are pleased to send you the offer letter for the Django Backend Engineer position. Please review the attached document carefully and confirm your acceptance at your earliest convenience.
+
+Looking forward to having you on our team.
+
+Best regards,
+Wipro HR Team</div>
+              <div class="gm-reading__attach" id="gmAttachArea">
+                <div class="gm-reading__attach-chip" style="cursor:pointer;" onclick="previewAttachment('OfferLetter.pdf','doc')">📎 OfferLetter.pdf</div>
+              </div>
+              <button class="gm-reply-btn" onclick="openComposeModal()">↩️ Reply</button>
+            </div>
+          </div>
+
+          {% comment %} FAB (mobile only) {% endcomment %}
+          <button class="gm-fab" onclick="openComposeModal()">✏️</button>
+        </div>
+      </div>
+    </div>
+
+    {% comment %} MOBILE FOLDER DRAWER {% endcomment %}
+    <div class="gm-mobile-drawer-overlay" id="gmDrawerOverlay" onclick="closeMailDrawer()"></div>
+    <div class="gm-mobile-drawer" id="gmDrawer">
+      <button class="gm-compose-btn" onclick="closeMailDrawer();openComposeModal();">✏️ Compose</button>
+      <div class="gm-folder active" id="gmDrawerInbox" onclick="switchFolder('inbox',this)"><span>📥</span> Inbox</div>
+      <div class="gm-folder" onclick="switchFolder('starred',this)"><span>⭐</span> Starred</div>
+      <div class="gm-folder" onclick="switchFolder('sent',this)"><span>📤</span> Sent</div>
+      <div class="gm-folder" onclick="switchFolder('drafts',this)"><span>📝</span> Drafts</div>
+      <div class="gm-folder" onclick="switchFolder('trash',this)"><span>🗑️</span> Trash</div>
+    </div>
+
+    {% comment %} ATTACHMENT PREVIEW MODAL {% endcomment %}
+    <div class="attach-preview-overlay" id="attachPreviewOverlay">
+      <div class="attach-preview-box">
+        <div class="attach-preview-box__hdr">
+          <span id="attachPreviewName">File.pdf</span>
+          <button onclick="closeAttachPreview()">✕</button>
+        </div>
+        <div class="attach-preview-box__body">
+          <div class="attach-preview-box__icon" id="attachPreviewIcon">📄</div>
+          <div id="attachPreviewImgWrap"></div>
+          <div style="color:#5f6368;font-size:13px;">Preview not available in demo mode</div>
+          <button class="attach-preview-box__download" onclick="alert('⬇️ Downloading...')">⬇️ Download</button>
+        </div>
+      </div>
+    </div>
+
+    {% comment %} GMAIL COMPOSE MODAL {% endcomment %}
+    <div class="gm-compose-overlay" id="gmComposeOverlay">
+      <div class="gm-compose-modal">
+        <div class="gm-compose__hdr">
+          <span>New Message</span>
+          <div><button onclick="closeComposeModal()">✕</button></div>
+        </div>
+        <div class="gm-compose__body">
+          <div class="gm-compose__field"><input type="text" placeholder="To" id="composeTo"></div>
+          <div class="gm-compose__field"><input type="text" placeholder="Subject" id="composeSubject"></div>
+          <textarea placeholder="Compose your message..." id="composeBody"></textarea>
+          <div class="gm-compose__attachlist" id="composeAttachList"></div>
+        </div>
+        <div class="gm-compose__ftr">
+          <button class="gm-compose__send" onclick="sendComposedMail()">Send</button>
+          <span style="cursor:pointer;" onclick="document.getElementById('composeFileInput').click()" title="Attach files">📎</span>
+        </div>
+      </div>
+    </div>
+    <input type="file" id="composeFileInput" accept="image/*,video/*,.pdf,.doc,.docx,.xlsx,.zip,.txt" multiple style="display:none" onchange="handleComposeFileSelect(this)">
+
+    {% comment %} NEW GROUP MODAL (WhatsApp-style) {% endcomment %}
+    <div class="wa-group-overlay" id="waGroupOverlay">
+      <div class="wa-group-modal">
+        <div class="wa-group-modal__hdr">
+          <button onclick="closeNewGroupModal()">✕</button>
+          <span>New Group</span>
+        </div>
+        <div class="wa-group-modal__body">
+          <div class="wa-group-modal__label">Add participants</div>
+          <div class="wa-group-contact-list" id="waGroupContactList">
+            <label class="wa-group-contact"><input type="checkbox" value="TCS HR" class="wa-group-checkbox"><div class="wa-avatar" style="width:36px;height:36px;font-size:12px;background:#0050b3;">TCS</div><span>TCS HR Team</span></label>
+            <label class="wa-group-contact"><input type="checkbox" value="Wipro HR" class="wa-group-checkbox"><div class="wa-avatar" style="width:36px;height:36px;font-size:12px;background:#4a148c;">WPR</div><span>Wipro HR</span></label>
+            <label class="wa-group-contact"><input type="checkbox" value="Infosys HR" class="wa-group-checkbox"><div class="wa-avatar" style="width:36px;height:36px;font-size:12px;background:#1b5e20;">INF</div><span>Infosys Recruiter</span></label>
+          </div>
+          <div class="wa-group-modal__label" style="margin-top:16px;">Group name</div>
+          <input type="text" class="wa-group-name-input" id="waGroupNameInput" placeholder="e.g. Placement Cell 2026" maxlength="40">
+        </div>
+        <div class="wa-group-modal__ftr">
+          <button class="wa-group-create-btn" onclick="createGroup()">✅ Create Group</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-page" id="section-profile">
+      <div class="page-header">
+        <div><h1>👤 Profile Management</h1><p>Manage your professional profile</p></div>
+      </div>
+
+      <div class="profile-layout">
+        {% comment %} LEFT: PROFILE CARD {% endcomment %}
+        <div>
+          <div class="profile-card">
+            <div class="profile-card__banner"></div>
+            <div class="profile-card__body">
+              <div class="profile-avatar-wrap">
+                <div class="profile-avatar">
+                  {% if employee_profile.profile_photo %}
+                    <img src="{{ employee_profile.profile_photo.url }}" alt="{{ full_name }}" style="width:100%;height:100%;object-fit:cover;">
+                  {% else %}
+                    {{ avatar_initials }}
+                  {% endif %}
+                </div>
+                <a href="{% url 'candidates:candidate_profile_edit' %}" class="profile-edit-btn" title="Edit Photo">✏️</a>
+              </div>
+              <div class="profile-name">{{ full_name }}</div>
+              <div class="profile-id">{{ employee_profile.bharathub_id }}</div>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">
+                {{ candidate_profile.headline|default:"No headline yet" }}{% if candidate_profile.location %} · {{ candidate_profile.location }}{% endif %}
+              </div>
+              <div class="profile-skills">
+                {% for skill in candidate_profile.skills_list %}
+                  <span class="skill-chip">{{ skill }}</span>
+                {% empty %}
+                  <span style="font-size:12px;color:var(--muted);">No skills added yet</span>
+                {% endfor %}
+              </div>
+              {% comment %} HIRE STATUS: ఇది candidate_profile.hire_status
+                 (DB లో నిల్వ చేసిన నిజమైన విలువ) ని చూపిస్తుంది --
+                 దీన్ని మార్చాలంటే కింద ఉన్న "Edit Profile" లింక్ లోని
+                 "Job Status" ఫీల్డ్ ద్వారానే మార్చాలి (అక్కడ CSRF +
+                 సర్వర్-సైడ్ వాలిడేషన్ తో సురక్షితంగా సేవ్ అవుతుంది). {% endcomment %}
+              <div style="margin:14px 0 10px;">
+                <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Job Status:</div>
+                <div style="padding:8px 12px;border-radius:8px;background:rgba(26,54,93,0.05);font-size:13px;font-weight:600;">
+                  {{ candidate_profile.get_hire_status_display }}
+                </div>
+              </div>
+              <a href="{% url 'candidates:candidate_profile_edit' %}"
+                 class="btn-sm btn-sm--accent" style="width:100%;display:block;text-align:center;box-sizing:border-box;">
+                ✏️ Edit Profile
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {% comment %} RIGHT: PROFILE DETAILS {% endcomment %}
+        <div>
+          {% comment %} PROFILE DETAILS {% endcomment %}
+          <div class="card">
+            <div class="card__header"><div class="card__title">📋 Profile Details</div></div>
+            <div class="card__body">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div><div style="font-size:11px;color:var(--muted);font-weight:600;">EMAIL</div><div style="font-size:13px;font-weight:500;">{{ user.email }}</div></div>
+                <div><div style="font-size:11px;color:var(--muted);font-weight:600;">MOBILE</div><div style="font-size:13px;font-weight:500;">+91 {{ employee_profile.mobile_number }}</div></div>
+                <div><div style="font-size:11px;color:var(--muted);font-weight:600;">QUALIFICATION</div><div style="font-size:13px;font-weight:500;">{{ candidate_profile.qualification|default:"—" }}</div></div>
+                <div><div style="font-size:11px;color:var(--muted);font-weight:600;">EXPERIENCE</div><div style="font-size:13px;font-weight:500;">{{ candidate_profile.get_experience_level_display }}</div></div>
+                <div><div style="font-size:11px;color:var(--muted);font-weight:600;">BHARATHUB ID</div><div style="font-size:13px;font-weight:600;color:var(--accent);">{{ employee_profile.bharathub_id }}</div></div>
+                <div><div style="font-size:11px;color:var(--muted);font-weight:600;">MEMBER SINCE</div><div style="font-size:13px;font-weight:500;">{{ employee_profile.created_at|date:"M Y" }}</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card__header">
+              <div class="card__title">🎓 Academic History</div>
+              <a href="{% url 'candidates:candidate_profile_edit' %}" class="btn-sm btn-sm--outline">➕ Add</a>
+            </div>
+            <div class="card__body">
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                {% for edu in education_entries %}
+                <div style="display:flex;gap:12px;align-items:flex-start;">
+                  <div style="width:40px;height:40px;border-radius:10px;background:rgba(26,54,93,0.08);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🎓</div>
+                  <div>
+                    <div style="font-size:13px;font-weight:700;">{{ edu.degree_title }}</div>
+                    <div style="font-size:12px;color:var(--muted);">{{ edu.institution }} · {{ edu.year_of_passing }}{% if edu.score %} · {{ edu.score }}{% endif %}</div>
+                  </div>
+                </div>
+                {% empty %}
+                <p style="font-size:13px;color:var(--muted);">
+                  ఇంకా విద్యార్హత వివరాలు జోడించలేదు —
+                  <a href="{% url 'candidates:candidate_profile_edit' %}">ఇక్కడ జోడించండి</a>.
+                </p>
+                {% endfor %}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% comment %} ══════════════ VIDEOS ══════════════
+       Employer లు తమ డాష్‌బోర్డ్ నుండి పోస్ట్ చేసిన కంపెనీ కల్చర్/
+       అచీవ్‌మెంట్ వీడియోల ఫీడ్ -- Home పేజీలో కనిపించే అదే videos యాప్
+       డేటా (ఒకే source of truth). లాగిన్ అయిన candidate గా లైక్/కామెంట్
+       చేయొచ్చు. {% endcomment %}
+    <div class="section-page" id="section-videos">
+      <div class="page-header">
+        <div>
+          <h1>🎥 Company Videos</h1>
+          <p>Office culture, achievements &amp; team highlights from companies hiring on BharatHub</p>
+        </div>
+      </div>
+      {% include "videos/_feed.html" with videos=feed_videos %}
+    </div>
+
+  </main>
+</div>
+
+{% comment %} OTP SECURITY MODAL (Profile Edit) {% endcomment %}
+{% comment %} MOBILE BOTTOM NAV {% endcomment %}
+<nav class="mobile-nav-bar" style="display:none;">
+  <button class="mobile-nav-item active" id="mNav-home" onclick="mobileNav('home',this)">
+    <span class="nav-icon">🏠</span>Home
+  </button>
+  <button class="mobile-nav-item" id="mNav-profile" onclick="mobileNav('profile',this)">
+    <span class="nav-icon">👤</span>Profile
+  </button>
+  <a class="mobile-nav-item" id="mNav-applied" href="{% url 'jobs:my_applications' %}" style="text-decoration:none;">
+    <span class="nav-icon">📊</span>Applied
+  </a>
+  <a class="mobile-nav-item" id="mNav-chat" href="{% url 'messaging:candidate_messages' %}" style="text-decoration:none;">
+    <span class="nav-icon">⚡</span>Chat
+  </a>
+  <button class="mobile-nav-item" id="mNav-mail" onclick="mobileNav('mail',this)">
+    <span class="nav-icon">📧</span>Mail
+  </button>
+</nav>
+
+<div class="otp-overlay" id="otpOverlay">
+  <div class="otp-modal">
+    <div style="font-size:44px;margin-bottom:10px;">🔒</div>
+    <h3 style="font-size:18px;font-weight:800;color:var(--primary);margin-bottom:6px;">Security Verification</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Verify email OTP for profile update</p>
+    <div class="otp-inputs-row">
+      <input type="text" class="otp-digit" maxlength="1" oninput="moveProfileOtp(this,1)">
+      <input type="text" class="otp-digit" maxlength="1" oninput="moveProfileOtp(this,2)">
+      <input type="text" class="otp-digit" maxlength="1" oninput="moveProfileOtp(this,3)">
+      <input type="text" class="otp-digit" maxlength="1" oninput="moveProfileOtp(this,4)">
+      <input type="text" class="otp-digit" maxlength="1" oninput="moveProfileOtp(this,5)">
+      <input type="text" class="otp-digit" maxlength="1" oninput="moveProfileOtp(this,6)">
+    </div>
+    <button class="btn-sm btn-sm--accent" style="width:100%;padding:11px;font-size:14px;border-radius:8px;" onclick="confirmProfileUpdate()">✅ Verify & Save</button>
+    <div style="margin-top:10px;font-size:12px;color:var(--muted);cursor:pointer;" onclick="document.getElementById('otpOverlay').classList.remove('open')">Cancel</div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block page_js %}
+<script src="{% static 'candidates/js/candidate_dashboard.js' %}"></script>
+<script src="{% static 'videos/js/video_feed.js' %}"></script>
+{% endblock %}

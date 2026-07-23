@@ -1,0 +1,104 @@
+{% comment %} ══════════════════════════════════════════════════════════════════
+   shopping/_shop_body.html
+   The B2B marketplace browsing page content -- moved here from what
+   used to be the "shopping" JS tab inside employer_dashboard.html.
+   An employer browses vendor products, filters by category/search,
+   and adds items to a cart (cart logic lives in
+   shopping/static/shopping/js/buyer_shopping.js).
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+    <div class="section-page active" id="section-shopping">
+      <div class="page-header">
+        <div><h1>🛍️ B2B Smart Marketplace</h1><p>Purchase office needs from verified vendors</p></div>
+        <button class="btn btn--primary" onclick="openCartModal()" style="position:relative;">
+          🛒 Cart
+          <span id="cartNum" style="background:var(--error);color:white;font-size:10px;font-weight:700;width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-left:6px;">0</span>
+        </button>
+      </div>
+
+      {% if messages %}
+        <div style="margin-bottom:16px;">
+          {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert--error{% else %}alert--success{% endif %}" style="display:block;">
+              {% if message.tags == 'error' %}⚠️{% else %}✅{% endif %} {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% comment %} SEARCH + FILTERS {% endcomment %}
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:8px;background:white;border:1.5px solid var(--border);border-radius:10px;padding:9px 16px;flex:1;max-width:420px;">
+          <span>🔍</span>
+          <input type="text" id="shopSearch" placeholder="Search Laptops, Office Chairs, Software..." oninput="filterProducts(this.value)" style="border:none;background:transparent;font-family:var(--font);font-size:14px;outline:none;flex:1;">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;" id="filterChips">
+        <button class="filter-chip active" onclick="filterCategory('all',this)">🌐 All</button>
+        <button class="filter-chip" onclick="filterCategory('hardware',this)">💻 Hardware</button>
+        <button class="filter-chip" onclick="filterCategory('software',this)">🖥️ Software</button>
+        <button class="filter-chip" onclick="filterCategory('service',this)">⚙️ Service</button>
+        <button class="filter-chip" onclick="filterCategory('office_supply',this)">🗂️ Office Supply</button>
+        <button class="filter-chip" onclick="filterCategory('training',this)">🎓 Training</button>
+        <button class="filter-chip" onclick="filterCategory('catering',this)">🍽️ Catering</button>
+      </div>
+
+      <div class="product-grid" id="productGrid">
+        {% comment %} ఇంతకుముందు ఇక్కడ 9 హార్డ్‌కోడెడ్ ప్రొడక్ట్‌లు (Dell
+           Laptop, LG Monitor...) ఉండేవి -- ఏ వెండర్ అమ్మనివి కూడా! ఇప్పుడు
+           ఇది shopping.Product నుండి వచ్చే నిజమైన డేటానే (ShopView లో
+           is_published=True, stock__gt=0 ఉన్నవి మాత్రమే) -- ఒక వెండర్
+           తన Dashboard లో ఒక ప్రొడక్ట్ యాడ్ చేస్తేనే అది ఇక్కడ కనిపిస్తుంది. {% endcomment %}
+        {% for product in products %}
+        <div class="product-card" data-category="{{ product.category }}" data-name="{{ product.name|lower }}">
+          {% if product.image %}
+            <div class="product-thumb" style="padding:0;"><img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover;"></div>
+          {% else %}
+            <div class="product-thumb">
+              {% if product.category == "hardware" %}💻
+              {% elif product.category == "software" %}🖥️
+              {% elif product.category == "service" %}⚙️
+              {% elif product.category == "office_supply" %}🗂️
+              {% elif product.category == "training" %}🎓
+              {% elif product.category == "catering" %}🍽️
+              {% else %}📦{% endif %}
+            </div>
+          {% endif %}
+          <div class="product-card__body">
+            <div class="product-name">{{ product.name }}</div>
+            <div class="product-vendor">🏪 {{ product.vendor.shop_name }}</div>
+            <div class="product-price">₹{{ product.price }}{% if product.unit != "per_unit" %} <small style="font-size:11px;color:var(--muted);">/{{ product.get_unit_display }}</small>{% endif %}</div>
+            {% if product.stock <= 10 %}
+              <div class="item-status item-status--lowstock">🟡 Low Stock</div>
+            {% else %}
+              <div class="item-status item-status--instock">🟢 In Stock</div>
+            {% endif %}
+            <div class="stock-count">📦 {{ product.stock }} available</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <label style="font-size:12px;color:var(--muted);font-weight:500;">Qty:</label>
+              <div style="display:flex;align-items:center;border:1.5px solid var(--border);border-radius:6px;overflow:hidden;">
+                <button onclick="changeQty(this,-1)" style="width:28px;height:28px;border:none;background:var(--light-bg);cursor:pointer;font-size:16px;font-weight:700;">−</button>
+                <input type="number" value="1" min="1" max="{{ product.stock }}" style="width:40px;height:28px;border:none;text-align:center;font-family:var(--font);font-size:13px;font-weight:600;outline:none;" class="qty-input">
+                <button onclick="changeQty(this,1)" style="width:28px;height:28px;border:none;background:var(--light-bg);cursor:pointer;font-size:16px;font-weight:700;">+</button>
+              </div>
+            </div>
+            <button class="btn-buy" onclick="addToCart(this,{{ product.id }},'{{ product.name|escapejs }}',{{ product.price }},'{% if product.category == "hardware" %}💻{% elif product.category == "software" %}🖥️{% elif product.category == "service" %}⚙️{% elif product.category == "office_supply" %}🗂️{% elif product.category == "training" %}🎓{% elif product.category == "catering" %}🍽️{% else %}📦{% endif %}')">🛒 Add to Cart</button>
+            <button class="btn-buy-now" onclick="buyNow(this,{{ product.id }},'{{ product.name|escapejs }}',{{ product.price }},'{% if product.category == "hardware" %}💻{% elif product.category == "software" %}🖥️{% elif product.category == "service" %}⚙️{% elif product.category == "office_supply" %}🗂️{% elif product.category == "training" %}🎓{% elif product.category == "catering" %}🍽️{% else %}📦{% endif %}')">⚡ Buy Now</button>
+          </div>
+        </div>
+        {% empty %}
+        <p style="color:var(--muted);font-size:13px;grid-column:1/-1;">ఇంకా ఏ వెండర్ ప్రొడక్ట్‌లు జోడించలేదు.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% comment %} checkoutForm: proceedCheckout() (buyer_shopping.js) ఈ ఫారమ్
+       లోకి కార్ట్ లోని ప్రతి ఐటమ్ కీ ఒక product_id + qty హిడెన్ ఇన్‌పుట్
+       జతని జోడించి submit() చేస్తుంది -- shopping:place_order (నిజమైన
+       Order/OrderItem క్రియేట్ చేసే వ్యూ) కి ఒక సాధారణ POST/Redirect/GET
+       గా వెళ్తుంది. {% endcomment %}
+    <form method="post" action="{% url 'shopping:place_order' %}" id="checkoutForm" style="display:none;">
+      {% csrf_token %}
+    </form>
+
+

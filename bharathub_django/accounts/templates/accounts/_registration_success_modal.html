@@ -1,0 +1,33 @@
+{% comment %} ══════════════════════════════════════════════════════════════════
+   accounts/_registration_success_modal.html
+   రిజిస్ట్రేషన్ సక్సెస్ అయిన వెంటనే కనిపించే popup -- జనరేట్ అయిన
+   BharatHub/Employer/Vendor ID ని ఇక్కడే స్పష్టంగా చూపిస్తుంది
+   (ఇమెయిల్ కి కూడా వెళ్ళింది -- accounts/notifications.py). ఇది
+   మూడు registration టెంప్లేట్‌లలో (employee/employer/vendor) share
+   అవుతుంది -- id_label, id_value, login_url మూడు వేరియబుల్స్ తో.
+
+   వాడకం: {% include "accounts/_registration_success_modal.html" with id_label="BharatHub ID" id_value=registered_id login_url_name="accounts:employee_login" %}
+
+   registered_id context లో ఉంటేనే (అంటే ఈ POST రిజిస్ట్రేషన్
+   సక్సెస్ అయిన రెస్పాన్స్ అయితేనే) ఈ overlay కనిపిస్తుంది --
+   లేకపోతే display:none గా దాక్కుని ఉంటుంది. ══════════════════════ {% endcomment %}
+{% if id_value %}
+<div class="reg-success-overlay" id="regSuccessOverlay" style="position:fixed;inset:0;background:rgba(15,23,42,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;">
+  <div style="background:#fff;border-radius:16px;max-width:420px;width:100%;padding:32px 28px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="font-size:56px;margin-bottom:8px;">🎉</div>
+    <h2 style="margin:0 0 6px;color:#16a34a;font-size:20px;">Registration Successful!</h2>
+    <p style="color:#6b7280;font-size:13px;margin:0 0 20px;">మీ {{ id_label }} జనరేట్ అయింది — ఇది మీ రిజిస్టర్డ్ ఇమెయిల్ కి కూడా పంపబడింది.</p>
+
+    <div style="background:#f0fdf4;border:1.5px dashed #16a34a;border-radius:10px;padding:16px;margin-bottom:20px;">
+      <div style="font-size:11px;color:#166534;font-weight:700;letter-spacing:1px;margin-bottom:6px;">{{ id_label|upper }}</div>
+      <div id="regSuccessIdText" style="font-size:24px;font-weight:800;color:#14532d;letter-spacing:1px;font-family:monospace;">{{ id_value }}</div>
+    </div>
+
+    <button type="button" onclick="navigator.clipboard.writeText('{{ id_value }}'); this.textContent='✅ Copied!'; setTimeout(()=>this.textContent='📋 Copy ID',1500);" style="width:100%;padding:10px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">📋 Copy ID</button>
+
+    <a href="{% url login_url_name %}" style="display:block;width:100%;padding:12px;border:none;border-radius:8px;background:var(--primary,#1a365d);color:#fff;font-size:14px;font-weight:700;text-decoration:none;box-sizing:border-box;">Continue to Login →</a>
+
+    <p style="color:#9ca3af;font-size:11px;margin:14px 0 0;">⚠️ ఈ ID ని భద్రంగా దాచుకోండి — లాగిన్ చేయడానికి ఇది కావాలి.</p>
+  </div>
+</div>
+{% endif %}

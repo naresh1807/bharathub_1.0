@@ -1,0 +1,47 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% comment %} jobs/my_applications.html — candidate's real applied-jobs list
+   (replaces the static "Jobs Applied: 3" hardcoded number in
+   candidate_dashboard.html with real JobApplication records). {% endcomment %}
+
+{% block title %}BharatHub — My Applications{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'candidates/css/candidate_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'employers/css/employer_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include "jobs/_candidate_topbar.html" with active="applications" %}
+
+<div class="layout" style="grid-template-columns:1fr;">
+  <main class="main" style="padding:24px;">
+    <div class="page-header" style="margin-bottom:16px;">
+      <h1>📊 My Applications</h1>
+      <p>{{ applications|length }} job{{ applications|length|pluralize }} applied</p>
+    </div>
+
+    <div class="card">
+      <div class="card__body" style="overflow-x:auto;">
+        <table class="app-table">
+          <thead>
+            <tr><th>Job</th><th>Company</th><th>Applied On</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {% for app in applications %}
+              <tr>
+                <td><a href="{% url 'jobs:job_detail' app.job.pk %}" style="color:var(--primary);text-decoration:none;font-weight:600;">{{ app.job.title }}</a></td>
+                <td>{{ app.job.employer.company_name }}</td>
+                <td>{{ app.applied_at|date:"d M Y" }}</td>
+                <td><span class="status-badge status-badge--{{ app.status }}">{{ app.get_status_display }}</span></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px;">మీరు ఇంకా ఏ ఉద్యోగానికి apply చేయలేదు. <a href="{% url 'jobs:job_browse' %}">Browse jobs →</a></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

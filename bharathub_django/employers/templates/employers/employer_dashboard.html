@@ -1,0 +1,298 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}BharatHub — Employer Dashboard{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'employers/css/employer_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'videos/css/video_feed.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% include "employers/_nav.html" with active=active_section %}
+
+  {% comment %} MAIN CONTENT {% endcomment %}
+  <main class="main">
+
+    {% comment %} Django messages framework -- views.py లోని messages.success(...)
+       (job posted / saved as draft) ఇక్కడ కనిపిస్తుంది. ఇది ఒక్కసారి
+       మాత్రమే చూపించి ఆటోమేటిక్‌గా పోతుంది (session నుండి చదివిన వెంటనే
+       తీసేస్తుంది Django) -- పేజీ మళ్ళీ రిఫ్రెష్ చేసినా మళ్ళీ కనిపించదు. {% endcomment %}
+    {% if messages %}
+      <div style="margin-bottom:16px;">
+        {% for message in messages %}
+          <div class="alert {% if message.tags == 'error' %}alert--error{% else %}alert--success{% endif %}" style="display:block;">
+            {% if message.tags == 'error' %}⚠️{% else %}✅{% endif %} {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% comment %} ══════════════ HOME DASHBOARD ══════════════ {% endcomment %}
+    <div class="section-page{% if active_section == "home" %} active{% endif %}" id="section-home">
+      <div class="page-header">
+        <div>
+          <h1>Welcome, {{ employer.company_name }}! 👋</h1>
+          <p>Your employer dashboard — check today's overview</p>
+        </div>
+        <button class="btn btn--accent" onclick="showSection('postjob')">➕ Post New Job</button>
+      </div>
+
+      {% comment %} STAT CARDS {% endcomment %}
+      <div class="stat-grid">
+        <div class="stat-card clickable" onclick="showSection('postjob')">
+          <div class="stat-card__icon">💼</div>
+          <div class="stat-card__num">{{ jobs.count }}</div>
+          <div class="stat-card__label">Active Job Posts</div>
+        </div>
+        <a class="stat-card stat-card--accent clickable" href="{% url 'jobs:applications' %}">
+          <div class="stat-card__icon">📩</div>
+          <div class="stat-card__num">{{ total_applications_count }}</div>
+          <div class="stat-card__label">Total Applications</div>
+        </a>
+        <a class="stat-card stat-card--green clickable" href="{% url 'jobs:applications' %}?status=shortlisted">
+          <div class="stat-card__icon">✅</div>
+          <div class="stat-card__num">{{ shortlisted_count }}</div>
+          <div class="stat-card__label">Shortlisted</div>
+        </a>
+        <a class="stat-card stat-card--purple clickable" href="{% url 'jobs:applications' %}?status=interview">
+          <div class="stat-card__icon">📅</div>
+          <div class="stat-card__num">{{ interview_count }}</div>
+          <div class="stat-card__label">Interviews Scheduled</div>
+        </a>
+        <div class="stat-card clickable" onclick="showSection('videos')">
+          <div class="stat-card__icon">🎥</div>
+          <div class="stat-card__num">{{ my_videos.count }}</div>
+          <div class="stat-card__label">Videos Published</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+        {% comment %} ACTIVE JOBS {% endcomment %}
+        <div class="card">
+          <div class="card__header">
+            <div class="card__title">💼 Active Job Posts</div>
+            <button class="btn btn--sm btn--accent" onclick="showSection('postjob')">+ Post Job</button>
+          </div>
+          <div class="card__body" style="padding:12px;">
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              {% comment %} jobs: views.py లోని get_context_data() లో
+                 employer.jobs.filter(status=Job.Status.ACTIVE) గా
+                 సెట్ చేసిన నిజమైన DB queryset -- ఇక్కడ ఏ హార్డ్‌కోడెడ్
+                 డేటా లేదు, ఈ కంపెనీ నిజంగా పోస్ట్ చేసిన జాబులే
+                 కనిపిస్తాయి. {{ }} ఆటోమేటిక్‌గా escape అవుతుంది కాబట్టి,
+                 ఎవరైనా జాబ్ టైటిల్ లో <script> లాంటిది టైప్ చేసినా
+                 అది కోడ్ గా రన్ అవ్వదు (XSS నుండి రక్షణ). {% endcomment %}
+              {% for job in jobs %}
+              <div style="padding:12px;border-radius:10px;background:rgba(26,54,93,0.04);border:1px solid var(--border);">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                  <div>
+                    <div style="font-size:13px;font-weight:700;color:var(--primary);">{{ job.title }}</div>
+                    <div style="font-size:11px;color:var(--muted);">{{ job.location }} · {{ job.salary_display }} · {{ job.openings_count }} opening{{ job.openings_count|pluralize }}</div>
+                  </div>
+                  <span class="status-badge badge--shortlisted">🟢 Active</span>
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:6px;">{{ job.skills_required }}</div>
+              </div>
+              {% empty %}
+              <div style="padding:24px 12px;text-align:center;color:var(--muted);font-size:13px;">
+                ఇంకా జాబ్ పోస్ట్ చేయలేదు. కుడివైపు "+ Post Job" నొక్కి మొదటి జాబ్ పోస్ట్ చేయండి.
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        {% comment %} RECENT ACTIVITY {% endcomment %}
+        <div class="card">
+          <div class="card__header">
+            <div class="card__title">🕐 Recent Activity</div>
+            <span style="font-size:11px;color:var(--muted);">Latest application updates</span>
+          </div>
+          <div class="card__body" style="padding:14px;">
+            {% for app in recent_applications %}
+            <div class="activity-item">
+              <div class="activity-dot {% if app.status == 'new' %}pulse{% endif %}"
+                   style="background:{% if app.status == 'shortlisted' %}var(--success){% elif app.status == 'interview' %}#6366f1{% elif app.status == 'rejected' %}var(--error){% elif app.status == 'offered' %}var(--accent){% else %}var(--primary){% endif %};"></div>
+              <div>
+                <div style="font-size:13px;font-weight:500;">
+                  {{ app.candidate.user.get_full_name|default:app.candidate.user.username }}
+                  {% if app.status == "new" %}applied for{% else %}— {{ app.get_status_display }} for{% endif %}
+                  {{ app.job.title }}
+                </div>
+                <div style="font-size:11px;color:var(--muted);">{{ app.updated_at|timesince }} ago</div>
+              </div>
+            </div>
+            {% empty %}
+            <p style="color:var(--muted);font-size:13px;">ఇంకా ఏ అప్లికేషన్‌లు రాలేదు.</p>
+            {% endfor %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    {% comment %} ══════════════ POST A JOB ══════════════ {% endcomment %}
+    <div class="section-page{% if active_section == "postjob" %} active{% endif %}" id="section-postjob">
+      <div class="page-header">
+        <div><h1>💼 Post a New Job</h1><p>Fill in job details — AI will automatically send it to matching candidates</p></div>
+      </div>
+
+      <div class="card job-form">
+        <div class="card__header">
+          <div class="card__title">📋 Job Details</div>
+        </div>
+        <div class="card__body">
+
+          {% comment %} method="post": ఉద్యోగం వివరాలు ఎప్పుడూ POST లోనే పంపాలి
+             (GET అయితే URL లో కనిపిస్తుంది, browser history/server
+             logs లో ఉండిపోతుంది). csrf_token లేకుండా ఏ POST ఫారమ్ కూడా
+             పనిచేయదు -- ఇది settings.py లోని CsrfViewMiddleware ఏర్పాటు
+             చేసిన per-session టోకెన్; ఇది లేకపోతే Django ఆ POST ని
+             తిరస్కరిస్తుంది (Cross-Site Request Forgery దాడుల నుండి
+             రక్షణ -- వేరే వెబ్‌సైట్ మన యూజర్ తరపున రహస్యంగా ఫారమ్
+             సబ్మిట్ చేయకుండా ఆపుతుంది). {% endcomment %}
+          <form method="post" id="postJobForm">
+          {% csrf_token %}
+
+          {% comment %} non-field ఎర్రర్స్ (ఉదా: salary_max < salary_min) ఫారమ్ పైన
+             ఒకేసారి చూపిస్తాం -- ఇవి ఏ ఒక్క ఫీల్డ్ కీ చెందవు. {% endcomment %}
+          {% if form.non_field_errors %}
+            <div class="alert alert--error" style="display:block;margin-bottom:14px;">
+              {% for err in form.non_field_errors %}⚠️ {{ err }}<br>{% endfor %}
+            </div>
+          {% endif %}
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Job Title <span style="color:var(--error)">*</span></label>
+              {{ form.title }}
+              {% if form.title.errors %}<div class="field-error">⚠️ {{ form.title.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+              <label class="form-label">Department</label>
+              {{ form.department }}
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Job Type <span style="color:var(--error)">*</span></label>
+              {{ form.job_type }}
+            </div>
+            <div class="form-group">
+              <label class="form-label">Experience Level</label>
+              {{ form.experience_level }}
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Location <span style="color:var(--error)">*</span></label>
+              {{ form.location }}
+              {% if form.location.errors %}<div class="field-error">⚠️ {{ form.location.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+              <label class="form-label">Salary Range (LPA)</label>
+              <div style="display:flex;gap:8px;align-items:center;">
+                {{ form.salary_min }}
+                <span style="color:var(--muted);font-size:13px;">to</span>
+                {{ form.salary_max }}
+              </div>
+              {% if form.salary_max.errors %}<div class="field-error">⚠️ {{ form.salary_max.errors.0 }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Job Description <span style="color:var(--error)">*</span></label>
+            {{ form.description }}
+            {% if form.description.errors %}<div class="field-error">⚠️ {{ form.description.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Required Skills <span style="color:var(--error)">*</span></label>
+            {% comment %} విజువల్ చిప్స్ UI (skill-tags-input) ఇంతకుముందు లాగే ఉంది --
+               కానీ ఇప్పుడు దీని వెనుక ఒక దాచిన (hidden) real Django ఫీల్డ్
+               {{ form.skills_required }} ఉంది, ఏ చిప్ యాడ్/రిమూవ్ చేసినా
+               employer_dashboard.js లోని syncSkillsField() దాన్ని ఎప్పటికప్పుడు
+               అప్‌డేట్ చేస్తుంది -- ఫారమ్ సబ్మిట్ అయ్యేది ఈ hidden ఫీల్డ్ లో
+               ఉన్న టెక్స్ట్ నే. {% endcomment %}
+            <div class="skill-tags-input" id="skillTagsInput" onclick="document.getElementById('skillTagInput').focus()">
+              {% for skill in form.instance.skills_list %}
+                <span class="skill-tag">{{ skill }} <button type="button" onclick="removeSkillTag(this)">✕</button></span>
+              {% endfor %}
+              <input type="text" id="skillTagInput" placeholder="Add a skill..." onkeypress="addSkillTag(event)">
+            </div>
+            {{ form.skills_required }}
+            {% if form.skills_required.errors %}<div class="field-error">⚠️ {{ form.skills_required.errors.0 }}</div>{% endif %}
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">Press Enter to add the skill</div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Application Deadline</label>
+              {{ form.application_deadline }}
+              {% if form.application_deadline.errors %}<div class="field-error">⚠️ {{ form.application_deadline.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+              <label class="form-label">No. of Openings</label>
+              {{ form.openings_count }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Qualification Required</label>
+            {{ form.qualification }}
+          </div>
+
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;">
+            {% comment %} type="submit" + name="action": views.py లోని post() మెథడ్
+               request.POST.get("action") తో ఏ బటన్ నొక్కారో చూస్తుంది --
+               "publish" అయితే వెంటనే ACTIVE గా, "draft" అయితే DRAFT గా
+               సేవ్ చేస్తుంది. రెండూ నిజమైన submit బటన్లు, JS onclick
+               అవసరం లేదు (సర్వర్ డేటాని validate చేసి save చేస్తుంది,
+               JS ఫేక్ alert() చూపించదు ఇక). {% endcomment %}
+            <button type="submit" name="action" value="publish" class="btn btn--accent">🚀 Post Job Now</button>
+            <button type="submit" name="action" value="draft" class="btn btn--outline">💾 Save as Draft</button>
+          </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+
+    {% comment %}
+      ══════════════ VIDEOS (real, DB-backed) ══════════════
+      videos యాప్ కి పూర్తిగా కనెక్ట్ చేసిన సెక్షన్ -- అప్‌లోడ్ ఫారమ్,
+      ఈ కంపెనీ సొంత వీడియోల గ్రిడ్ (డిలీట్ పనిచేస్తుంది), మరియు అందరి
+      కంపెనీల ఫీడ్ (Home పేజీ & Candidate డాష్‌బోర్డ్ లో కూడా ఇదే ఫీడ్
+      కనిపిస్తుంది) -- అన్నీ videos/_upload_panel.html లో ఒక్కసారే
+      రాసిన మార్కప్ నుండి వస్తాయి.
+    {% endcomment %}
+    <div class="section-page{% if active_section == "videos" %} active{% endif %}" id="section-videos">
+      <div class="page-header">
+        <div><h1>🎥 Videos</h1><p>Office culture, achievements — publish once, appears on Home &amp; every dashboard feed</p></div>
+      </div>
+      {% include "videos/_upload_panel.html" with form=video_form videos=feed_videos my_videos=my_videos %}
+    </div>
+
+
+  </main>
+</div>
+
+
+{% comment %} MOBILE BOTTOM NAV {% endcomment %}
+<nav class="mobile-nav-bar" style="display:none;">
+  <button class="mobile-nav-item active" onclick="mobileNav('home',this)"><span class="nav-icon">🏠</span>Home</button>
+  <button class="mobile-nav-item" onclick="mobileNav('postjob',this)"><span class="nav-icon">💼</span>Post Job</button>
+  <button class="mobile-nav-item" onclick="window.location.href='{% url 'messaging:employer_messages' %}'"><span class="nav-icon">💬</span>Messages</button>
+  <button class="mobile-nav-item" onclick="window.location.href='{% url 'shopping:shop' %}'"><span class="nav-icon">🛍️</span>Shop</button>
+  <button class="mobile-nav-item" onclick="window.location.href='{% url 'shopping:my_orders' %}'"><span class="nav-icon">📦</span>Orders</button>
+</nav>{% endblock %}
+
+{% block page_js %}
+<script src="{% static 'employers/js/employer_dashboard.js' %}"></script>
+<script src="{% static 'videos/js/video_feed.js' %}"></script>
+{% endblock %}

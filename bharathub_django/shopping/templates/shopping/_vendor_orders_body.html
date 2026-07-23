@@ -1,0 +1,94 @@
+{% comment %} ══════════════════════════════════════════════════════════════════
+   shopping/_vendor_orders_body.html
+   వెండర్ యొక్క "Orders & Leads" page -- ఇప్పుడు shopping.Order model
+   నుండి రియల్ డేటాతో పనిచేస్తుంది.
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+    <div class="section-page active" id="section-orders">
+      <div class="page-header">
+        <div><h1>📝 Orders & Leads</h1><p>Manage orders received from companies</p></div>
+      </div>
+
+      {% if messages %}
+        {% for message in messages %}
+          <div style="padding:10px 14px;border-radius:8px;margin-bottom:12px;background:rgba(22,163,74,0.08);color:#16a34a;font-size:13px;font-weight:600;">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+
+      {% comment %} ORDER STATS {% endcomment %}
+      <div class="stat-grid">
+        <div class="stat-card stat-card--accent"><div class="stat-card__icon">🆕</div><div class="stat-card__num">{{ count_new }}</div><div class="stat-card__label">New Orders</div></div>
+        <div class="stat-card"><div class="stat-card__icon">⚙️</div><div class="stat-card__num">{{ count_processing }}</div><div class="stat-card__label">Processing</div></div>
+        <div class="stat-card stat-card--green"><div class="stat-card__icon">✅</div><div class="stat-card__num">{{ count_delivered }}</div><div class="stat-card__label">Delivered</div></div>
+        <div class="stat-card clickable" onclick="window.location.href='{% url 'vendor:vendor_dashboard' %}'"><div class="stat-card__icon">💰</div><div class="stat-card__num">₹{{ month_revenue }}</div><div class="stat-card__label">Delivered Revenue</div></div>
+      </div>
+
+      {% comment %} ORDER NOTIFICATIONS -- new/processing orders needing action {% endcomment %}
+      <div class="card">
+        <div class="card__header">
+          <div class="card__title">🔔 Order Notifications</div>
+          <span style="font-size:12px;color:var(--muted);">{{ count_new }} new orders</span>
+        </div>
+        <div class="card__body">
+          {% for order in new_orders %}
+          <div class="order-notif new-order">
+            <div class="order-notif__icon" style="background:rgba(99,102,241,0.1);">📦</div>
+            <div class="order-notif__body">
+              <div class="order-notif__title">{{ order.buyer.company_name }} — {% for item in order.items.all %}{{ item.product.name }} × {{ item.quantity }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+              <div class="order-notif__meta">Order #{{ order.pk }} · ₹{{ order.total_amount }} · {{ order.buyer.employer_id }} · {{ order.created_at|timesince }} ago</div>
+              <div class="order-notif__actions">
+                <form method="post" style="display:inline;">{% csrf_token %}<input type="hidden" name="order_id" value="{{ order.pk }}"><button class="btn btn--sm btn--success" type="submit" name="status" value="processing">✅ Accept Order</button></form>
+                <form method="post" style="display:inline;">{% csrf_token %}<input type="hidden" name="order_id" value="{{ order.pk }}"><button class="btn btn--sm btn--danger" type="submit" name="status" value="cancelled">❌ Decline</button></form>
+              </div>
+            </div>
+            <span class="order-status os--new">🆕 New</span>
+          </div>
+          {% empty %}
+          <p style="color:var(--muted);">కొత్త ఆర్డర్లు ఏమీ లేవు.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% comment %} ALL ORDERS TABLE {% endcomment %}
+      <div class="card">
+        <div class="card__header">
+          <div class="card__title">📋 All Orders History</div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="orders-table">
+            <thead>
+              <tr><th>Order ID</th><th>Company</th><th>Products</th><th>Amount</th><th>Date</th><th>Status</th><th>Update</th></tr>
+            </thead>
+            <tbody>
+              {% for order in orders %}
+              <tr>
+                <td style="font-weight:700;color:var(--accent);">#{{ order.pk }}</td>
+                <td><strong>{{ order.buyer.company_name }}</strong></td>
+                <td>{% for item in order.items.all %}{{ item.product.name }} × {{ item.quantity }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+                <td style="font-weight:700;color:var(--success);">₹{{ order.total_amount }}</td>
+                <td>{{ order.created_at|date:"d M Y" }}</td>
+                <td>
+                  {% if order.status == 'new' %}<span class="order-status os--new">🆕 New</span>
+                  {% elif order.status == 'processing' %}<span class="order-status os--processing">⚙️ Processing</span>
+                  {% elif order.status == 'delivered' %}<span class="order-status os--delivered">✅ Delivered</span>
+                  {% else %}<span class="order-status">❌ Cancelled</span>{% endif %}
+                </td>
+                <td>
+                  <form method="post" style="display:flex;gap:4px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="order_id" value="{{ order.pk }}">
+                    <select name="status" class="form-select" style="padding:4px 8px;font-size:12px;" onchange="this.form.submit()">
+                      {% for value, label in order.Status.choices %}
+                        <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </form>
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;">ఇంకా ఆర్డర్లు రాలేదు.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>

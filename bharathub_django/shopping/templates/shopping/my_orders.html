@@ -1,0 +1,30 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   shopping/my_orders.html
+   The employer's order-tracking page -- pulled OUT of
+   employer_dashboard.html the same way shop.html was. Its own real
+   URL: /shop/my_orders.html (see shopping/urls.py).
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+
+{% block title %}BharatHub — My Orders{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'employers/css/employer_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% include "employers/_nav.html" with active="myorders" %}
+
+  {% comment %} MAIN CONTENT {% endcomment %}
+  <main class="main">
+{% include "shopping/_my_orders_body.html" %}
+  </main>
+</div>
+
+{% endblock %}
+
+{% block page_js %}
+<script src="{% static 'shopping/js/buyer_shopping.js' %}"></script>
+{% endblock %}

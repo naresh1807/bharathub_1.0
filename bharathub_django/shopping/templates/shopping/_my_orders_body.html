@@ -1,0 +1,145 @@
+{% comment %} ══════════════════════════════════════════════════════════════════
+   shopping/_my_orders_body.html
+   The employer's "My Orders" page content -- ఇంతకుముందు ఇది కేవలం
+   buyer_shopping.js లోని renderOrdersList() ద్వారా, పేజీ-స్కోప్డ్
+   in-memory `allOrders` array నుండి నింపబడేది -- పేజీ మళ్ళీ లోడ్ అయితే
+   (ఉదా: shop.html నుండి ఇక్కడికి navigate అయితే) ఆ array ఖాళీ అయిపోయి
+   "No Orders Yet" చూపించేది, ఇప్పుడే పెట్టిన ఆర్డర్ కూడా కనిపించేది కాదు.
+   ఇప్పుడు ఇది MyOrdersView.get_context_data() లోని నిజమైన Order/OrderItem
+   DB రికార్డుల నుండే సర్వర్-సైడ్ రెండర్ అవుతుంది.
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+    <div class="section-page active" id="section-myorders">
+      <div class="page-header">
+        <div>
+          <h1>📦 My Orders</h1>
+          <p>Track all your B2B purchase orders and their current status</p>
+        </div>
+        <button class="btn btn--accent" onclick="window.location.href='{% url 'shopping:shop' %}'">🛍️ Continue Shopping</button>
+      </div>
+
+      {% if messages %}
+        <div style="margin-bottom:16px;">
+          {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert--error{% else %}alert--success{% endif %}" style="display:block;">
+              {% if message.tags == 'error' %}⚠️{% else %}✅{% endif %} {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% comment %} ORDER STATS {% endcomment %}
+      <div class="stat-grid" style="margin-bottom:20px;">
+        <div class="stat-card clickable" onclick="scrollToOrders()">
+          <div class="stat-card__icon">📦</div>
+          <div class="stat-card__num" id="os-total">{{ count_total }}</div>
+          <div class="stat-card__label">Total Orders</div>
+        </div>
+        <div class="stat-card clickable" style="--num-color:#f59e0b;" onclick="scrollToOrders()">
+          <div class="stat-card__icon">⏳</div>
+          <div class="stat-card__num" id="os-pending" style="color:#f59e0b;">{{ count_pending }}</div>
+          <div class="stat-card__label">Processing</div>
+        </div>
+        <div class="stat-card stat-card--green clickable" onclick="scrollToOrders()">
+          <div class="stat-card__icon">✅</div>
+          <div class="stat-card__num" id="os-delivered" style="color:var(--success);">{{ count_delivered }}</div>
+          <div class="stat-card__label">Delivered</div>
+        </div>
+        <div class="stat-card stat-card--accent clickable" onclick="window.location.href='{% url 'shopping:shop' %}'">
+          <div class="stat-card__icon">💰</div>
+          <div class="stat-card__num" id="os-total-amount">₹{{ total_spent }}</div>
+          <div class="stat-card__label">Total Spent</div>
+        </div>
+      </div>
+
+      {% if not orders %}
+      {% comment %} EMPTY STATE {% endcomment %}
+      <div id="ordersEmpty" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:60px 20px;text-align:center;">
+        <div style="font-size:64px;margin-bottom:16px;">🛒</div>
+        <div style="font-size:20px;font-weight:700;color:var(--primary);margin-bottom:8px;">No Orders Yet</div>
+        <div style="font-size:14px;color:var(--muted);margin-bottom:20px;">You haven't placed any orders yet. Browse the marketplace and order what your company needs!</div>
+        <button class="btn btn--accent" onclick="window.location.href='{% url 'shopping:shop' %}'">🛍️ Go to Shopping</button>
+      </div>
+      {% else %}
+      {% comment %} ORDERS LIST {% endcomment %}
+      <div id="ordersList" style="display:flex;flex-direction:column;gap:16px;">
+        {% for order in orders %}
+        <div style="background:white;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;">
+          <div style="background:linear-gradient(135deg,var(--primary),#2a4a7f);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <div>
+              <div style="font-size:10px;color:rgba(255,255,255,0.6);font-weight:700;">ORDER ID</div>
+              <div style="font-size:15px;font-weight:800;color:white;">#{{ order.pk }} · {{ order.vendor.shop_name }}</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px;">{{ order.created_at|date:"d M Y" }} · {{ order.created_at|time:"g:i A" }}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:12px;background:rgba(255,255,255,0.15);color:white;padding:4px 12px;border-radius:20px;font-weight:700;margin-bottom:4px;display:inline-block;">
+                {% if order.status == "delivered" %}✅{% elif order.status == "cancelled" %}❌{% else %}⏳{% endif %} {{ order.get_status_display }}
+              </div>
+              <div style="font-size:20px;font-weight:800;color:var(--accent);">₹{{ order.total_amount }}</div>
+            </div>
+          </div>
+
+          <div style="padding:14px 20px;border-bottom:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:10px;">🛍️ ORDERED ITEMS</div>
+            {% for item in order.items.all %}
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(26,54,93,0.05);">
+              <div style="width:36px;height:36px;background:rgba(26,54,93,0.07);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">
+                {% if item.product.category == "hardware" %}💻{% elif item.product.category == "software" %}🖥️{% elif item.product.category == "service" %}⚙️{% elif item.product.category == "office_supply" %}🗂️{% elif item.product.category == "training" %}🎓{% elif item.product.category == "catering" %}🍽️{% else %}📦{% endif %}
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:600;color:var(--primary);">{{ item.product.name }}</div>
+                <div style="font-size:12px;color:var(--muted);">Qty: {{ item.quantity }} × ₹{{ item.price_at_order }}</div>
+              </div>
+              <div style="font-size:14px;font-weight:700;color:var(--success);">₹{{ item.line_total }}</div>
+            </div>
+            {% endfor %}
+          </div>
+
+          {% if order.status == "cancelled" %}
+          <div style="padding:14px 20px;color:var(--error);font-size:13px;font-weight:600;">❌ ఈ ఆర్డర్ cancel చేయబడింది.</div>
+          {% else %}
+          {% comment %} STATUS TRACKER -- Order.Status లో "shipped" అనే విడి
+             స్టేజ్ లేదు (new/processing/delivered/cancelled మాత్రమే), కాబట్టి
+             ఒరిజినల్ మాక్ లోని 4-స్టెప్ ట్రాకర్ కి బదులు, నిజంగా ఉన్న
+             3 స్టేజీలనే చూపిస్తున్నాం. {% endcomment %}
+          <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:16px;">📍 ORDER STATUS TRACKER</div>
+            <div style="display:flex;align-items:flex-start;">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;">
+                <div style="position:absolute;top:16px;left:50%;width:100%;height:2px;background:var(--success);z-index:0;"></div>
+                <div style="width:32px;height:32px;border-radius:50%;background:var(--success);border:2px solid var(--success);display:flex;align-items:center;justify-content:center;font-size:13px;z-index:1;position:relative;color:white;">✓</div>
+                <div style="font-size:10px;font-weight:700;color:var(--success);text-align:center;margin-top:6px;">Order Placed</div>
+                <div style="font-size:10px;color:var(--primary);text-align:center;margin-top:2px;">{{ order.created_at|time:"g:i A" }}</div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;">
+                <div style="position:absolute;top:16px;left:50%;width:100%;height:2px;background:{% if order.status == "delivered" %}var(--success){% else %}#e5e7eb{% endif %};z-index:0;"></div>
+                <div style="width:32px;height:32px;border-radius:50%;background:{% if order.status == "processing" or order.status == "delivered" %}var(--success){% else %}#f3f4f6{% endif %};border:2px solid {% if order.status == "processing" or order.status == "delivered" %}var(--success){% else %}#e5e7eb{% endif %};display:flex;align-items:center;justify-content:center;font-size:13px;z-index:1;position:relative;color:white;">{% if order.status == "processing" or order.status == "delivered" %}✓{% else %}✅{% endif %}</div>
+                <div style="font-size:10px;font-weight:{% if order.status == "processing" or order.status == "delivered" %}700{% else %}500{% endif %};color:{% if order.status == "processing" or order.status == "delivered" %}var(--success){% else %}var(--muted){% endif %};text-align:center;margin-top:6px;">Vendor Confirmed</div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;">
+                <div style="width:32px;height:32px;border-radius:50%;background:{% if order.status == "delivered" %}var(--success){% else %}#f3f4f6{% endif %};border:2px solid {% if order.status == "delivered" %}var(--success){% else %}#e5e7eb{% endif %};display:flex;align-items:center;justify-content:center;font-size:13px;z-index:1;position:relative;color:white;">{% if order.status == "delivered" %}✓{% else %}📦{% endif %}</div>
+                <div style="font-size:10px;font-weight:{% if order.status == "delivered" %}700{% else %}500{% endif %};color:{% if order.status == "delivered" %}var(--success){% else %}var(--muted){% endif %};text-align:center;margin-top:6px;">Delivered</div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          <div style="padding:14px 20px;display:flex;gap:10px;flex-wrap:wrap;">
+            {% if order.status != "delivered" and order.status != "cancelled" %}
+            <form method="post" action="{% url 'shopping:order_mark_delivered' order.pk %}" style="display:contents;">
+              {% csrf_token %}
+              <button type="submit" style="background:rgba(22,163,74,0.1);border:1px solid rgba(22,163,74,0.2);color:var(--success);border-radius:8px;padding:8px 16px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;">✅ Mark Delivered</button>
+            </form>
+            {% endif %}
+            <button onclick="window.location.href='{% url 'shopping:shop' %}'" style="background:rgba(26,54,93,0.07);border:1px solid var(--border);color:var(--primary);border-radius:8px;padding:8px 16px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;">🔄 Reorder from Shop</button>
+            {% if order.status == "new" %}
+            <form method="post" action="{% url 'shopping:order_cancel' order.pk %}" style="display:contents;" onsubmit="return confirm('Cancel this order?');">
+              {% csrf_token %}
+              <button type="submit" style="background:rgba(220,38,38,0.07);border:1px solid rgba(220,38,38,0.15);color:var(--error);border-radius:8px;padding:8px 16px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;">❌ Cancel</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>

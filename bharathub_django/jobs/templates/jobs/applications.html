@@ -1,0 +1,41 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   jobs/applications.html
+   The "Applications" page -- pulled OUT of the old giant single-page
+   employer_dashboard.html (where it was one JS show/hide "section")
+   into its own real, bookmarkable/shareable URL:
+       /jobs/applications.html   (see jobs/urls.py)
+
+   It reuses employers/css/employer_dashboard.css so the page-header,
+   candidate-card, status-badge, table, topnav & sidebar all look
+   pixel-identical to the rest of the employer dashboard -- we are
+   not duplicating those styles, just the one shared stylesheet.
+
+   The topnav/sidebar links for Post a Job / Upload Video / Chat /
+   Mail / Shopping / My Orders point back to the main employer
+   dashboard (those sections still live there for now, waiting to be
+   extracted into their own apps the same way Applications was).
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+
+{% block title %}BharatHub — Applications{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'employers/css/employer_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% include "employers/_nav.html" with active="applications" %}
+
+  {% comment %} MAIN CONTENT {% endcomment %}
+  <main class="main">
+{% include "jobs/_applications_body.html" %}
+  </main>
+</div>
+
+{% endblock %}
+
+{% block page_js %}
+<script src="{% static 'jobs/js/applications.js' %}"></script>
+{% endblock %}

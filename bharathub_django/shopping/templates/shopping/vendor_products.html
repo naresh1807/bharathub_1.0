@@ -1,0 +1,32 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   shopping/vendor_products.html
+   The vendor's product-catalog management page -- pulled OUT of
+   vendor_dashboard.html into its own real URL:
+   /shop/vendor_products.html (see shopping/urls.py). Reuses
+   vendor/css/vendor_dashboard.css + vendor/_nav.html so it looks
+   identical to the rest of the vendor dashboard.
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+
+{% block title %}BharatHub — My Products & Services{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'vendor/css/vendor_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% include "vendor/_nav.html" with active="products" %}
+
+  {% comment %} MAIN CONTENT {% endcomment %}
+  <main class="main">
+{% include "shopping/_vendor_products_body.html" %}
+  </main>
+</div>
+
+{% endblock %}
+
+{% block page_js %}
+<script src="{% static 'shopping/js/vendor_products.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% load static %}
+{% load vendor_extras %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   vendor/_nav.html
+   The vendor dashboard's top nav bar + left sidebar, factored out
+   into ONE shared partial (same idea as employers/_nav.html) so it
+   isn't copy-pasted into every page that needs it.
+
+   HOW TO USE: {% include "vendor/_nav.html" with active="products" %}
+
+   Home / Chat / Mail / Analytics still live TOGETHER as JS show/hide
+   tabs inside vendor_dashboard.html (onclick=showSection(...));
+   Products and Orders are now real, separate pages (shopping app),
+   so those are always plain <a href> links. See employers/_nav.html
+   for the fuller explanation of this split.
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+<nav class="topnav">
+  <a href="{% url 'home:bharathub_home' %}" class="topnav__brand">
+    <div class="topnav__brand-icon">BH</div>
+    Bharat<span>Hub</span>
+  </a>
+  {% pending_orders_count request.user as orders_badge_count %}
+  <div class="topnav__tabs">
+    {% comment %} ఇంతకుముందు Home/Analytics రెండూ ఒకే URL (?section=
+       లేకుండా) కి పాయింట్ చేసేవి, కాబట్టి Analytics ఎక్కడి నుండి
+       క్లిక్ చేసినా ఎప్పుడూ Home ట్యాబే తెరుచుకునేది. ఇప్పుడు
+       ?section=... query param తో ఏ ట్యాబ్ ఉద్దేశించారో
+       vendor/views.py:VendorDashboardView కి తెలుస్తుంది. {% endcomment %}
+    {% if active == "home" %}
+      <button class="topnav__tab active" onclick="showSection('home',this)">🏠 Home</button>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'vendor:vendor_dashboard' %}?section=home">🏠 Home</a>
+    {% endif %}
+
+    {% if active == "products" %}
+      <span class="topnav__tab active">📦 My Products</span>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'shopping:vendor_products' %}">📦 My Products</a>
+    {% endif %}
+
+    {% if active == "orders" %}
+      <span class="topnav__tab active">📝 Orders/Leads{% if orders_badge_count %} <span class="badge">{{ orders_badge_count }}</span>{% endif %}</span>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'shopping:vendor_orders' %}">📝 Orders/Leads{% if orders_badge_count %} <span class="badge">{{ orders_badge_count }}</span>{% endif %}</a>
+    {% endif %}
+
+    {% if active == "messages" %}
+      <span class="topnav__tab active">💬 Messages{% if unread_message_count %} <span class="badge">{{ unread_message_count }}</span>{% endif %}</span>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'messaging:vendor_messages' %}">💬 Messages{% if unread_message_count %} <span class="badge">{{ unread_message_count }}</span>{% endif %}</a>
+    {% endif %}
+
+    {% if active == "analytics" %}
+      <button class="topnav__tab active" onclick="showSection('analytics',this)">📊 Analytics</button>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'vendor:vendor_dashboard' %}?section=analytics">📊 Analytics</a>
+    {% endif %}
+  </div>
+  <div class="topnav__right">
+    <div class="topnav__vendor">
+      <div class="topnav__vlogo">{{ request.user.vendor_profile.shop_name|slice:":2"|upper }}</div>
+      <div class="topnav__vinfo">
+        <div class="topnav__vname">{{ request.user.vendor_profile.shop_name }}</div>
+        <div class="topnav__vid">{{ request.user.vendor_profile.vendor_id }}</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+{% comment %} ══ LAYOUT ══ (caller closes this </div> after their own <main>) {% endcomment %}
+<div class="layout">
+
+  {% comment %} SIDEBAR {% endcomment %}
+  <aside class="sidebar">
+    <div class="sidebar__vendor">
+      <div class="sidebar__logo">{{ request.user.vendor_profile.shop_name|slice:":2"|upper }}</div>
+      <div class="sidebar__name">{{ request.user.vendor_profile.shop_name }}</div>
+      <div class="sidebar__id">{{ request.user.vendor_profile.vendor_id }}</div>
+      {% if request.user.vendor_profile.category %}
+        <div class="sidebar__cat">{{ request.user.vendor_profile.category }}</div>
+      {% endif %}
+      {% comment %} రివ్యూ/రేటింగ్ మోడల్ ప్రాజెక్ట్ లో ఇంకా లేదు
+         (vendor/models.py లో ఏ Review ఫీల్డ్ లేదు) కాబట్టి ఇక్కడ
+         తప్పుడు "⭐4.8" చూపించే బదులు దాన్ని పూర్తిగా తీసేశాం. {% endcomment %}
+    </div>
+
+    <div class="sidebar__section-label">Main Menu</div>
+    <nav class="sidebar__nav">
+      {% if active == "home" %}
+        <button class="sidebar__item active" onclick="showSection('home',null,this)"><span class="nav-icon">🏠</span> Dashboard</button>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'vendor:vendor_dashboard' %}?section=home"><span class="nav-icon">🏠</span> Dashboard</a>
+      {% endif %}
+
+      {% if active == "products" %}
+        <span class="sidebar__item active"><span class="nav-icon">📦</span> My Products/Services</span>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'shopping:vendor_products' %}"><span class="nav-icon">📦</span> My Products/Services</a>
+      {% endif %}
+
+      {% if active == "orders" %}
+        <span class="sidebar__item active"><span class="nav-icon">📝</span> Orders/Leads{% if orders_badge_count %} <span class="nav-badge">{{ orders_badge_count }}</span>{% endif %}</span>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'shopping:vendor_orders' %}"><span class="nav-icon">📝</span> Orders/Leads{% if orders_badge_count %} <span class="nav-badge">{{ orders_badge_count }}</span>{% endif %}</a>
+      {% endif %}
+
+      {% if active == "messages" %}
+        <span class="sidebar__item active"><span class="nav-icon">💬</span> Messages{% if unread_message_count %} <span class="nav-badge">{{ unread_message_count }}</span>{% endif %}</span>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'messaging:vendor_messages' %}"><span class="nav-icon">💬</span> Messages{% if unread_message_count %} <span class="nav-badge">{{ unread_message_count }}</span>{% endif %}</a>
+      {% endif %}
+
+      <div class="sidebar__section-label">Analytics</div>
+      {% if active == "analytics" %}
+        <button class="sidebar__item active" onclick="showSection('analytics',null,this)"><span class="nav-icon">📊</span> Business Analytics</button>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'vendor:vendor_dashboard' %}?section=analytics"><span class="nav-icon">📊</span> Business Analytics</a>
+      {% endif %}
+
+      <div class="sidebar__section-label">Account</div>
+      <form method="post" action="{% url 'accounts:logout' %}" style="display:contents;">
+        {% csrf_token %}
+        <button type="submit" class="sidebar__item" onclick="return confirm('Do you want to logout?');">
+          <span class="nav-icon">🚪</span> Logout
+        </button>
+      </form>
+    </nav>
+  </aside>
+

@@ -1,0 +1,69 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   jobs/job_browse.html
+   Real "Browse Jobs" page -- lists actual Job records posted by real
+   employers (employers/models.py). Replaces the old hardcoded
+   TCS/Wipro/Infosys mock cards inside candidate_dashboard.html's
+   #section-jobs tab with a real, server-rendered, searchable list.
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+
+{% block title %}BharatHub — Browse Jobs{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'candidates/css/candidate_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include "jobs/_candidate_topbar.html" with active="browse" %}
+
+<div class="layout" style="grid-template-columns:1fr;">
+  <main class="main" style="padding:24px;">
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert--{{ message.tags }}" style="padding:10px 16px;border-radius:8px;margin-bottom:14px;background:rgba(22,163,74,0.1);color:var(--success);font-size:13px;">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <div><h1>💼 Browse Jobs</h1><p>{{ jobs|length }} open position{{ jobs|length|pluralize }}</p></div>
+      <form method="get" style="display:flex;gap:8px;">
+        <input type="text" name="q" value="{{ query }}" placeholder="🔍 Search title, skill, location..."
+               style="padding:8px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px;outline:none;width:260px;">
+        <button type="submit" class="btn-sm btn-sm--primary">Search</button>
+      </form>
+    </div>
+
+    <div class="job-grid">
+      {% for job in jobs %}
+        <a href="{% url 'jobs:job_detail' job.pk %}" class="job-card" style="text-decoration:none;color:inherit;display:block;">
+          <div class="job-card__company">
+            <div class="job-card__logo" style="background:var(--primary);">{{ job.employer.company_name|slice:":3"|upper }}</div>
+            <div>
+              <div class="job-card__company-name">{{ job.employer.company_name }}</div>
+              <div class="job-card__location">📍 {{ job.location }}</div>
+            </div>
+          </div>
+          <div class="job-card__role">{{ job.title }}</div>
+          <div class="job-card__tags">
+            {% for skill in job.skills_list|slice:":4" %}
+              <span class="tag">{{ skill }}</span>
+            {% endfor %}
+            {% if job.pk in applied_job_ids %}
+              <span class="tag--accent tag">✅ Applied</span>
+            {% endif %}
+          </div>
+          <div class="job-card__footer">
+            <div class="job-card__salary">{{ job.salary_display }}</div>
+            <span class="btn-apply">View & Apply 🚀</span>
+          </div>
+        </a>
+      {% empty %}
+        <p style="color:var(--muted);">ప్రస్తుతం ఏ ఉద్యోగాలు అందుబాటులో లేవు{% if query %} — "{{ query }}" కి ఏమీ దొరకలేదు{% endif %}.</p>
+      {% endfor %}
+    </div>
+
+  </main>
+</div>
+{% endblock %}
