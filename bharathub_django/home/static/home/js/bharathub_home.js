@@ -1,3 +1,49 @@
+// ─── MOBILE NAV DRAWER ──────────────────────────
+// ఇంతకుముందు మొబైల్ లో ఏ నావిగేషన్ మెనూ లేదు -- ఈ మూడు ఫంక్షన్లు
+// హెడర్ లోని ☰ బటన్ (#mobileMenuToggle) తో drawer (#mobileNavDrawer)
+// ని తెరవడం/మూయడం చేస్తాయి.
+function toggleMobileNav() {
+  const drawer = document.getElementById('mobileNavDrawer');
+  if (drawer.classList.contains('open')) {
+    closeMobileNav();
+  } else {
+    openMobileNav();
+  }
+}
+
+function openMobileNav() {
+  const drawer = document.getElementById('mobileNavDrawer');
+  const overlay = document.getElementById('mobileNavOverlay');
+  const toggle = document.getElementById('mobileMenuToggle');
+  drawer.classList.add('open');
+  overlay.classList.add('open');
+  drawer.setAttribute('aria-hidden', 'false');
+  toggle.setAttribute('aria-expanded', 'true');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMobileNav() {
+  const drawer = document.getElementById('mobileNavDrawer');
+  const overlay = document.getElementById('mobileNavOverlay');
+  const toggle = document.getElementById('mobileMenuToggle');
+  drawer.classList.remove('open');
+  overlay.classList.remove('open');
+  drawer.setAttribute('aria-hidden', 'true');
+  toggle.setAttribute('aria-expanded', 'false');
+  document.body.style.overflow = '';
+}
+
+// Escape కీ తో మూయడం, మరియు స్క్రీన్ ని డెస్క్‌టాప్ సైజ్ కి రీసైజ్
+// చేస్తే (ఉదా: ఫోన్ rotate చేసినా, లేదా బ్రౌజర్ విండో పెద్దది
+// చేసినా) drawer ఆటోమేటిక్‌గా మూసుకుపోవాలి -- లేకపోతే డెస్క్‌టాప్
+// వ్యూ లో కూడా అది తెరిచే ఉండిపోతుంది.
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeMobileNav();
+});
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 768) closeMobileNav();
+});
+
 // ─── LIKE / REACTION ───────────────────────────
 function toggleLike(id) {
   const btn = document.getElementById(id);
@@ -30,16 +76,6 @@ function toggleComments(id) {
   const el = document.getElementById(id);
   el.classList.toggle('open');
 }
-
-// ─── LIVE VIEWER COUNT SIMULATION ──────────────
-let viewerBase = 1240;
-setInterval(() => {
-  viewerBase += Math.floor(Math.random() * 7) - 3;
-  if (viewerBase < 1100) viewerBase = 1100;
-  if (viewerBase > 1400) viewerBase = 1400;
-  const el = document.getElementById('viewerCount');
-  if (el) el.textContent = viewerBase.toLocaleString('en-IN');
-}, 3000);
 
 // ─── NUMBER TICKER ANIMATION ───────────────────
 function animateCounter(el, target, suffix) {

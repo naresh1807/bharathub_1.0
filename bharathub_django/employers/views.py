@@ -14,7 +14,7 @@ from messaging.views import unread_total_for
 from videos.forms import VideoUploadForm
 from videos.models import Video
 from videos.utils import published_videos_for
-from .forms import HireRequestForm, JobPostForm
+from .forms import HireRequestForm, JobPostForm, EmployerLogoForm
 from .models import HireRequest, Job
 
 # ============================================================================
@@ -55,7 +55,7 @@ class EmployerDashboardView(LoginRequiredMixin, TemplateView):
     def get_current_employer(self):
         employer_profile = getattr(self.request.user, "employer_profile", None)
         if employer_profile is None:
-            raise PermissionDenied("ఈ పేజీ Employer ఖాతాలకి మాత్రమే.")
+            raise PermissionDenied("This page is for Employer accounts only.")
         return employer_profile
 
     def get_context_data(self, **kwargs):
@@ -155,11 +155,11 @@ class EmployerDashboardView(LoginRequiredMixin, TemplateView):
             job.save()
 
             if job.status == Job.Status.DRAFT:
-                messages.success(request, f"💾 '{job.title}' డ్రాఫ్ట్‌గా సేవ్ అయింది.")
+                messages.success(request, f"💾 '{job.title}' saved as draft.")
             else:
                 messages.success(
                     request,
-                    f"🎉 '{job.title}' విజయవంతంగా పోస్ట్ అయింది! మ్యాచింగ్ అభ్యర్థులకు కనిపిస్తుంది.",
+                    f"🎉 '{job.title}' posted successfully! It will be visible to matching candidates.",
                 )
             # POST/Redirect/Get pattern -- యూజర్ పేజీ రిఫ్రెష్ చేసినా
             # జాబ్ మళ్ళీ డూప్లికేట్‌గా పోస్ట్ కాకుండా.
@@ -189,6 +189,33 @@ class EmployerDashboardView(LoginRequiredMixin, TemplateView):
 # job-seekers యొక్క వ్యక్తిగత డేటాని వెతికి చూడగలిగే గోప్యతా సమస్య
 # వస్తుంది.
 # ============================================================================
+# ============================================================================
+# EmployerLogoUpdateView
+#
+# Company logo అప్‌లోడ్ -- Home tab లోని "🏢 Company Logo" చిన్న కార్డ్
+# నుండి పోస్ట్ అవుతుంది (employer_dashboard.html). ఇది EmployerDashboardView
+# లో కలపలేదు (అక్కడి post() ఇప్పటికే JobPostForm కి specific గా ఉంది)
+# -- వేరే URL/View గా ఉంచడం వల్ల ఏ ఫారమ్ ఏ URL కి పోస్ట్ అవుతుందో
+# స్పష్టంగా ఉంటుంది, ఒక ఫారమ్ ఇన్వాలిడ్ అయితే ఇంకో ఫారమ్ డేటా పోదు.
+# ============================================================================
+class EmployerLogoUpdateView(LoginRequiredMixin, View):
+    login_url = "accounts:employer_login"
+
+    def post(self, request, *args, **kwargs):
+        employer = getattr(request.user, "employer_profile", None)
+        if employer is None:
+            raise PermissionDenied("This page is for Employer accounts only.")
+
+        form = EmployerLogoForm(request.POST, request.FILES, instance=employer)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "✅ Company logo updated.")
+        else:
+            for error in form.errors.get("company_logo", []):
+                messages.error(request, f"⚠️ {error}")
+        return redirect("employers:employer_dashboard")
+
+
 class CandidateSearchView(LoginRequiredMixin, TemplateView):
     template_name = "employers/candidate_search.html"
     login_url = "accounts:employer_login"
@@ -253,6 +280,15 @@ class SendHireRequestView(LoginRequiredMixin, View):
     def post(self, request, pk, *args, **kwargs):
         employer = _current_employer_or_403(request)
         candidate = get_object_or_404(CandidateProfile, pk=pk)
+
+        if candidate.hire_status == CandidateProfile.HireStatus.HIRED:
+            messages.error(
+                request,
+                f"⚠️ {candidate.user.get_full_name() or candidate.user.username} is currently "
+                "marked as Hired elsewhere and isn't accepting new Hire Requests.",
+            )
+            return redirect("employers:candidate_detail", pk=candidate.pk)
+
         form = HireRequestForm(request.POST, employer=employer)
 
         if form.is_valid():
@@ -263,12 +299,12 @@ class SendHireRequestView(LoginRequiredMixin, View):
             if created:
                 messages.success(
                     request,
-                    f"📨 {candidate.user.get_full_name() or candidate.user.username} కి Hire Request పంపబడింది.",
+                    f"📨 Hire Request sent to {candidate.user.get_full_name() or candidate.user.username}.",
                 )
             else:
-                messages.info(request, "ℹ️ ఈ candidate కి ఇప్పటికే ఇదే job కోసం రిక్వెస్ట్ పంపారు.")
+                messages.info(request, "ℹ️ You have already sent a request to this candidate for this job.")
         else:
-            messages.error(request, "⚠️ Hire Request పంపడంలో సమస్య వచ్చింది.")
+            messages.error(request, "⚠️ There was a problem sending the Hire Request.")
 
         return redirect("employers:candidate_detail", pk=candidate.pk)
 
@@ -299,5 +335,5 @@ class StartChatWithCandidateView(LoginRequiredMixin, View):
 def _current_employer_or_403(request):
     employer_profile = getattr(request.user, "employer_profile", None)
     if employer_profile is None:
-        raise PermissionDenied("ఈ పేజీ Employer ఖాతాలకి మాత్రమే.")
+        raise PermissionDenied("This page is for Employer accounts only.")
     return employer_profile

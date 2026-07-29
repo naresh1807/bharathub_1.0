@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
+from django.db.models import Count, OuterRef, Subquery
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -14,7 +15,7 @@ from django.views.generic import TemplateView, View
 
 from .forms import GroupForm, MessageForm
 from .models import Conversation, Message, PushSubscription
-from .permissions import avatar_url_for, can_message, contacts_for, _role_of
+from .permissions import avatar_url_for, can_message, search_contacts, valid_contact_ids, _role_of
 
 # ============================================================================
 # messaging/views.py
@@ -56,14 +57,68 @@ class _RoleMessagesMixin(LoginRequiredMixin):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
+        # ⚠️ పెర్ఫార్మెన్స్ ఫిక్స్: ఇంతకుముందు participant_one/two యొక్క
+        # ప్రొఫైల్ (candidate_profile/employee_profile/employer_profile/
+        # vendor_profile) select_related చేయలేదు -- కింద ఉన్న లూప్ లో
+        # ప్రతి conversation కి avatar_url_for()/_display_name() (రెండూ
+        # hasattr ద్వారా ఈ ప్రొఫైల్స్ ని చెక్ చేస్తాయి) పిలిచినప్పుడల్లా
+        # కొత్త క్వెరీ పరిగెత్తేది -- 20 conversations ఉంటే 40+ ఎక్స్‌ట్రా
+        # క్వెరీలు. ఇప్పుడు ముందుగానే అన్నీ ఒక్క JOIN లోనే తెచ్చేస్తాం.
+        profile_related = (
+            "candidate_profile", "employee_profile", "employer_profile", "vendor_profile",
+        )
+        select_related_fields = ["participant_one", "participant_two"] + [
+            f"participant_{side}__{rel}"
+            for side in ("one", "two")
+            for rel in profile_related
+        ]
+
         # members=user: direct మరియు group రెండు రకాల conversations
         # నీ ఒక్కటే query లో తీసుకొస్తుంది.
         conversations = list(
             Conversation.objects.filter(members=user)
-            .select_related("participant_one", "participant_two")
+            .select_related(*select_related_fields)
             .prefetch_related("members")
             .distinct()
         )
+        conv_ids = [c.id for c in conversations]
+
+        # ⚠️ పెర్ఫార్మెన్స్ ఫిక్స్: ఇంతకుముందు ప్రతి conversation కి విడిగా
+        # `c.messages.last()` + `c.messages.exclude(...).count()` -- అంటే
+        # ప్రతి conversation కి 2 ఎక్స్‌ట్రా క్వెరీలు (N+1). ఇప్పుడు అన్ని
+        # conversations కి కలిపి ఖచ్చితంగా 2 బల్క్ క్వెరీలు మాత్రమే:
+        #   1. last_message_id -- ఒక్కో conversation కి subquery ద్వారా,
+        #      తర్వాత ఆ IDs తో ఒకేసారి అసలు Message objects తెచ్చుకోవడం
+        #      (body EncryptedTextField కాబట్టి, నిజమైన Message queryset
+        #      గుండానే తేవాలి -- అప్పుడే decrypt సరిగ్గా జరుగుతుంది).
+        #   2. unread_count -- values().annotate(Count) ద్వారా ఒక్క
+        #      group-by క్వెరీలో అన్ని conversations కి ఒకేసారి.
+        last_message_by_conv = {}
+        unread_count_by_conv = {}
+        if conv_ids:
+            last_id_subq = (
+                Message.objects.filter(conversation=OuterRef("pk"))
+                .order_by("-created_at")
+                .values("id")[:1]
+            )
+            conv_last_ids = dict(
+                Conversation.objects.filter(id__in=conv_ids)
+                .annotate(last_message_id=Subquery(last_id_subq))
+                .values_list("id", "last_message_id"),
+            )
+            last_ids = [mid for mid in conv_last_ids.values() if mid]
+            if last_ids:
+                for msg in Message.objects.filter(id__in=last_ids).select_related("sender"):
+                    last_message_by_conv[msg.conversation_id] = msg
+
+            unread_rows = (
+                Message.objects.filter(conversation_id__in=conv_ids)
+                .exclude(sender=user)
+                .exclude(read_by=user)
+                .values("conversation_id")
+                .annotate(cnt=Count("id"))
+            )
+            unread_count_by_conv = {row["conversation_id"]: row["cnt"] for row in unread_rows}
 
         active_id = self.request.GET.get("c")
         active_conversation = None
@@ -94,8 +149,8 @@ class _RoleMessagesMixin(LoginRequiredMixin):
                 other = c.other_participant(user)
                 display_name = _display_name(other) if other else "Unknown"
                 avatar_url = avatar_url_for(other) if other else None
-            last_msg = c.messages.last()
-            unread_count = c.messages.exclude(sender=user).exclude(read_by=user).count()
+            last_msg = last_message_by_conv.get(c.id)
+            unread_count = unread_count_by_conv.get(c.id, 0)
             conv_rows.append({
                 "conversation": c,
                 "other_user": other,
@@ -113,7 +168,17 @@ class _RoleMessagesMixin(LoginRequiredMixin):
             else:
                 active_avatar_url = avatar_url_for(active_conversation.other_participant(user))
 
-        new_contacts = contacts_for(user)
+        # ⚠️ పెర్ఫార్మెన్స్ ఫిక్స్ (అసలైన బగ్): ఇక్కడ ఇంతకుముందు
+        # `contacts_for(user)` ని unconditionally పిలిచేవాళ్ళు -- అంటే
+        # Messages పేజీ ఓపెన్ చేసిన ప్రతిసారీ (ఇప్పటికే ఉన్న చాట్ ని
+        # చూసినా సరే) సైట్ లో రిజిస్టర్ అయిన ప్రతి ఒక్కరినీ (candidates+
+        # employers+vendors) పూర్తిగా మెమరీ లోకి తెచ్చి, ఆ మొత్తం
+        # జాబితానీ JSON గా పేజీ HTML లో ఎంబెడ్ చేసేవాళ్ళు. యూజర్ల
+        # సంఖ్య పెరిగే కొద్దీ (వందలు/వేలు) ప్రతి Messages పేజీ లోడ్ నెమ్మది
+        # అవుతూ ఉండేది. ఇప్పుడు ఇక్కడ ఏమీ eager గా లోడ్ చేయం -- సెర్చ్
+        # బాక్స్ లో యూజర్ టైప్ చేసినప్పుడు మాత్రమే, ఆ query కి సరిపోలిన
+        # కొద్దిమందిని (max 20) AJAX ద్వారా తెస్తాం (ContactSearchView
+        # + messaging/static/messaging/js/contact_search.js చూడండి).
 
         context.update({
             "conversation_rows": conv_rows,
@@ -127,18 +192,7 @@ class _RoleMessagesMixin(LoginRequiredMixin):
             "thread_messages": thread_messages,
             "message_form": MessageForm(),
             "group_form": GroupForm(),
-            "new_contacts": new_contacts,
-            "new_contacts_json": json.dumps([
-                {
-                    "id": c["user"].id,
-                    "name": c["name"],
-                    "identifier": c["identifier"],
-                    "avatar_url": c["avatar_url"] or "",
-                }
-                for c in new_contacts
-            ]).replace("</", "<\\/"),  # ఒక కంపెనీ/candidate పేరులో
-            # "</script>" లాంటి స్ట్రింగ్ ఉంటే, ఇది <script type=
-            # "application/json"> ట్యాగ్ ని బ్రేక్ చేయకుండా ఆపుతుంది.
+            "contact_search_url": reverse("messaging:contact_search"),
             "redirect_url_name": self.redirect_url_name,
             "unread_message_count": sum(r["unread_count"] for r in conv_rows),
             "vapid_public_key": settings.VAPID_PUBLIC_KEY,
@@ -196,6 +250,31 @@ class CandidateMessagesView(_RoleMessagesMixin, TemplateView):
     redirect_url_name = "messaging:candidate_messages"
 
 
+class ContactSearchView(LoginRequiredMixin, View):
+    """AJAX: సెర్చ్ బాక్స్ లో (కొత్త చాట్ మొదలుపెట్టడానికి, గ్రూప్
+    సభ్యులని ఎంచుకోవడానికి, లేదా ఇప్పటికే ఉన్న గ్రూప్ కి కొత్త సభ్యుడిని
+    యాడ్ చేయడానికి) ఒక్కో అక్షరం టైప్ చేసినప్పుడల్లా ఇక్కడికి పిలుస్తారు.
+    ఇదే `contacts_for()` లో ఉన్న 'ప్రతి పేజీ లోడ్ కి మొత్తం యూజర్ బేస్
+    ని మెమరీ లోకి తేవడం' అనే బగ్ కి అసలైన పరిష్కారం -- search_contacts()
+    ఎప్పుడూ query కి సరిపోలిన కొద్దిమందిని (max 20) మాత్రమే, bounded
+    DB క్వెరీలతో తెస్తుంది."""
+
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get("q", "")
+        results = search_contacts(request.user, query, limit=20)
+        return JsonResponse({
+            "results": [
+                {
+                    "id": c["user"].id,
+                    "name": c["name"],
+                    "identifier": c["identifier"],
+                    "avatar_url": c["avatar_url"] or "",
+                }
+                for c in results
+            ],
+        })
+
+
 class SendMessageView(LoginRequiredMixin, View):
     """POST-only fallback (JS లేని బ్రౌజర్ల కోసం). JS ఉన్నప్పుడు,
     క్లయింట్ దీని బదులు WebSocket ద్వారానే మెసేజ్ పంపుతుంది
@@ -204,7 +283,7 @@ class SendMessageView(LoginRequiredMixin, View):
     def post(self, request, pk, *args, **kwargs):
         conversation = get_object_or_404(Conversation, pk=pk)
         if not conversation.is_participant(request.user):
-            messages.error(request, "⚠️ మీకు ఈ సంభాషణ యాక్సెస్ లేదు.")
+            messages.error(request, "⚠️ You do not have access to this conversation.")
             return redirect(_home_redirect(request.user))
 
         form = MessageForm(request.POST)
@@ -216,15 +295,15 @@ class SendMessageView(LoginRequiredMixin, View):
             )
             conversation.save(update_fields=["updated_at"])
         else:
-            messages.error(request, "⚠️ సందేశం పంపడంలో సమస్య వచ్చింది.")
+            messages.error(request, "⚠️ There was a problem sending the message.")
 
         redirect_name = _redirect_name_for(request.user)
         return redirect(f"{reverse(redirect_name)}?c={conversation.pk}")
 
 
 class StartConversationView(LoginRequiredMixin, View):
-    """'కొత్త చాట్' -- target యూజర్ తో ఇప్పటికే వ్యాపార సంబంధం
-    (job application / order) ఉంటేనే conversation క్రియేట్ అవుతుంది."""
+    """'కొత్త చాట్' -- సైట్ లో రిజిస్టర్ అయిన ఎవరితోనైనా (Candidate/
+    Employer/Vendor ఏ రోల్ అయినా) కొత్త conversation మొదలుపెట్టొచ్చు."""
 
     def post(self, request, *args, **kwargs):
         target = get_object_or_404(User, pk=request.POST.get("user_id"))
@@ -232,8 +311,7 @@ class StartConversationView(LoginRequiredMixin, View):
         if not can_message(request.user, target):
             messages.error(
                 request,
-                "⚠️ మీకు మరియు వీరికి మధ్య ఇంకా ఏ వ్యాపార సంబంధం (job "
-                "application / order) లేదు కాబట్టి చాట్ మొదలుపెట్టలేరు.",
+                "⚠️ You cannot start a chat with this user.",
             )
             return redirect(_home_redirect(request.user))
 
@@ -247,10 +325,12 @@ class StartConversationView(LoginRequiredMixin, View):
 # ============================================================================
 
 class CreateGroupView(LoginRequiredMixin, View):
-    """కొత్త గ్రూప్ క్రియేట్ చేస్తుంది. సభ్యులు ఎవరిని ఎంచుకోవచ్చు --
-    ప్రస్తుతం ఆ యూజర్ కి contacts_for() లో కనిపించే వాళ్ళనే (అంటే,
-    ఇప్పటికే ఏదో వ్యాపార సంబంధం ఉన్నవాళ్ళనే) group లోకి యాడ్ చేయగలరు,
-    దీనివల్ల గ్రూప్‌ల ద్వారా కూడా అపరిచితులకి స్పామ్ చేయలేరు."""
+    """కొత్త గ్రూప్ క్రియేట్ చేస్తుంది. సైట్ లో రిజిస్టర్ అయిన ఎవరినైనా
+    సభ్యుడిగా జోడించొచ్చు (contacts_for() డాక్‌స్ట్రింగ్ చూడండి) --
+    కానీ ఇక్కడ మొత్తం యూజర్ బేస్ ని లోడ్ చేయాల్సిన అవసరం లేదు, ఫారమ్
+    సమర్పించిన కొద్దిమంది member_ids మాత్రమే చెల్లుబాటు అవుతాయో లేదో
+    (valid_contact_ids()) చెక్ చేస్తే సరిపోతుంది -- bounded, submitted
+    IDs సంఖ్యకే పరిమితమైన క్వెరీ."""
 
     def post(self, request, *args, **kwargs):
         form = GroupForm(request.POST, request.FILES)
@@ -261,10 +341,9 @@ class CreateGroupView(LoginRequiredMixin, View):
                 messages.error(request, f"⚠️ {error}")
             return redirect(_home_redirect(request.user))
 
-        allowed_ids = {c["user"].id for c in contacts_for(request.user)}
-        chosen_ids = {int(i) for i in member_ids if i.isdigit()} & allowed_ids
+        chosen_ids = valid_contact_ids(member_ids)
         if not chosen_ids:
-            messages.error(request, "⚠️ కనీసం ఒక్క సభ్యుడినైనా ఎంచుకోండి.")
+            messages.error(request, "⚠️ Please select at least one member.")
             return redirect(_home_redirect(request.user))
 
         member_users = User.objects.filter(id__in=chosen_ids)
@@ -291,7 +370,7 @@ class RenameGroupView(LoginRequiredMixin, View):
             Conversation, pk=pk, chat_type=Conversation.ChatType.GROUP,
         )
         if conversation.admin_id != request.user.id:
-            messages.error(request, "⚠️ గ్రూప్ అడ్మిన్ మాత్రమే గ్రూప్ వివరాలు మార్చగలరు.")
+            messages.error(request, "⚠️ Only the group admin can change group details.")
             return redirect(_home_redirect(request.user))
 
         form = GroupForm(request.POST, request.FILES)
@@ -351,7 +430,7 @@ class LeaveGroupView(LoginRequiredMixin, View):
                     body=f"{_display_name(next_admin)} is now the group admin",
                 )
 
-        messages.success(request, "మీరు గ్రూప్ నుండి బయటకు వచ్చారు.")
+        messages.success(request, "You have left the group.")
         return redirect(_home_redirect(request.user))
 
 
@@ -364,7 +443,7 @@ class GroupMemberUpdateView(LoginRequiredMixin, View):
             Conversation, pk=pk, chat_type=Conversation.ChatType.GROUP,
         )
         if conversation.admin_id != request.user.id:
-            messages.error(request, "⚠️ గ్రూప్ అడ్మిన్ మాత్రమే సభ్యులని add/remove చేయగలరు.")
+            messages.error(request, "⚠️ Only the group admin can add/remove members.")
             return redirect(_home_redirect(request.user))
 
         action = request.POST.get("action")
@@ -372,7 +451,7 @@ class GroupMemberUpdateView(LoginRequiredMixin, View):
 
         if action == "add":
             if not can_message(request.user, target):
-                messages.error(request, "⚠️ వీరిని గ్రూప్ లోకి యాడ్ చేయలేరు.")
+                messages.error(request, "⚠️ These members could not be added to the group.")
                 return redirect(_home_redirect(request.user))
             conversation.members.add(target)
             Message.objects.create(
@@ -390,8 +469,8 @@ class GroupMemberUpdateView(LoginRequiredMixin, View):
             if target.id == request.user.id:
                 messages.error(
                     request,
-                    "⚠️ మీరు అడ్మిన్ గా ఉండి మిమ్మల్ని మీరు తీసేసుకోలేరు -- "
-                    "బదులుగా 'Leave Group' వాడండి.",
+                    "⚠️ As the admin, you cannot remove yourself -- "
+                    "please use 'Leave Group' instead.",
                 )
                 return redirect(f"{reverse(_redirect_name_for(request.user))}?c={conversation.pk}")
             conversation.members.remove(target)

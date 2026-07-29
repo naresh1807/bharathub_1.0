@@ -25,7 +25,7 @@
           <div class="vf-card__meta">{{ video.created_at|timesince }} ago · {{ video.get_category_display }}</div>
         </div>
         {% if request.user.is_authenticated and request.user.employer_profile.id == video.employer_id %}
-        <form method="post" action="{% url 'videos:delete_video' video.pk %}" onsubmit="return confirm('ఈ వీడియో ని శాశ్వతంగా తీసేయాలా?');">
+        <form method="post" action="{% url 'videos:delete_video' video.pk %}" onsubmit="return confirm('Permanently delete this video?');">
           {% csrf_token %}
           <button type="submit" class="vf-card__delete" title="Delete video">🗑️</button>
         </form>
@@ -35,7 +35,7 @@
       <div class="vf-card__body">
         <video class="vf-video" controls preload="metadata">
           <source src="{{ video.video_file.url }}">
-          మీ బ్రౌజర్ వీడియో ప్లేబ్యాక్ ని సపోర్ట్ చేయడం లేదు.
+          Your browser does not support video playback.
         </video>
       </div>
 
@@ -90,7 +90,7 @@
       </div>
     </article>
     {% empty %}
-    <div class="vf-empty">🎬 ఇంకా వీడియోలు ఏవీ పోస్ట్ కాలేదు — తొలి వీడియో మీరే పోస్ట్ చేయండి!</div>
+    <div class="vf-empty">🎬 No videos posted yet — be the first to post one!</div>
     {% endfor %}
   </div>
 </div>

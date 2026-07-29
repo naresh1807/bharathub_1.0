@@ -1,0 +1,173 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offer Letter — {{ employment.employer.company_name }} — BharatHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  {% comment %}
+  candidates/document_offer_letter.html -- Employer 'Mark as Hired' నొక్కిన
+  వెంటనే (designation/joining_date/salary_lpa తో) ఆటోమేటిక్‌గా జనరేట్
+  అయ్యే ఆఫర్ లెటర్ (jobs/views.py: MarkAsHiredView). ఇంకా Accept
+  చేయకపోతే దిగువ 'Accept Offer' ఫారమ్ కనిపిస్తుంది -- POST అవుతుంది
+  jobs:offer_letter_accept కి (OfferLetterAcceptView), అది Accept
+  అయిన వెంటనే employer కి ఇమెయిల్ నోటిఫికేషన్ పంపిస్తుంది
+  (jobs/notifications.py). Accept అయ్యాక ఈ పేజీనే మళ్ళీ చూపిస్తుంది,
+  ఈసారి '✅ Accepted' బ్యాడ్జ్ తో -- Print/Download ఎప్పుడూ పనిచేస్తాయి,
+  Accept అయినా కాకపోయినా (బ్రౌజర్ ప్రింట్ డైలాగ్ ద్వారానే, document_resume.html
+  లో ఉన్న అదే కారణంతో -- సర్వర్-సైడ్ PDF లైబ్రరీ లేదు).
+  {% endcomment %}
+  <style>
+    :root { --primary:#1a365d; --accent:#ff8c00; --muted:#6b7280; --border:#e5e7eb; --success:#16a34a; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; margin: 0; background: #f3f4f6; color: #1f2937; }
+
+    .toolbar {
+      position: sticky; top: 0; z-index: 10; background: #fff;
+      border-bottom: 1px solid var(--border); padding: 12px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .toolbar__back { font-size: 13px; color: var(--muted); text-decoration: none; }
+    .toolbar__back:hover { color: var(--primary); }
+    .toolbar__actions { display: flex; gap: 10px; }
+    .toolbar__btn {
+      border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px;
+      font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .toolbar__btn--primary { background: var(--primary); color: #fff; }
+    .toolbar__btn--outline { background: none; border: 1.5px solid var(--border); color: #374151; }
+
+    .sheet {
+      max-width: 800px; margin: 28px auto 60px; background: #fff;
+      border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 46px 52px;
+    }
+    .sheet__header {
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 3px solid var(--primary); padding-bottom: 18px; margin-bottom: 26px;
+    }
+    .sheet__brand { display: flex; align-items: center; gap: 8px; color: var(--primary); }
+    .sheet__brand-icon {
+      width: 26px; height: 26px; border-radius: 6px; background: var(--primary);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+    }
+    .sheet__brand-name { font-size: 13px; font-weight: 700; letter-spacing: 0.3px; }
+
+    .al-title { font-size: 20px; font-weight: 800; color: var(--primary); margin: 0 0 4px; text-align: center; }
+    .al-subtitle { font-size: 12.5px; color: var(--muted); text-align: center; margin: 0 0 30px; }
+
+    .al-body { font-size: 13.5px; line-height: 1.9; color: #1f2937; }
+    .al-facts { margin: 18px 0; border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .al-facts__row { display: flex; padding: 10px 16px; font-size: 13px; }
+    .al-facts__row:nth-child(even) { background: #f9fafb; }
+    .al-facts__label { width: 180px; flex-shrink: 0; color: var(--muted); font-weight: 600; }
+    .al-facts__value { color: #1f2937; font-weight: 600; }
+
+    .accept-box {
+      margin-top: 24px; text-align: center; padding: 20px; border-radius: 10px;
+      background: rgba(255,140,0,0.06); border: 1.5px solid #fde68a;
+    }
+    .accept-box--done { background: rgba(22,163,74,0.08); border-color: rgba(22,163,74,0.3); }
+    .accept-btn {
+      border: none; border-radius: 8px; padding: 12px 32px; font-size: 14px;
+      font-weight: 700; cursor: pointer; font-family: inherit; background: var(--success); color: #fff;
+    }
+    .accepted-badge { font-size: 14px; font-weight: 700; color: var(--success); }
+
+    .sheet__footer {
+      margin-top: 34px; padding-top: 14px; border-top: 1px solid var(--border);
+      font-size: 10.5px; color: var(--muted); text-align: center;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .no-print { display: none !important; }
+      .sheet { box-shadow: none; margin: 0; padding: 0; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar no-print">
+    <a href="{% url 'candidates:downloads_list' %}" class="toolbar__back">← Back to Downloads</a>
+    <div class="toolbar__actions">
+      <button type="button" class="toolbar__btn toolbar__btn--outline" onclick="window.print()">⬇️ Download</button>
+      <button type="button" class="toolbar__btn toolbar__btn--primary" onclick="window.print()">🖨️ Print</button>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <div class="sheet__header">
+      <div class="sheet__brand">
+        <div class="sheet__brand-icon">{% include "_logo_mark.html" %}</div>
+        <span class="sheet__brand-name">BharatHub</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);">Issued {{ employment.created_at|date:"M d, Y" }}</div>
+    </div>
+
+    <h1 class="al-title">Offer Letter</h1>
+    <p class="al-subtitle">Issued via BharatHub</p>
+
+    <div class="al-body">
+      <p>Dear {{ full_name }},</p>
+      <p>
+        We are pleased to inform you that <strong>{{ employment.employer.company_name }}</strong> has offered
+        you the position below through BharatHub. Please review the details and accept this offer below.
+      </p>
+
+      <div class="al-facts">
+        <div class="al-facts__row">
+          <div class="al-facts__label">Candidate Name</div>
+          <div class="al-facts__value">{{ full_name }}</div>
+        </div>
+        <div class="al-facts__row">
+          <div class="al-facts__label">BharatHub ID</div>
+          <div class="al-facts__value">{{ employment.candidate.user.employee_profile.bharathub_id }}</div>
+        </div>
+        <div class="al-facts__row">
+          <div class="al-facts__label">Company</div>
+          <div class="al-facts__value">{{ employment.employer.company_name }}</div>
+        </div>
+        <div class="al-facts__row">
+          <div class="al-facts__label">Designation</div>
+          <div class="al-facts__value">{{ employment.designation }}</div>
+        </div>
+        {% if employment.job.department %}
+        <div class="al-facts__row">
+          <div class="al-facts__label">Department</div>
+          <div class="al-facts__value">{{ employment.job.get_department_display }}</div>
+        </div>
+        {% endif %}
+        <div class="al-facts__row">
+          <div class="al-facts__label">Date of Joining</div>
+          <div class="al-facts__value">{{ employment.joining_date|date:"F d, Y" }}</div>
+        </div>
+        <div class="al-facts__row">
+          <div class="al-facts__label">Salary</div>
+          <div class="al-facts__value">₹{{ employment.salary_lpa }} LPA</div>
+        </div>
+      </div>
+    </div>
+
+    {% if employment.offer_status == "accepted" %}
+      <div class="accept-box accept-box--done">
+        <div class="accepted-badge">✅ Offer Accepted on {{ employment.offer_accepted_at|date:"F d, Y" }}</div>
+      </div>
+    {% else %}
+      <div class="accept-box no-print">
+        <p style="font-size:13px;color:var(--muted);margin:0 0 14px;">Review the details above, then accept this offer to confirm your joining.</p>
+        <form method="post" action="{% url 'jobs:offer_letter_accept' employment.pk %}" onsubmit="return confirm('Accept this offer from {{ employment.employer.company_name }}?');">
+          {% csrf_token %}
+          <button type="submit" class="accept-btn">✅ Accept Offer</button>
+        </form>
+      </div>
+    {% endif %}
+
+    <div class="sheet__footer">
+      This document was generated by BharatHub based on platform records · Reference: OFR-{{ employment.pk }}
+    </div>
+  </div>
+
+</body>
+</html>

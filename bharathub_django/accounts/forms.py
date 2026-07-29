@@ -13,12 +13,12 @@ User = get_user_model()
 # RegexValidator ని ఒక్కసారి రాసి, ఎన్ని ఫారమ్‌లలో అయినా తిరిగి వాడొచ్చు.
 mobile_validator = RegexValidator(
     regex=r"^[6-9]\d{9}$",
-    message="దయచేసి సరైన 10-అంకెల భారతీయ మొబైల్ నెంబర్ ఇవ్వండి (6-9తో మొదలవ్వాలి).",
+    message="Please enter a valid 10-digit Indian mobile number (must start with 6-9).",
 )
 
 pan_validator = RegexValidator(
     regex=r"^[A-Z]{5}[0-9]{4}[A-Z]{1}$",
-    message="PAN ఫార్మాట్ తప్పు. ఉదాహరణ: ABCDE1234F",
+    message="Invalid PAN format. Example: ABCDE1234F",
 )
 
 
@@ -83,13 +83,13 @@ class EmployeeRegistrationForm(forms.Form):
         # ఇదే ఇమెయిల్ తో ఇంతకుముందే ఖాతా ఉందా అని DB లో చెక్ చేస్తున్నాం
         # -- డూప్లికేట్ రిజిస్ట్రేషన్‌లు ఆపడానికి.
         if User.objects.filter(email__iexact=email).exists():
-            raise ValidationError("ఈ ఇమెయిల్ తో ఇప్పటికే ఒక ఖాతా ఉంది.")
+            raise ValidationError("An account with this email already exists.")
         return email
 
     def clean_mobile_number(self):
         mobile = self.cleaned_data["mobile_number"].strip()
         if EmployeeProfile.objects.filter(mobile_number=mobile).exists():
-            raise ValidationError("ఈ మొబైల్ నెంబర్ తో ఇప్పటికే ఒక ఖాతా ఉంది.")
+            raise ValidationError("An account with this mobile number already exists.")
         return mobile
 
     def clean_password1(self):
@@ -110,7 +110,7 @@ class EmployeeRegistrationForm(forms.Form):
         password1 = cleaned_data.get("password1")
         password2 = cleaned_data.get("password2")
         if password1 and password2 and password1 != password2:
-            self.add_error("password2", "పాస్‌వర్డ్‌లు రెండూ సరిపోలలేదు.")
+            self.add_error("password2", "The two passwords did not match.")
         return cleaned_data
 
     # ------------------------------------------------------------------
@@ -153,7 +153,7 @@ class EmployeeRegistrationForm(forms.Form):
 class EmployeeLoginForm(forms.Form):
     login_id = forms.CharField(
         label="BharatHub ID / Email",
-        widget=forms.TextInput(attrs={"class": "form__input", "placeholder": "BH20261001 or email@example.com"}),
+        widget=forms.TextInput(attrs={"class": "form__input", "placeholder": "BHEMP26070001234 or email@example.com"}),
     )
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={"class": "form__input", "placeholder": "Enter your password"}),
@@ -222,13 +222,13 @@ class EmployerRegistrationForm(forms.Form):
     def clean_corporate_email(self):
         email = self.cleaned_data["corporate_email"].lower().strip()
         if User.objects.filter(email__iexact=email).exists():
-            raise ValidationError("ఈ ఇమెయిల్ తో ఇప్పటికే ఒక ఖాతా ఉంది.")
+            raise ValidationError("An account with this email already exists.")
         return email
 
     def clean_mobile_number(self):
         mobile = self.cleaned_data["mobile_number"].strip()
         if EmployerProfile.objects.filter(mobile_number=mobile).exists():
-            raise ValidationError("ఈ మొబైల్ నెంబర్ తో ఇప్పటికే ఒక ఖాతా ఉంది.")
+            raise ValidationError("An account with this mobile number already exists.")
         return mobile
 
     def clean_password1(self):
@@ -239,7 +239,7 @@ class EmployerRegistrationForm(forms.Form):
     def clean(self):
         cleaned_data = super().clean()
         if cleaned_data.get("password1") != cleaned_data.get("password2"):
-            self.add_error("password2", "పాస్‌వర్డ్‌లు రెండూ సరిపోలలేదు.")
+            self.add_error("password2", "The two passwords did not match.")
         return cleaned_data
 
     def save(self):

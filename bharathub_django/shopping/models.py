@@ -65,6 +65,12 @@ class Order(models.Model):
     )
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW)
     total_amount = models.PositiveIntegerField(default=0)
+    # చెక్‌అవుట్ సమయంలో Employer ఇచ్చిన డెలివరీ అడ్రస్ -- employer.address
+    # (ప్రొఫైల్ లో నమోదు చేసినది) తో ఒకటే కానవసరం లేదు, వేరే బ్రాంచ్‌కి
+    # షిప్ చేయాల్సి రావొచ్చు కాబట్టి ప్రతి ఆర్డర్ కీ విడిగా అడుగుతాం
+    # (shopping/views.py: PlaceOrderView, buyer_shopping.js చెక్‌అవుట్
+    # మోడల్). ఇన్వాయిస్ లో కూడా ఇదే చూపిస్తాం.
+    delivery_address = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

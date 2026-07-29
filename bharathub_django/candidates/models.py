@@ -43,7 +43,7 @@ def current_year():
 # లో సైజ్ చెక్ తో పాటు రెండో పొర రక్షణ.)
 resume_extension_validator = FileExtensionValidator(
     allowed_extensions=["pdf", "doc", "docx"],
-    message="రెజ్యూమ్ కేవలం PDF, DOC లేదా DOCX ఫార్మాట్ లో మాత్రమే అప్‌లోడ్ చేయాలి.",
+    message="Resume must be uploaded in PDF, DOC, or DOCX format only.",
 )
 
 
@@ -76,7 +76,7 @@ class CandidateProfile(models.Model):
 
     headline = models.CharField(
         max_length=150, blank=True,
-        help_text="ఉదా: Python Developer · Fresher",
+        help_text="e.g. Python Developer · Fresher",
     )
     location = models.CharField(max_length=100, blank=True)
     about = models.TextField(
@@ -90,7 +90,7 @@ class CandidateProfile(models.Model):
 
     qualification = models.CharField(
         max_length=150, blank=True,
-        help_text="అత్యున్నత విద్యార్హత, ఉదా: B.Tech CSE",
+        help_text="Highest qualification, e.g. B.Tech CSE",
     )
     experience_level = models.CharField(
         max_length=10, choices=ExperienceLevel.choices,
@@ -167,7 +167,7 @@ class CandidateEducation(models.Model):
     level = models.CharField(max_length=20, choices=Level.choices)
     degree_title = models.CharField(
         max_length=150, verbose_name="Degree / Course Title",
-        help_text="ఉదా: B.Tech Computer Science",
+        help_text="e.g. B.Tech Computer Science",
     )
     institution = models.CharField(max_length=200)
 
@@ -180,7 +180,7 @@ class CandidateEducation(models.Model):
     )
     score = models.CharField(
         max_length=30, blank=True,
-        help_text="ఉదా: 7.8 CGPA లేదా 89%",
+        help_text="e.g. 7.8 CGPA or 89%",
     )
 
     class Meta:

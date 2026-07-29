@@ -108,7 +108,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         if msg_type != "typing" and not self._check_rate_limit():
             await self.send_json({
                 "type": "error", "code": "rate_limited",
-                "message": "మీరు చాలా వేగంగా పంపుతున్నారు, కొంచెం ఆగి మళ్ళీ ప్రయత్నించండి.",
+                "message": "You are sending too fast, please wait a moment and try again.",
             })
             return
 

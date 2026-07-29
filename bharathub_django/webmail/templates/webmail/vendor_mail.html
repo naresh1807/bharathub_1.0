@@ -1,0 +1,25 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% comment %} webmail/vendor_mail.html -- shares webmail/_mail_body.html
+   with the Candidate/Employer pages; only the nav + dashboard CSS differ. {% endcomment %}
+
+{% block title %}BharatHub — Mail{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'vendor/css/vendor_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'webmail/css/mail.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% include "vendor/_nav.html" with active="mail" %}
+
+  <main class="main" style="padding:24px;max-width:1100px;margin:0 auto;">
+{% include "webmail/_mail_body.html" %}
+  </main>
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script src="{% static 'webmail/js/mail.js' %}"></script>
+{% endblock %}

@@ -158,6 +158,16 @@
 .vf-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 @media (max-width: 640px) { .vf-field-row { grid-template-columns: 1fr; } }
 
+/* ── MOBILE (home page feed is the most-viewed context) ─────── */
+@media (max-width: 480px) {
+  .vf-video { max-height: 260px; }
+  .vf-card__header { padding: 12px 14px; gap: 10px; }
+  .vf-card__logo { width: 36px; height: 36px; font-size: 11px; }
+  .vf-card__caption { padding: 10px 14px; font-size: 13px; }
+  .vf-action-btn { padding: 9px 10px; font-size: 12.5px; }
+  .vf-dropzone { padding: 26px 14px; }
+}
+
 .vf-btn {
   border: none; border-radius: 10px; padding: 10px 20px; font-size: 13px;
   font-weight: 700; font-family: inherit; cursor: pointer;

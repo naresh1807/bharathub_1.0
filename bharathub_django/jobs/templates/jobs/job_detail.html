@@ -16,9 +16,8 @@
 {% endblock %}
 
 {% block content %}
-{% include "jobs/_candidate_topbar.html" with active="browse" %}
+{% include "candidates/_nav.html" with active="browse" %}
 
-<div class="layout" style="grid-template-columns:1fr;">
   <main class="main" style="padding:24px;max-width:760px;margin:0 auto;">
 
     {% if messages %}
@@ -58,7 +57,7 @@
 
       {% if existing_application %}
         <div style="padding:14px;border-radius:10px;background:rgba(22,163,74,0.08);color:var(--success);font-weight:600;">
-          ✅ మీరు ఇప్పటికే ఈ ఉద్యోగానికి apply చేశారు — స్టేటస్: {{ existing_application.get_status_display }}
+          ✅ You have already applied to this job — Status: {{ existing_application.get_status_display }}
         </div>
       {% else %}
         <form method="post" action="{% url 'jobs:job_apply' job.pk %}">

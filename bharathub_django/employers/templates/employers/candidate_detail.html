@@ -101,7 +101,7 @@ candidate_search.html నుండి వచ్చే, ఒక్క candidate �
 
         {% if existing_hire_requests %}
           <div style="margin-top:18px;">
-            <h4 style="font-size:13px;color:#888;">ఇంతకుముందు పంపిన రిక్వెస్ట్‌లు</h4>
+            <h4 style="font-size:13px;color:#888;">Previously Sent Requests</h4>
             {% for hr in existing_hire_requests %}
               <div style="font-size:13px;padding:8px 0;border-top:1px solid #f0f0f0;">
                 {{ hr.job.title|default:"General interest" }} — <strong>{{ hr.get_status_display }}</strong>

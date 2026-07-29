@@ -1,0 +1,107 @@
+/* static/shared/css/mobile_nav.css
+   ══════════════════════════════════════════════════════════════════
+   మొబైల్ నావిగేషన్ డ్రాయర్ -- Employer / Vendor / Candidate మూడు
+   dashboardలకీ, మరియు అవి extend చేసే స్టాండలోన్ సబ్-పేజీలకీ
+   (Applications, Messages, Candidate Search, ...) ఒకే చోట పని చేసే
+   షేర్డ్ CSS. templates/dashboard_base.html లో లోడ్ అవుతుంది కాబట్టి
+   ఇక్కడ మార్చిన ఏదైనా అన్ని పేజీలకీ వర్తిస్తుంది.
+
+   BUG THIS FIXES: ప్రతి dashboard CSS (employer_dashboard.css,
+   vendor_dashboard.css, candidate_dashboard.css) లో ఇప్పటికే ఇలా
+   ఉంది --
+       @media (max-width: 900px) { .sidebar { display: none; }
+                                    .topnav__tabs { display: none; } }
+   అంటే మొబైల్ లో సైడ్‌బార్ మరియు టాప్ ట్యాబ్స్ రెండూ పూర్తిగా
+   మాయమైపోతాయి, మిగిలేది ఒక్క '.mobile-nav-bar' మాత్రమే -- అది కూడా
+   ప్రతి పేజీలో కేవలం 4-5 హార్డ్‌కోడ్ చేసిన ఐటమ్స్ మాత్రమే చూపిస్తుంది
+   (మిగతావన్నీ -- Search Candidates, Videos, Mail, Applications లాంటివి
+   -- మొబైల్ లో ఎక్కడా కనిపించవు).
+
+   FIX: సైడ్‌బార్ ని పూర్తిగా దాచేయకుండా, ఎడమవైపు నుండి స్లైడ్-ఇన్
+   అయ్యే డ్రాయర్ గా మారుస్తాం (☰ బటన్ నొక్కితే తెరుచుకుంటుంది) --
+   అందులో ఇప్పటికే ఉన్న ప్రతి నావ్ ఐటమ్ (డెస్క్‌టాప్ సైడ్‌బార్ లో
+   ఉన్నవన్నీ) కనిపిస్తుంది, వేరే ఎక్కడా డూప్లికేట్ జాబితా
+   నిర్వహించాల్సిన అవసరం లేదు -- '.mobile-nav-bar' కి ఇప్పుడు ఒక
+   6వ "☰ More" బటన్ యాడ్ చేస్తే ఇదే డ్రాయర్ తెరుచుకుంటుంది.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* హామ్‌బర్గర్ బటన్ -- డెస్క్‌టాప్ లో దాచేసి, మొబైల్ లో మాత్రమే చూపిస్తాం. */
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 6px 10px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.mobile-nav-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 299; /* .sidebar (మొబైల్ డ్రాయర్ మోడ్ లో) కంటే కిందే, .topnav కంటే పైన */
+}
+.mobile-nav-backdrop.open { display: block; }
+
+@media (max-width: 900px) {
+  .mobile-menu-btn { display: block; }
+
+  /* టాప్ ట్యాబ్స్ ఇప్పటికీ దాచేస్తాం (ఇవి డెస్క్‌టాప్-వెడల్పు ట్యాబ్
+     స్ట్రిప్ కోసం డిజైన్ చేసినవి) -- కానీ వాటిలో ఉన్న ప్రతి లింక్
+     కిందున్న డ్రాయర్ (పాత .sidebar) లో కూడా ఉంటుంది కాబట్టి ఏమీ
+     కోల్పోరు. */
+  .topnav__tabs { display: none !important; }
+
+  /* ఇదే అసలైన ఫిక్స్: .sidebar ఇక "display:none" కాదు -- ఎడమవైపు
+     నుండి స్లైడ్-ఇన్ అయ్యే ఫుల్-హైట్ డ్రాయర్.
+
+     ⚠️ "Logout కిందికి వెళ్ళిపోయి, స్క్రోల్ చేయలేకపోవడం" బగ్ ఫిక్స్:
+     ఇంతకుముందు ఇక్కడ `height: 100vh !important` కూడా ఉండేది --
+     మొబైల్ బ్రౌజర్లలో (అడ్రస్ బార్ ఇంకా కనిపిస్తున్నప్పుడు) `100vh`
+     నిజంగా కనిపించే స్క్రీన్ కంటే పొడవుగా లెక్కించబడుతుంది (address
+     బార్ దాక్కున్నప్పటి గరిష్ట ఎత్తు ప్రకారం) -- దాంతో డ్రాయర్ దిగువ
+     భాగం (Logout ఉన్నచోటు) కనిపించే స్క్రీన్ కిందకి జారిపోయేది.
+     `position:fixed` తో `top:0; left:0; bottom:0;` మాత్రమే ఇస్తే,
+     బ్రౌజర్ దాన్ని ఎప్పుడూ ప్రస్తుతం కనిపించే viewport కే సరిపోయేలా
+     dynamically సైజ్ చేస్తుంది (అడ్రస్ బార్ చూపించినా/దాక్కున్నా) --
+     కాబట్టి ప్రత్యేకంగా height పెట్టాల్సిన అవసరమే లేదు. దానికి తోడు
+     overflow-y ఇక్కడ స్పష్టంగా పెట్టాం (డెస్క్‌టాప్ .sidebar రూల్
+     నుండి inherit అవుతున్నా, డ్రాయర్ మోడ్ లో దీన్ని దాచిపెట్టే వేరే
+     ఏ CSS రూలైనా భవిష్యత్తులో పొరపాటున జోడించినా ఇది కాపాడుతుంది),
+     మరియు దిగువన గెస్చర్-బార్ ఉన్న ఫోన్లలో Logout అంచుకి అతుక్కుపోకుండా
+     safe-area padding జోడించాం. */
+  .sidebar {
+    display: flex !important;
+    flex-direction: column;
+    position: fixed !important;
+    top: 0; left: 0; bottom: 0;
+    width: 78vw; max-width: 300px;
+    z-index: 300;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.25);
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+  }
+  .sidebar.mobile-open { transform: translateX(0); }
+
+  /* '.mobile-nav-bar' లో ఇప్పటికే ఉన్న ఐటమ్స్ (Home/Messages వంటివి)
+     అలానే ఉంటాయి -- కొత్తగా జోడించిన "☰ More" బటన్ ఈ డ్రాయర్ ని
+     తెరుస్తుంది, తద్వారా మిగతా అన్ని ఐటమ్‌లూ ఒక్క ట్యాప్ దూరంలో
+     ఉంటాయి. */
+  .mobile-nav-item--more { color: inherit; }
+}
+
+@media (min-width: 901px) {
+  /* డెస్క్‌టాప్ లో డ్రాయర్ లాజిక్ ఏదీ వర్తించదు -- హామ్‌బర్గర్,
+     బ్యాక్‌డ్రాప్ కూడా ఎప్పుడూ కనిపించవు (ఇక్కడ మళ్ళీ స్పష్టంగా
+     చెప్పడం, పైన ఉన్న డిఫాల్ట్ display:none తో సరిపోతున్నా, భవిష్యత్
+     CSS మార్పులతో పొరపాటు జరగకుండా ఉండటానికి). */
+  .mobile-nav-backdrop { display: none !important; }
+}

@@ -48,28 +48,28 @@ class CandidateProfileForm(forms.ModelForm):
         ]
         widgets = {
             "headline": forms.TextInput(attrs={
-                "class": INPUT_CLASS, "placeholder": "ఉదా: Python Developer · Fresher",
+                "class": INPUT_CLASS, "placeholder": "e.g. Python Developer · Fresher",
             }),
             "location": forms.TextInput(attrs={
-                "class": INPUT_CLASS, "placeholder": "ఉదా: Hyderabad",
+                "class": INPUT_CLASS, "placeholder": "e.g. Hyderabad",
             }),
             "about": forms.Textarea(attrs={
                 "class": INPUT_CLASS, "rows": 4,
-                "placeholder": "మీ గురించి క్లుప్తంగా రాయండి...",
+                "placeholder": "Write a short summary about yourself...",
             }),
             "skills": forms.TextInput(attrs={
                 "class": INPUT_CLASS,
-                "placeholder": "Python, Django, MySQL, React, Git (కామాతో వేరు చేయండి)",
+                "placeholder": "Python, Django, MySQL, React, Git (comma separated)",
             }),
             "qualification": forms.TextInput(attrs={
-                "class": INPUT_CLASS, "placeholder": "ఉదా: B.Tech CSE",
+                "class": INPUT_CLASS, "placeholder": "e.g. B.Tech CSE",
             }),
             "experience_level": forms.Select(attrs={"class": INPUT_CLASS}),
             "current_ctc_lpa": forms.NumberInput(attrs={
-                "class": INPUT_CLASS, "step": "0.1", "min": "0", "placeholder": "ఉదా: 6.5",
+                "class": INPUT_CLASS, "step": "0.1", "min": "0", "placeholder": "e.g. 6.5",
             }),
             "expected_ctc_lpa": forms.NumberInput(attrs={
-                "class": INPUT_CLASS, "step": "0.1", "min": "0", "placeholder": "ఉదా: 9.0",
+                "class": INPUT_CLASS, "step": "0.1", "min": "0", "placeholder": "e.g. 9.0",
             }),
             "hire_status": forms.Select(attrs={"class": INPUT_CLASS}),
             "resume": forms.ClearableFileInput(attrs={
@@ -99,7 +99,7 @@ class CandidateProfileForm(forms.ModelForm):
             if skill and skill.lower() not in [s.lower() for s in seen]:
                 seen.append(skill)
         if len(seen) > 25:
-            raise ValidationError("గరిష్టంగా 25 స్కిల్స్ మాత్రమే జోడించగలరు.")
+            raise ValidationError("You can add a maximum of 25 skills.")
         return ", ".join(seen)
 
     # ------------------------------------------------------------------
@@ -113,14 +113,14 @@ class CandidateProfileForm(forms.ModelForm):
         resume = self.cleaned_data.get("resume")
         if resume and hasattr(resume, "size"):
             if resume.size > MAX_RESUME_SIZE_MB * 1024 * 1024:
-                raise ValidationError(f"రెజ్యూమ్ సైజ్ {MAX_RESUME_SIZE_MB}MB కన్నా తక్కువ ఉండాలి.")
+                raise ValidationError(f"Resume size must be under {MAX_RESUME_SIZE_MB}MB.")
         return resume
 
     def clean_profile_photo(self):
         photo = self.cleaned_data.get("profile_photo")
         if photo and hasattr(photo, "size"):
             if photo.size > MAX_PHOTO_SIZE_MB * 1024 * 1024:
-                raise ValidationError(f"ఫోటో సైజ్ {MAX_PHOTO_SIZE_MB}MB కన్నా తక్కువ ఉండాలి.")
+                raise ValidationError(f"Photo size must be under {MAX_PHOTO_SIZE_MB}MB.")
         return photo
 
     # ------------------------------------------------------------------
@@ -136,7 +136,7 @@ class CandidateProfileForm(forms.ModelForm):
             if expected_ctc < current_ctc:
                 self.add_error(
                     "expected_ctc_lpa",
-                    "Expected CTC, Current CTC కన్నా తక్కువగా ఉండకూడదు.",
+                    "Expected CTC should not be less than Current CTC.",
                 )
         return cleaned_data
 
@@ -159,15 +159,15 @@ class CandidateEducationForm(forms.ModelForm):
         widgets = {
             "level": forms.Select(attrs={"class": INPUT_CLASS}),
             "degree_title": forms.TextInput(attrs={
-                "class": INPUT_CLASS, "placeholder": "ఉదా: B.Tech Computer Science",
+                "class": INPUT_CLASS, "placeholder": "e.g. B.Tech Computer Science",
             }),
             "institution": forms.TextInput(attrs={
-                "class": INPUT_CLASS, "placeholder": "ఉదా: JNTU Hyderabad",
+                "class": INPUT_CLASS, "placeholder": "e.g. JNTU Hyderabad",
             }),
             "year_of_passing": forms.NumberInput(attrs={
-                "class": INPUT_CLASS, "placeholder": "ఉదా: 2024",
+                "class": INPUT_CLASS, "placeholder": "e.g. 2024",
             }),
             "score": forms.TextInput(attrs={
-                "class": INPUT_CLASS, "placeholder": "ఉదా: 7.8 CGPA లేదా 89%",
+                "class": INPUT_CLASS, "placeholder": "e.g. 7.8 CGPA or 89%",
             }),
         }

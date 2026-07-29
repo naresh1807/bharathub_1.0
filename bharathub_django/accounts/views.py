@@ -108,9 +108,9 @@ class EmployeeLoginView(TemplateView):
             if resolved_user is not None and is_locked_out(resolved_user):
                 messages.error(
                     request,
-                    "🔒 ఈ ఖాతాలో 3 సార్లు తప్పు పాస్‌వర్డ్ ఎంటర్ చేశారు. భద్రత కోసం "
-                    "ఖాతా లాక్ చేయబడింది -- కింద ఉన్న 'Forgot Password?' తో గుర్తింపు "
-                    "నిర్ధారించుకుని, కొత్త పాస్‌వర్డ్ సెట్ చేసుకుంటేనే మళ్ళీ లాగిన్ అవ్వగలరు.",
+                    "🔒 You have entered the wrong password 3 times on this account. For security, "
+                    "the account has been locked -- please verify your identity via 'Forgot Password?' "
+                    "below and set a new password to log in again.",
                 )
                 return self.render_to_response(self.get_context_data(form=form))
 
@@ -172,9 +172,9 @@ class EmployeeLoginView(TemplateView):
                     # చేసుకోమని స్పష్టంగా చెప్తాం.
                     messages.error(
                         request,
-                        "🔒 3 సార్లు తప్పు పాస్‌వర్డ్ ఎంటర్ చేశారు. మీ ఖాతా భద్రత "
-                        "కోసం లాక్ చేయబడింది. దయచేసి కింద ఉన్న 'Forgot Password?' "
-                        "లింక్ తో మీ పాస్‌వర్డ్ ని తప్పనిసరిగా రీసెట్ చేసుకోండి.",
+                        "🔒 You entered the wrong password 3 times. For your account's security, "
+                        "it has been locked. Please use the 'Forgot Password?' link "
+                        "below to reset your password.",
                     )
                 else:
                     # భద్రతా గమనిక: ఎన్ని ప్రయత్నాలు మిగిలాయో ఖచ్చితంగా
@@ -246,9 +246,9 @@ class EmployerLoginView(TemplateView):
             if resolved_user is not None and is_locked_out(resolved_user):
                 messages.error(
                     request,
-                    "🔒 ఈ ఖాతాలో 3 సార్లు తప్పు పాస్‌వర్డ్ ఎంటర్ చేశారు. భద్రత కోసం "
-                    "ఖాతా లాక్ చేయబడింది -- కింద ఉన్న 'Forgot Password?' తో గుర్తింపు "
-                    "నిర్ధారించుకుని, కొత్త పాస్‌వర్డ్ సెట్ చేసుకుంటేనే మళ్ళీ లాగిన్ అవ్వగలరు.",
+                    "🔒 You have entered the wrong password 3 times on this account. For security, "
+                    "the account has been locked -- please verify your identity via 'Forgot Password?' "
+                    "below and set a new password to log in again.",
                 )
                 return self.render_to_response(self.get_context_data(form=form))
 
@@ -267,9 +267,9 @@ class EmployerLoginView(TemplateView):
                 if attempts >= MAX_FAILED_ATTEMPTS:
                     messages.error(
                         request,
-                        "🔒 3 సార్లు తప్పు పాస్‌వర్డ్ ఎంటర్ చేశారు. మీ ఖాతా భద్రత "
-                        "కోసం లాక్ చేయబడింది. దయచేసి కింద ఉన్న 'Forgot Password?' "
-                        "లింక్ తో మీ పాస్‌వర్డ్ ని తప్పనిసరిగా రీసెట్ చేసుకోండి.",
+                        "🔒 You entered the wrong password 3 times. For your account's security, "
+                        "it has been locked. Please use the 'Forgot Password?' link "
+                        "below to reset your password.",
                     )
                 else:
                     messages.error(request, "⚠️ Invalid credentials. Please try again.")
@@ -332,7 +332,7 @@ class ForgotPasswordVerifyView(View):
             # ఏ ఫీల్డ్ తప్పు అని చెప్పం (enumeration నివారించడానికి) --
             # 3 ఫీల్డ్స్ లో దేనికదే విడిగా ఏది సరైనదో తప్పో చెప్పకుండా
             # ఒకే generic ఎర్రర్.
-            return JsonResponse({"ok": False, "error": "వివరాలు సరిపోలలేదు. దయచేసి మళ్ళీ చెక్ చేయండి."}, status=400)
+            return JsonResponse({"ok": False, "error": "Details did not match. Please check again."}, status=400)
 
         password_reset.send_otp(request, user)
         return JsonResponse({"ok": True})
@@ -350,7 +350,7 @@ class ForgotPasswordOtpVerifyView(View):
         otp = (data.get("otp") or "").strip()
         if password_reset.verify_otp(request, otp):
             return JsonResponse({"ok": True})
-        return JsonResponse({"ok": False, "error": "OTP తప్పు లేదా గడువు ముగిసింది."}, status=400)
+        return JsonResponse({"ok": False, "error": "OTP is incorrect or has expired."}, status=400)
 
 
 class ForgotPasswordSetView(View):
@@ -372,7 +372,7 @@ class ForgotPasswordSetView(View):
         confirm_password = data.get("confirm_password") or ""
 
         if new_password != confirm_password:
-            return JsonResponse({"ok": False, "error": "పాస్‌వర్డ్‌లు సరిపోలలేదు."}, status=400)
+            return JsonResponse({"ok": False, "error": "Passwords did not match."}, status=400)
         try:
             validate_password(new_password)
         except ValidationError as exc:
@@ -380,7 +380,7 @@ class ForgotPasswordSetView(View):
 
         user = password_reset.set_new_password(request, new_password)
         if user is None:
-            return JsonResponse({"ok": False, "error": "సెషన్ గడువు ముగిసింది. దయచేసి మళ్ళీ మొదటి నుండి ప్రయత్నించండి."}, status=400)
+            return JsonResponse({"ok": False, "error": "Session expired. Please start over."}, status=400)
 
         return JsonResponse({"ok": True})
 
@@ -415,6 +415,6 @@ class EmployerProfileCompletionView(View):
             profile = form.save(commit=False)
             profile.profile_completed = True
             profile.save()
-            messages.success(request, "✅ మీ ప్రొఫైల్ పూర్తయింది! ఇక పూర్తి యాక్సెస్ మీది.")
+            messages.success(request, "✅ Your profile is complete! You now have full access.")
             return redirect("employers:employer_dashboard")
         return render(request, self.template_name, {"form": form})

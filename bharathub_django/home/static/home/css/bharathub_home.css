@@ -71,6 +71,127 @@ body {
 
 .header__actions { display: flex; align-items: center; gap: 12px; }
 
+/* ─── MOBILE MENU TOGGLE (☰) ─────────────────────────────
+   డెస్క్‌టాప్ లో దాచిపెట్టి, 768px కన్నా తక్కువ స్క్రీన్ లో మాత్రమే
+   కనిపిస్తుంది (దిగువ మీడియా క్వెరీ చూడండి). 44×44px టచ్ టార్గెట్ --
+   Apple/Google accessibility గైడ్‌లైన్స్ ప్రకారం కనీస సైజ్. */
+.header__menu-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 44px; height: 44px;
+  background: rgba(255,255,255,0.08);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+.header__menu-toggle span {
+  display: block;
+  width: 20px; height: 2px;
+  background: white;
+  border-radius: 2px;
+  transition: transform 0.25s ease, opacity 0.2s ease;
+}
+.header__menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.header__menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.header__menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ─── MOBILE NAV DRAWER ──────────────────────────────────── */
+.mobile-nav-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 199;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.mobile-nav-overlay.open { display: block; opacity: 1; }
+
+.mobile-nav-drawer {
+  position: fixed;
+  top: 0; right: 0;
+  width: min(320px, 86vw);
+  height: 100%;
+  background: var(--white);
+  z-index: 200;
+  box-shadow: -8px 0 32px rgba(0,0,0,0.2);
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 18px 28px;
+}
+.mobile-nav-drawer.open { transform: translateX(0); }
+
+.mobile-nav-drawer__header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px;
+}
+.mobile-nav-drawer__brand { font-size: 18px; font-weight: 700; color: var(--primary-color); }
+.mobile-nav-drawer__brand span { color: var(--accent-color); }
+.mobile-nav-drawer__close {
+  width: 36px; height: 36px;
+  border: none; background: var(--light-bg);
+  border-radius: 8px; font-size: 16px; color: var(--muted);
+  cursor: pointer;
+}
+
+.mobile-nav-drawer__search {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--light-bg);
+  border: 1.5px solid rgba(26,54,93,0.12);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+.mobile-nav-drawer__search input {
+  border: none; background: transparent; outline: none;
+  font-family: var(--font-family); font-size: 14px; color: var(--dark-text);
+  width: 100%;
+}
+
+.mobile-nav-drawer__label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted);
+  margin: 6px 2px 8px;
+}
+
+.mobile-nav-drawer__section {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 6px;
+}
+
+.mobile-nav-drawer__btn {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px;
+  padding: 13px 16px;
+  border-radius: 10px;
+  font-size: 14px; font-weight: 600;
+  text-decoration: none;
+  font-family: var(--font-family);
+}
+.mobile-nav-drawer__btn--outline { border: 1.5px solid rgba(26,54,93,0.2); color: var(--primary-color); }
+.mobile-nav-drawer__btn--accent { background: var(--accent-color); color: white; }
+.mobile-nav-drawer__btn--employer { background: linear-gradient(135deg, #1A365D, #2a4a7f); color: white; }
+.mobile-nav-drawer__btn--vendor { background: linear-gradient(135deg, #FF9900, #ffb833); color: white; }
+
+.mobile-nav-drawer__links {
+  display: flex; flex-direction: column;
+}
+.mobile-nav-drawer__links a {
+  padding: 12px 4px;
+  font-size: 14px; font-weight: 500;
+  color: var(--dark-text);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(26,54,93,0.06);
+}
+.mobile-nav-drawer__links a:last-child { border-bottom: none; }
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -825,12 +946,96 @@ body {
 .hero-stat__num { font-size: 24px; font-weight: 800; color: var(--accent-color); }
 .hero-stat__label { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px; }
 
-/* Responsive */
-@media (max-width: 900px) {
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ఇంతకుముందు ఇక్కడ ఒక్కటే @media (max-width: 900px) బ్లాక్ ఉండేది --
+   కేవలం రెండు గ్రిడ్ లేఅవుట్‌లని ఒక కాలమ్ గా మార్చేది, header/sub-header
+   padding కొంచెం తగ్గించేది. బటన్లు, హీరో టెక్స్ట్, టికర్/స్లయిడర్
+   వంటివి ఏవీ మొబైల్ కి తగినట్టుగా చిన్నవి కావు, మరియు మొబైల్ లో
+   నావిగేషన్ (Login/Register/Employer/Vendor/Search) కోసం ప్రత్యేక
+   మెనూ ఏమీ లేదు. ఇప్పుడు మూడు layered breakpoints:
+     1024px → grid stacking (టాబ్లెట్)
+     768px  → హెడర్ యాక్షన్స్ + సబ్-హెడర్ దాచిపెట్టి హ్యామ్‌బర్గర్
+              మెనూ చూపిస్తాం (ఇదే అసలైన "నావిగేషన్ మిస్సింగ్" ఫిక్స్)
+     480px  → బటన్లు/టెక్స్ట్/విడ్జెట్స్ ఫోన్ స్క్రీన్ కి తగినట్టుగా
+   ══════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1024px) {
   .main-container, .ecosystem-section { grid-template-columns: 1fr; }
-  .hero-banner__inner { flex-direction: column; }
-  .hero-banner__stats { width: 100%; justify-content: center; }
-  .header { padding: 0 16px; }
-  .sub-header { padding: 0 16px; }
-  .main-container { padding: 16px; }
+  .hero-banner__inner { flex-direction: column; align-items: flex-start; }
+  .hero-banner__stats { width: 100%; justify-content: center; flex-wrap: wrap; }
+}
+
+@media (max-width: 768px) {
+  .header { padding: 0 14px; }
+  .header__inner { height: 58px; }
+  .header__logo-icon { width: 34px; height: 34px; font-size: 15px; }
+  .header__brand { font-size: 18px; }
+
+  /* డెస్క్‌టాప్ హెడర్ యాక్షన్స్ + మొత్తం సబ్-హెడర్ (Employer/Vendor/
+     Search) దాచిపెట్టి, హ్యామ్‌బర్గర్ టోగుల్ చూపిస్తాం -- ఇవన్నీ ఇప్పుడు
+     Mobile Nav Drawer లోపల ఉన్నాయి (ఒకేసారి, పెద్ద టచ్-ఫ్రెండ్లీ
+     లిస్ట్ గా), header/sub-header లో నొక్కుకుపోయి కనిపించే బదులు. */
+  .header__actions { display: none; }
+  .header__menu-toggle { display: flex; }
+  .sub-header { display: none; }
+
+  .main-container { padding: 14px; gap: 16px; }
+  .ecosystem-section { padding: 0 14px 24px; gap: 16px; }
+
+  .hero-banner { padding: 26px 16px; }
+  .hero-banner__text h1 { font-size: 24px; }
+  .hero-banner__text p { font-size: 13.5px; }
+
+  .footer { padding: 22px 16px; }
+  .footer__inner { justify-content: center; text-align: center; }
+  .footer__links { justify-content: center; gap: 14px 20px; }
+}
+
+@media (max-width: 480px) {
+  body { font-size: 14px; }
+
+  /* బటన్లు: డెస్క్‌టాప్ padding (9-22px)/font (14px) ఫోన్ స్క్రీన్
+     మీద అనవసరంగా పెద్దగా కనిపించేవి -- తగ్గించాం, కానీ టచ్ టార్గెట్
+     (కనీసం ~40px ఎత్తు) ఇంకా సౌకర్యవంతంగానే ఉంటుంది. */
+  .btn { padding: 9px 16px; font-size: 13px; }
+
+  .hero-banner { padding: 22px 14px; }
+  .hero-banner__text h1 { font-size: 21px; }
+  .hero-banner__text p { font-size: 13px; margin-bottom: 16px; }
+  .hero-banner__actions { flex-direction: column; }
+  .hero-banner__actions .btn { width: 100%; padding: 12px 16px; font-size: 14px; }
+
+  .hero-banner__stats { gap: 10px; }
+  .hero-stat { padding: 10px 12px; flex: 1; min-width: 90px; }
+  .hero-stat__num { font-size: 19px; }
+  .hero-stat__label { font-size: 10px; }
+
+  .feed-section h2 { font-size: 15px; margin-bottom: 14px; }
+
+  .widget__header { padding: 12px 14px; font-size: 13px; }
+  .ticker-container { height: 220px; }
+  .ticker-item { padding: 10px 14px; }
+  .ticker-item__role { font-size: 12.5px; }
+  .ticker-item__company, .ticker-item__meta { font-size: 11px; }
+
+  .live-counter__number { font-size: 22px; }
+
+  .company-slider-widget { padding: 16px; }
+  .company-logo-chip { padding: 8px 14px; }
+  .company-logo-chip__icon { width: 28px; height: 28px; font-size: 11px; }
+  .company-logo-chip__name { font-size: 12px; }
+
+  .stats-panel { padding: 18px; }
+  .stat-item__icon { width: 38px; height: 38px; font-size: 17px; }
+  .stat-item__number { font-size: 19px; }
+
+  .footer__links { gap: 10px 16px; }
+  .footer__links a { font-size: 12.5px; }
+  .footer__brand-name { font-size: 14px; }
+
+  /* లాగిన్ ప్రాంప్ట్ మోడల్ -- చిన్న ఫోన్‌ల మీద padding తగ్గించాం. */
+  .login-prompt-modal { padding: 28px 22px; }
+  .login-prompt-modal__icon { font-size: 44px; }
+  .login-prompt-modal h3 { font-size: 19px; }
 }

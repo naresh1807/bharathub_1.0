@@ -1,0 +1,49 @@
+{% comment %}
+webmail/_compose_panel.html -- Gmail తరహా బాటమ్-రైట్ floating panel,
+డిఫాల్ట్ గా దాచి ఉంటుంది (style="display:none"), bhOpenCompose()/
+bhEditDraft() JS (mail.js) దీన్ని తెరుస్తుంది. ఒకటే ఫారమ్ మూడు
+పనులకీ వాడతాం (కొత్త మెయిల్ / రిప్లై / డ్రాఫ్ట్ ఎడిట్) -- webmail/
+views.py లోని ComposeSendView 'draft_id' ఖాళీగా ఉందా లేదా అని బట్టి
+కొత్తది క్రియేట్ చేయాలో, పాతదాన్ని అప్‌డేట్ చేయాలో నిర్ణయిస్తుంది.
+{% endcomment %}
+<div id="bhComposePanel" class="mail-compose-panel" style="display:none;"
+     data-delete-attachment-url-template="{% url 'webmail:delete_attachment' 0 %}">
+  <div class="mail-compose-panel__header">
+    <span id="bhComposeTitle">New Message</span>
+    <button type="button" onclick="bhCloseCompose()" class="mail-icon-btn" title="Close">✕</button>
+  </div>
+  <form method="post" action="{% url 'webmail:compose_send' %}" enctype="multipart/form-data" id="bhComposeForm">
+    {% csrf_token %}
+    <input type="hidden" name="draft_id" id="bhDraftId" value="">
+    <input type="text" name="to" id="bhComposeTo" class="mail-compose-panel__field"
+           placeholder="To ({{ mail_domain }} ID)" required>
+    <input type="text" name="subject" id="bhComposeSubject" class="mail-compose-panel__field" placeholder="Subject">
+    <textarea name="body" id="bhComposeBody" class="mail-compose-panel__body" placeholder="Write your message…"></textarea>
+
+    {% comment %} ఇప్పటికే ఈ draft కి attach అయిన ఫైళ్ళు (Edit Draft
+       తెరిచినప్పుడు bhEditDraft() ఇక్కడ నింపుతుంది) -- ఒక్కో దానికీ
+       "✕" నొక్కితే webmail:delete_attachment కి AJAX POST వెళ్ళి,
+       వెంటనే DB నుండి తీసేస్తుంది (ఇవి ఇప్పటికే సేవ్ అయ్యే ఉన్నాయి
+       కాబట్టి). {% endcomment %}
+    <div id="bhExistingAttachments" class="mail-attach-chips"></div>
+
+    {% comment %} కొత్తగా ఎంచుకున్న ఫైళ్ళు (ఇంకా అప్‌లోడ్ కాలేదు,
+       Send/Save Draft నొక్కినప్పుడే సర్వర్ కి వెళ్తాయి) -- "✕"
+       నొక్కితే బ్రౌజర్ FileList నుండి తీసేస్తాం (DataTransfer API,
+       mail.js చూడండి). {% endcomment %}
+    <div id="bhNewAttachments" class="mail-attach-chips"></div>
+
+    <div class="mail-compose-panel__attach-row">
+      <input type="file" name="attachments" id="bhAttachInput" multiple
+             accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+             style="display:none;" onchange="bhRenderNewAttachments()">
+      <button type="button" class="mail-icon-btn" title="Attach files" onclick="document.getElementById('bhAttachInput').click()">📎 Attach</button>
+      <span style="font-size:11px;color:var(--muted);">Max 10MB per file · Images, PDF, Office docs</span>
+    </div>
+
+    <div class="mail-compose-panel__actions">
+      <button type="submit" name="action" value="send" class="mail-btn mail-btn--primary">Send</button>
+      <button type="submit" name="action" value="draft" class="mail-btn mail-btn--outline">Save Draft</button>
+    </div>
+  </form>
+</div>

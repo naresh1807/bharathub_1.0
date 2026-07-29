@@ -1,0 +1,58 @@
+{% comment %}
+webmail/_email_detail.html -- ఒక్క మెయిల్ చదివే వ్యూ (?open=<id>).
+Reply నొక్కితే ఇదే పేజీలో compose panel తెరుచుకుని To/Subject
+ప్రీఫిల్ అవుతుంది (webmail/static/webmail/js/mail.js: bhOpenCompose).
+{% endcomment %}
+<div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;">
+  <a href="?folder={{ folder }}" class="mail-icon-btn" style="text-decoration:none;" title="Back to list">←</a>
+
+  <form method="post" action="{% url 'webmail:trash_email' open_email.pk %}" style="display:contents;">
+    {% csrf_token %}<input type="hidden" name="folder" value="{{ folder }}">
+    <button type="submit" class="mail-icon-btn" title="Move to Trash">🗑️</button>
+  </form>
+
+  {% if folder == "trash" %}
+    <form method="post" action="{% url 'webmail:restore_email' open_email.pk %}" style="display:contents;">
+      {% csrf_token %}
+      <button type="submit" class="mail-icon-btn" title="Restore">↩️</button>
+    </form>
+    <form method="post" action="{% url 'webmail:delete_forever' open_email.pk %}"
+          onsubmit="return confirm('Permanently delete this mail? This cannot be undone.');" style="display:contents;">
+      {% csrf_token %}
+      <button type="submit" class="mail-icon-btn" title="Delete forever">❌</button>
+    </form>
+  {% endif %}
+</div>
+
+<div class="mail-detail-body" style="flex:1;overflow-y:auto;padding:26px 30px;">
+  <h2 style="margin:0 0 18px;color:var(--primary);font-size:20px;">{{ open_email.subject|default:"(no subject)" }}</h2>
+
+  <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:22px;">
+    <div class="mail-avatar">{{ open_email.sender.address|slice:":1"|upper }}</div>
+    <div>
+      <div style="font-weight:700;font-size:14px;">{{ open_email.sender.address }}</div>
+      <div style="font-size:12px;color:var(--muted);">
+        to {{ open_email.recipient.address|default:"—" }} · {{ open_email.created_at|date:"M d, Y, g:i A" }}
+      </div>
+    </div>
+  </div>
+
+  <div style="white-space:pre-wrap;font-size:14px;line-height:1.65;color:#222;">{{ open_email.body }}</div>
+
+  {% if open_email.attachments.exists %}
+    <div class="mail-attach-chips" style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;">
+      {% for a in open_email.attachments.all %}
+        <a href="{{ a.file.url }}" download="{{ a.original_filename }}" class="mail-attach-chip mail-attach-chip--link" target="_blank" rel="noopener noreferrer">
+          📎 {{ a.original_filename }} <span class="mail-attach-chip__size">({{ a.human_size }})</span>
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if folder != "trash" and folder != "drafts" %}
+    <button type="button" class="mail-btn mail-btn--outline" style="margin-top:28px;"
+            onclick="bhOpenCompose('{{ open_email.sender.address|escapejs }}', 'Re: {{ open_email.subject|escapejs }}')">
+      ↩️ Reply
+    </button>
+  {% endif %}
+</div>

@@ -9,7 +9,7 @@
 
   {% if form.errors %}
   <div class="alert alert--error" style="display:block;margin-bottom:16px;">
-    ⚠️ వీడియో అప్‌లోడ్ లో లోపం — దిగువ ఫారమ్ చెక్ చేయండి.
+    ⚠️ Error uploading video — please check the form below.
   </div>
   {% endif %}
 
@@ -65,14 +65,14 @@
           <div class="vf-my-card__meta"><span>👍 {{ video.like_count }}</span><span>💬 {{ video.comment_count }}</span></div>
         </div>
         <div class="vf-my-card__actions">
-          <form method="post" action="{% url 'videos:delete_video' video.pk %}" onsubmit="return confirm('డిలీట్ చేయాలా?');">
+          <form method="post" action="{% url 'videos:delete_video' video.pk %}" onsubmit="return confirm('Delete this?');">
             {% csrf_token %}
             <button type="submit" class="vf-btn vf-btn--outline" style="width:100%;color:var(--vf-error);border-color:var(--vf-error);">🗑️ Delete</button>
           </form>
         </div>
       </div>
       {% empty %}
-      <div class="vf-empty" style="grid-column:1/-1;">ఇంకా మీరు ఏ వీడియో అప్‌లోడ్ చేయలేదు — పైన ఫారమ్ వాడి మొదటి వీడియో పోస్ట్ చేయండి.</div>
+      <div class="vf-empty" style="grid-column:1/-1;">You haven't uploaded any videos yet — use the form above to post your first one.</div>
       {% endfor %}
     </div>
   </div>

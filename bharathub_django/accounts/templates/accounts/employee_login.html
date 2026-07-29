@@ -68,7 +68,7 @@
           <label class="form__label">BharatHub ID / Email <span style="color:#dc2626">*</span></label>
           <div class="form__input-wrap">
             <span class="input-icon">👤</span>
-            <input type="text" class="form__input" id="loginId" name="login_id" placeholder="BH20261001 or email@example.com">
+            <input type="text" class="form__input" id="loginId" name="login_id" placeholder="BHEMP26070001234 or email@example.com">
           </div>
           <div class="input-hint">💡 Use the ID or email assigned after registration</div>
         </div>
@@ -280,6 +280,16 @@
   </div>
 
 </div>{% comment %} end card-wrapper {% endcomment %}
+
+{% comment %} PAGE FOOTER -- లాగిన్ చేసేటప్పుడు Terms/Privacy చదవడం
+   తప్పనిసరి కాదు (అది registration సమయంలో అవసరం), కానీ అందుబాటులో
+   ఉండాలి కాబట్టి పేజీ కింద footer లో పెట్టాం (reCAPTCHA బ్యాడ్జ్
+   కింద కాదు -- అది కేవలం విజువల్ reCAPTCHA లోగోకి సంబంధించినది). {% endcomment %}
+<footer class="page-footer">
+  <span>© 2026 BharatHub</span>
+  <a href="{% url 'home:privacy' %}" target="_blank">Privacy Policy</a>
+  <a href="{% url 'home:terms' %}" target="_blank">Terms of Service</a>
+</footer>
 
 {% comment %} NOTE: ఇంతకుముందు ఇక్కడ ఉన్న "2FA OTP MODAL (Login)" తీసివేశాం.
    అది doLogin() JS ఫంక్షన్ ద్వారా మాత్రమే తెరుచుకునేది, కానీ లాగిన్

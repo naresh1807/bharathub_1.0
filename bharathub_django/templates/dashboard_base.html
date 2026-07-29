@@ -34,6 +34,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   {% block page_css %}{% endblock %}
+
+  {% comment %} మొబైల్ నావిగేషన్ డ్రాయర్ (☰) -- మూడు dashboardలకీ, వాటి
+  సబ్-పేజీలకీ (Applications/Messages/Candidate Search/...) ఒకే చోట.
+  page_css తర్వాత లోడ్ చేయడం ఉద్దేశపూర్వకమే -- ఇందులోని మొబైల్
+  మీడియా-క్వెరీ రూల్స్ ప్రతి dashboard CSS లో ఉన్న పాత
+  ".sidebar{display:none}" రూల్ ని override చేయాలి. {% endcomment %}
+  <link rel="stylesheet" href="{% static 'shared/css/mobile_nav.css' %}">
 </head>
 <body>
 
@@ -43,6 +50,7 @@
    vendor_dashboard.html. {% endcomment %}
 {% block content %}{% endblock %}
 
+<script src="{% static 'shared/js/mobile_nav.js' %}"></script>
 {% block page_js %}{% endblock %}
 </body>
 </html>

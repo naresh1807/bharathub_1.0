@@ -1,0 +1,186 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% comment %}
+candidates/downloads_list.html -- "Downloads" నావ్ ఐటమ్ (candidate_dashboard.html
+సైడ్‌బార్) ఇక్కడికే లింక్ చేస్తుంది. ఐదు రకాల డాక్యుమెంట్ కార్డులు చూపిస్తాం:
+Resume ఎప్పుడూ అందుబాటులో ఉంటుంది. Appointment Letter -- accepted_hire_requests
+లో ఎంట్రీలు ఉంటేనే ఒక్కో దానికి ఒక కార్డు కనిపిస్తుంది. Joining/Relieving/
+Experience Letter మూడూ కలిసి -- ఒక Employment RELIEVED అయ్యాకే (candidate
+resign చేసి, employer accept చేశాక -- jobs/views.py: ResignationRespondView)
+ఆటోమేటిక్‌గా అందుబాటులోకి వస్తాయి (candidates/views.py: DownloadsListView
+లోని relieved_employments చూడండి). అప్పటిదాకా "Not available yet".
+{% endcomment %}
+
+{% block title %}BharatHub — Downloads{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'candidates/css/candidate_dashboard.css' %}">
+<style>
+  .downloads-wrap { max-width: 780px; margin: 32px auto; padding: 0 20px 60px; }
+  .back-link { font-size: 13px; color: var(--muted); text-decoration: none; }
+  .back-link:hover { color: var(--primary); }
+  .doc-card {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    padding: 16px 18px; margin-bottom: 12px;
+  }
+  .doc-card__icon {
+    width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+    background: rgba(26,54,93,0.08); display: flex; align-items: center;
+    justify-content: center; font-size: 20px;
+  }
+  .doc-card__title { font-weight: 700; font-size: 14px; color: var(--primary); }
+  .doc-card__desc { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .doc-card__unavailable {
+    font-size: 11.5px; color: var(--muted); background: #f3f4f6;
+    padding: 5px 10px; border-radius: 999px; white-space: nowrap;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include "candidates/_nav.html" with active="downloads" %}
+
+  <main class="main" style="padding:24px;">
+  <div class="downloads-wrap" style="margin:0;max-width:780px;">
+
+  <div class="page-header">
+    <div>
+      <h1>📥 Downloads</h1>
+      <p>View, print, or download your resume and employment documents</p>
+    </div>
+  </div>
+
+  {% comment %} ── Resume: always available, generated from real profile data ── {% endcomment %}
+  <div class="card doc-card">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="doc-card__icon">📄</div>
+      <div>
+        <div class="doc-card__title">Resume</div>
+        <div class="doc-card__desc">Auto-generated from your BharatHub profile</div>
+      </div>
+    </div>
+    <a href="{% url 'candidates:download_resume' %}" class="btn-sm btn-sm--primary" style="text-decoration:none;">View →</a>
+  </div>
+
+  {% comment %} ── Offer Letter(s): one card per Employment, generated the moment
+     an Employer marks this candidate as Hired (jobs/views.py: MarkAsHiredView) ── {% endcomment %}
+  {% for emp in all_employments %}
+    <div class="card doc-card">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div class="doc-card__icon">🎉</div>
+        <div>
+          <div class="doc-card__title">Offer Letter — {{ emp.employer.company_name }}</div>
+          <div class="doc-card__desc">
+            {{ emp.designation }} · joins {{ emp.joining_date|date:"M d, Y" }}
+            {% if emp.offer_status == "accepted" %} · <span style="color:var(--success);font-weight:600;">✅ Accepted</span>{% else %} · <span style="color:var(--accent);font-weight:600;">Pending Acceptance</span>{% endif %}
+          </div>
+        </div>
+      </div>
+      <a href="{% url 'candidates:download_offer_letter' emp.pk %}" class="btn-sm btn-sm--primary" style="text-decoration:none;">View →</a>
+    </div>
+  {% endfor %}
+
+  {% comment %} ── Appointment Letter(s): one card per ACCEPTED HireRequest that has a job attached ── {% endcomment %}
+  {% if accepted_hire_requests %}
+    {% for hr in accepted_hire_requests %}
+      <div class="card doc-card">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div class="doc-card__icon">📝</div>
+          <div>
+            <div class="doc-card__title">Appointment Letter — {{ hr.job.title }}</div>
+            <div class="doc-card__desc">{{ hr.employer.company_name }} · accepted {{ hr.updated_at|date:"M d, Y" }}</div>
+          </div>
+        </div>
+        <a href="{% url 'candidates:download_appointment_letter' hr.pk %}" class="btn-sm btn-sm--primary" style="text-decoration:none;">View →</a>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="card doc-card">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div class="doc-card__icon">📝</div>
+        <div>
+          <div class="doc-card__title">Appointment Letter</div>
+          <div class="doc-card__desc">Available once you accept a Hire Request for a specific job</div>
+        </div>
+      </div>
+      <span class="doc-card__unavailable">Not available yet</span>
+    </div>
+  {% endif %}
+
+  {% comment %} ── Joining / Relieving / Experience: unlock automatically, together,
+     once an Employment record is RELIEVED (candidate resigned and the employer
+     accepted it -- jobs/views.py: ResignationRespondView). Until then we're honest
+     that these need a real employment record instead of generating blank/fake letters. ── {% endcomment %}
+  {% if relieved_employments %}
+    {% for emp in relieved_employments %}
+      <div class="card doc-card">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div class="doc-card__icon">📄</div>
+          <div>
+            <div class="doc-card__title">Joining Letter — {{ emp.employer.company_name }}</div>
+            <div class="doc-card__desc">{{ emp.designation }} · joined {{ emp.joining_date|date:"M d, Y" }}</div>
+          </div>
+        </div>
+        <a href="{% url 'candidates:download_employment_letter' emp.pk 'joining' %}" class="btn-sm btn-sm--primary" style="text-decoration:none;">View →</a>
+      </div>
+      <div class="card doc-card">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div class="doc-card__icon">📄</div>
+          <div>
+            <div class="doc-card__title">Relieving Letter — {{ emp.employer.company_name }}</div>
+            <div class="doc-card__desc">{{ emp.designation }} · relieved {{ emp.relieving_date|date:"M d, Y" }}</div>
+          </div>
+        </div>
+        <a href="{% url 'candidates:download_employment_letter' emp.pk 'relieving' %}" class="btn-sm btn-sm--primary" style="text-decoration:none;">View →</a>
+      </div>
+      <div class="card doc-card">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div class="doc-card__icon">📄</div>
+          <div>
+            <div class="doc-card__title">Experience Letter — {{ emp.employer.company_name }}</div>
+            <div class="doc-card__desc">{{ emp.designation }} · {{ emp.joining_date|date:"M Y" }} – {{ emp.relieving_date|date:"M Y" }}</div>
+          </div>
+        </div>
+        <a href="{% url 'candidates:download_employment_letter' emp.pk 'experience' %}" class="btn-sm btn-sm--primary" style="text-decoration:none;">View →</a>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="card doc-card">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div class="doc-card__icon">📄</div>
+        <div>
+          <div class="doc-card__title">Joining Letter</div>
+          <div class="doc-card__desc">Unlocks automatically once you're hired and later relieved from a role</div>
+        </div>
+      </div>
+      <span class="doc-card__unavailable">Not available yet</span>
+    </div>
+
+    <div class="card doc-card">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div class="doc-card__icon">📄</div>
+        <div>
+          <div class="doc-card__title">Relieving Letter</div>
+          <div class="doc-card__desc">Unlocks automatically once your employer accepts your resignation</div>
+        </div>
+      </div>
+      <span class="doc-card__unavailable">Not available yet</span>
+    </div>
+
+    <div class="card doc-card">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div class="doc-card__icon">📄</div>
+        <div>
+          <div class="doc-card__title">Experience Letter</div>
+          <div class="doc-card__desc">Unlocks automatically once your employer accepts your resignation</div>
+        </div>
+      </div>
+      <span class="doc-card__unavailable">Not available yet</span>
+    </div>
+  {% endif %}
+
+  </div>
+  </main>
+</div>
+{% endblock %}

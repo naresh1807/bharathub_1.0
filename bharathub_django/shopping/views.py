@@ -36,7 +36,7 @@ class MyOrdersView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         employer_profile = getattr(self.request.user, "employer_profile", None)
         if employer_profile is None:
-            raise PermissionDenied("ఈ పేజీ Employer ఖాతాలకి మాత్రమే.")
+            raise PermissionDenied("This page is for Employer accounts only.")
         orders = list(
             employer_profile.orders.select_related("vendor").prefetch_related("items__product"),
         )
@@ -64,7 +64,7 @@ class VendorProductsView(LoginRequiredMixin, View):
     def get_vendor(self, request):
         vendor_profile = getattr(request.user, "vendor_profile", None)
         if vendor_profile is None:
-            raise PermissionDenied("ఈ పేజీ Vendor ఖాతాలకి మాత్రమే.")
+            raise PermissionDenied("This page is for Vendor accounts only.")
         return vendor_profile
 
     def get(self, request, *args, **kwargs):
@@ -83,7 +83,7 @@ class VendorProductsView(LoginRequiredMixin, View):
             product.vendor = vendor
             product.is_published = request.POST.get("action") != "draft"
             product.save()
-            messages.success(request, f"✅ '{product.name}' catalog కి జోడించబడింది.")
+            messages.success(request, f"✅ '{product.name}' added to catalog.")
             return redirect("shopping:vendor_products")
 
         context = {"products": vendor.products.all(), "form": form}
@@ -96,7 +96,7 @@ class VendorProductDeleteView(LoginRequiredMixin, View):
     def post(self, request, pk, *args, **kwargs):
         product = get_object_or_404(Product, pk=pk, vendor__user=request.user)
         product.delete()
-        messages.success(request, "🗑️ ప్రొడక్ట్ తొలగించబడింది.")
+        messages.success(request, "🗑️ Product deleted.")
         return redirect("shopping:vendor_products")
 
 
@@ -108,7 +108,7 @@ class VendorOrdersView(LoginRequiredMixin, View):
     def get_vendor(self, request):
         vendor_profile = getattr(request.user, "vendor_profile", None)
         if vendor_profile is None:
-            raise PermissionDenied("ఈ పేజీ Vendor ఖాతాలకి మాత్రమే.")
+            raise PermissionDenied("This page is for Vendor accounts only.")
         return vendor_profile
 
     def get(self, request, *args, **kwargs):
@@ -131,7 +131,7 @@ class VendorOrdersView(LoginRequiredMixin, View):
         if new_status in Order.Status.values:
             order.status = new_status
             order.save(update_fields=["status"])
-            messages.success(request, f"✅ Order #{order.pk} స్టేటస్ అప్‌డేట్ అయ్యింది.")
+            messages.success(request, f"✅ Order #{order.pk} status updated.")
         return redirect("shopping:vendor_orders")
 
 
@@ -160,16 +160,21 @@ class PlaceOrderView(LoginRequiredMixin, View):
     def get_employer(self, request):
         employer_profile = getattr(request.user, "employer_profile", None)
         if employer_profile is None:
-            raise PermissionDenied("ఈ పేజీ Employer ఖాతాలకి మాత్రమే.")
+            raise PermissionDenied("This page is for Employer accounts only.")
         return employer_profile
 
     def post(self, request, *args, **kwargs):
         employer = self.get_employer(request)
         product_ids = request.POST.getlist("product_id")
         raw_quantities = request.POST.getlist("qty")
+        delivery_address = request.POST.get("delivery_address", "").strip()
 
         if not product_ids:
-            messages.error(request, "⚠️ కార్ట్ ఖాళీగా ఉంది.")
+            messages.error(request, "⚠️ Your cart is empty.")
+            return redirect("shopping:shop")
+
+        if not delivery_address:
+            messages.error(request, "⚠️ Please enter a delivery address before placing the order.")
             return redirect("shopping:shop")
 
         # ఒకే వెండర్ కి చెందిన ఐటమ్స్ ని ఒక్కచోట గుర్తుపెట్టుకుంటాం (Order
@@ -196,14 +201,17 @@ class PlaceOrderView(LoginRequiredMixin, View):
             items_by_vendor.setdefault(product.vendor_id, []).append((product, qty))
 
         if not items_by_vendor:
-            messages.error(request, "⚠️ ఎంచుకున్న ప్రొడక్ట్‌లు ఇప్పుడు అందుబాటులో లేవు (స్టాక్ అయిపోయి ఉండొచ్చు).")
+            messages.error(request, "⚠️ The selected products are no longer available (may be out of stock).")
             return redirect("shopping:shop")
 
         created_orders = []
         with transaction.atomic():
             for product_qty_list in items_by_vendor.values():
                 vendor = product_qty_list[0][0].vendor
-                order = Order.objects.create(vendor=vendor, buyer=employer, total_amount=0)
+                order = Order.objects.create(
+                    vendor=vendor, buyer=employer, total_amount=0,
+                    delivery_address=delivery_address,
+                )
                 order_total = 0
                 for product, qty in product_qty_list:
                     OrderItem.objects.create(
@@ -220,16 +228,16 @@ class PlaceOrderView(LoginRequiredMixin, View):
         if len(created_orders) == 1:
             messages.success(
                 request,
-                f"🎉 Order #{created_orders[0].pk} విజయవంతంగా పెట్టబడింది! మొత్తం ₹{created_orders[0].total_amount}.",
+                f"🎉 Order #{created_orders[0].pk} placed successfully! Total ₹{created_orders[0].total_amount}.",
             )
         else:
             order_ids = ", ".join(f"#{o.pk}" for o in created_orders)
             messages.success(
                 request,
-                f"🎉 {len(created_orders)} వేర్వేరు వెండర్ల నుండి ఆర్డర్‌లు ({order_ids}) విజయవంతంగా పెట్టబడ్డాయి!",
+                f"🎉 {len(created_orders)} orders ({order_ids}) placed successfully across different vendors!",
             )
         if skipped_any:
-            messages.warning(request, "⚠️ కార్ట్ లో కొన్ని ఐటమ్స్ ఇప్పుడు అందుబాటులో లేక తీసివేయబడ్డాయి.")
+            messages.warning(request, "⚠️ Some items in your cart are no longer available and were removed.")
         return redirect("shopping:my_orders")
 
 
@@ -243,10 +251,10 @@ class EmployerOrderCancelView(LoginRequiredMixin, View):
     def post(self, request, pk, *args, **kwargs):
         employer_profile = getattr(request.user, "employer_profile", None)
         if employer_profile is None:
-            raise PermissionDenied("ఈ పేజీ Employer ఖాతాలకి మాత్రమే.")
+            raise PermissionDenied("This page is for Employer accounts only.")
         order = get_object_or_404(Order, pk=pk, buyer=employer_profile)
         if order.status != Order.Status.NEW:
-            messages.error(request, "⚠️ వెండర్ ఇప్పటికే ప్రాసెస్ చేయడం మొదలుపెట్టిన ఆర్డర్‌ని cancel చేయలేరు.")
+            messages.error(request, "⚠️ Cannot cancel an order the vendor has already started processing.")
             return redirect("shopping:my_orders")
         with transaction.atomic():
             for item in order.items.select_related("product"):
@@ -254,7 +262,7 @@ class EmployerOrderCancelView(LoginRequiredMixin, View):
                 item.product.save(update_fields=["stock"])
             order.status = Order.Status.CANCELLED
             order.save(update_fields=["status"])
-        messages.success(request, f"❌ Order #{order.pk} cancel చేయబడింది.")
+        messages.success(request, f"❌ Order #{order.pk} cancelled.")
         return redirect("shopping:my_orders")
 
 
@@ -267,11 +275,40 @@ class EmployerOrderMarkDeliveredView(LoginRequiredMixin, View):
     def post(self, request, pk, *args, **kwargs):
         employer_profile = getattr(request.user, "employer_profile", None)
         if employer_profile is None:
-            raise PermissionDenied("ఈ పేజీ Employer ఖాతాలకి మాత్రమే.")
+            raise PermissionDenied("This page is for Employer accounts only.")
         order = get_object_or_404(Order, pk=pk, buyer=employer_profile)
         if order.status in (Order.Status.DELIVERED, Order.Status.CANCELLED):
             return redirect("shopping:my_orders")
         order.status = Order.Status.DELIVERED
         order.save(update_fields=["status"])
-        messages.success(request, f"✅ Order #{order.pk} delivered గా గుర్తించబడింది.")
+        messages.success(request, f"✅ Order #{order.pk} marked as delivered.")
         return redirect("shopping:my_orders")
+
+
+class InvoiceView(LoginRequiredMixin, TemplateView):
+    """ఒక Order యొక్క B2B ఇన్వాయిస్ -- ఆర్డర్ ఐటమ్స్, డెలివరీ అడ్రస్,
+    Vendor మరియు Employer (buyer) ఇద్దరి GST నెంబర్లతో సహా. ఈ Order కి
+    సంబంధించిన Employer (buyer) లేదా Vendor (seller) -- ఈ ఇద్దరిలో
+    ఎవరైనా చూడొచ్చు (IDOR గార్డ్ కింద చూడండి), వేరే ఎవరూ చూడలేరు.
+    Employer 'My Orders' మరియు Vendor 'My Orders' రెండు పేజీల్లోనూ
+    ప్రతి ఆర్డర్ పక్కన '🧾 Invoice' లింక్ ఇక్కడికే వెళ్తుంది."""
+
+    template_name = "shopping/invoice.html"
+    login_url = "accounts:employer_login"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        order = get_object_or_404(
+            Order.objects.select_related("buyer__user", "vendor__user").prefetch_related("items__product"),
+            pk=kwargs["pk"],
+        )
+
+        buyer_profile = getattr(self.request.user, "employer_profile", None)
+        vendor_profile = getattr(self.request.user, "vendor_profile", None)
+        is_buyer = buyer_profile is not None and order.buyer_id == buyer_profile.pk
+        is_seller = vendor_profile is not None and order.vendor_id == vendor_profile.pk
+        if not (is_buyer or is_seller):
+            raise PermissionDenied("This invoice does not belong to you.")
+
+        context["order"] = order
+        return context

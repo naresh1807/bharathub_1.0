@@ -1,5 +1,6 @@
 {% extends "dashboard_base.html" %}
 {% load static %}
+{% load webmail_extras %}
 
 {% block title %}BharatHub — Candidate Dashboard{% endblock %}
 
@@ -11,8 +12,9 @@
 {% block content %}
 {% comment %} ══ TOP NAV ══ {% endcomment %}
 <nav class="topnav">
+  <button type="button" class="mobile-menu-btn" onclick="toggleMobileDrawer()" aria-label="Open menu">☰</button>
   <a href="{% url 'home:bharathub_home' %}" class="topnav__brand">
-    <div class="topnav__brand-icon">BH</div>
+    <div class="topnav__brand-icon">{% include "_logo_mark.html" %}</div>
     Bharat<span>Hub</span>
   </a>
 
@@ -25,6 +27,10 @@
     </a>
     <a class="topnav__tab" href="{% url 'messaging:candidate_messages' %}">
       💬 Messages{% if unread_message_count %}<span class="bh-badge" style="background:var(--error,#dc2626);color:#fff;font-size:10px;border-radius:9px;padding:1px 6px;margin-left:4px;">{{ unread_message_count }}</span>{% endif %}
+    </a>
+    {% unread_mail_count request.user as mail_badge %}
+    <a class="topnav__tab" href="{% url 'webmail:candidate_mail' %}">
+      📧 Mail{% if mail_badge %}<span class="bh-badge" style="background:var(--error,#dc2626);color:#fff;font-size:10px;border-radius:9px;padding:1px 6px;margin-left:4px;">{{ mail_badge }}</span>{% endif %}
     </a>
   </div>
 
@@ -97,15 +103,19 @@
         <span class="nav-icon">⚡</span> Chat
         {% if unread_message_count %}<span class="nav-badge">{{ unread_message_count }}</span>{% endif %}
       </a>
-      <button class="sidebar__nav-item" onclick="showSection('mail',null,this)">
+      <a class="sidebar__nav-item" href="{% url 'webmail:candidate_mail' %}" style="text-decoration:none;">
         <span class="nav-icon">📧</span> Mail
-      </button>
+        {% if mail_badge %}<span class="nav-badge">{{ mail_badge }}</span>{% endif %}
+      </a>
       <a class="sidebar__nav-item" href="{% url 'jobs:job_browse' %}">
         <span class="nav-icon">💼</span> Job Matches
       </a>
       <a class="sidebar__nav-item" href="{% url 'jobs:my_applications' %}">
         <span class="nav-icon">📊</span> My Applications
         {% if applications_total_count %}<span class="nav-badge">{{ applications_total_count }}</span>{% endif %}
+      </a>
+      <a class="sidebar__nav-item" href="{% url 'candidates:downloads_list' %}">
+        <span class="nav-icon">📥</span> Downloads
       </a>
       <form method="post" action="{% url 'accounts:logout' %}" style="display:contents;">
         {% csrf_token %}
@@ -152,7 +162,7 @@
           <div class="stat-card__num">{{ applications_total_count }}</div>
           <div class="stat-card__label">Jobs Applied</div>
         </a>
-        <div class="stat-card stat-card--accent" title="ప్రొఫైల్ వ్యూస్ ట్రాకింగ్ ఫీచర్ ఇంకా అందుబాటులో లేదు">
+        <div class="stat-card stat-card--accent" title="Profile views tracking feature is not yet available">
           <div class="stat-card__icon">👀</div>
           <div class="stat-card__num">—</div>
           <div class="stat-card__label">Profile Views</div>
@@ -171,7 +181,35 @@
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
 
-        {% comment %} RECOMMENDED JOBS PREVIEW {% endcomment %}
+        {% comment %} RECOMMENDED JOBS PREVIEW -- candidate.hire_status == HIRED అయితే
+        బదులుగా "Currently Employed" కార్డు + Resign బటన్ చూపిస్తాం (candidates/views.py:
+        CandidateDashboardView లోని current_employment context చూడండి). {% endcomment %}
+        {% if current_employment %}
+        <div class="card">
+          <div class="card__header">
+            <div class="card__title">💼 Currently Employed</div>
+          </div>
+          <div class="card__body" style="padding:16px;">
+            <div style="font-size:14px;font-weight:700;color:var(--primary);">{{ current_employment.designation }}</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-top:2px;">
+              {{ current_employment.employer.company_name }} · joined {{ current_employment.joining_date|date:"M d, Y" }}
+            </div>
+            {% if current_employment.status == "resignation_requested" %}
+              <p style="font-size:12.5px;color:var(--accent);font-weight:600;margin-top:14px;">
+                📤 Resignation request sent — awaiting employer approval.
+              </p>
+            {% else %}
+              <p style="font-size:12px;color:var(--muted);margin-top:14px;">
+                You won't see new job offers or Hire Requests while employed. Planning to move on?
+              </p>
+              <form method="post" action="{% url 'jobs:resign' %}" onsubmit="return confirm('Send a resignation request to {{ current_employment.employer.company_name }}?');" style="margin-top:8px;">
+                {% csrf_token %}
+                <button type="submit" class="btn-sm btn-sm--outline">Resign</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
         <div class="card">
           <div class="card__header">
             <div class="card__title">⭐ Recommended Jobs</div>
@@ -190,11 +228,12 @@
                 </div>
               </a>
               {% empty %}
-              <p style="color:var(--muted);font-size:13px;">ప్రస్తుతం మ్యాచింగ్ జాబులు లేవు — <a href="{% url 'jobs:job_browse' %}">అన్ని జాబులు చూడండి</a>.</p>
+              <p style="color:var(--muted);font-size:13px;">No matching jobs right now — <a href="{% url 'jobs:job_browse' %}">view all jobs</a>.</p>
               {% endfor %}
             </div>
           </div>
         </div>
+        {% endif %}
 
         {% comment %} 📨 HIRE REQUESTS RECEIVED -- ఏదైనా కంపెనీ (employer)
         ఈ candidate ని headhunting ద్వారా (ఏ job కి apply చేయకపోయినా)
@@ -251,11 +290,14 @@
                     {% if app.status == "new" %}Application submitted to {{ app.job.employer.company_name }}
                     {% else %}{{ app.job.employer.company_name }} — {{ app.get_status_display }}{% endif %}
                   </div>
+                  {% if app.status == "interview" and app.interview_datetime %}
+                  <div style="font-size:11px;color:#6366f1;font-weight:600;">📅 {{ app.interview_datetime|date:"d M Y, h:i A" }} · {{ app.get_interview_mode_display }}</div>
+                  {% endif %}
                   <div style="font-size:11px;color:var(--muted);">{{ app.updated_at|timesince }} ago</div>
                 </div>
               </div>
               {% empty %}
-              <p style="color:var(--muted);font-size:13px;">ఇంకా యాక్టివిటీ లేదు — <a href="{% url 'jobs:job_browse' %}">జాబులకి అప్లై చేయడం మొదలుపెట్టండి</a>.</p>
+              <p style="color:var(--muted);font-size:13px;">No activity yet — <a href="{% url 'jobs:job_browse' %}">start applying to jobs</a>.</p>
               {% endfor %}
             </div>
           </div>
@@ -263,151 +305,6 @@
 
       </div>
 
-    </div>
-
-    {% comment %} ══════════════ MAIL (GMAIL STYLE) ══════════════ {% endcomment %}
-    <div class="section-page" id="section-mail">
-      <div class="page-header">
-        <div><h1>📧 Mail</h1><p>Formal correspondence with employers</p></div>
-      </div>
-
-      <div class="gm-wrap">
-        {% comment %} LEFT: GMAIL SIDEBAR (desktop only) {% endcomment %}
-        <div class="gm-sidebar">
-          <button class="gm-compose-btn" onclick="openComposeModal()">✏️ Compose</button>
-          <div class="gm-folder active" onclick="switchFolder('inbox',this)"><span>📥</span> Inbox <span class="gm-folder__count" id="gmCountInbox">2</span></div>
-          <div class="gm-folder" onclick="switchFolder('starred',this)"><span>⭐</span> Starred <span class="gm-folder__count" id="gmCountStarred">0</span></div>
-          <div class="gm-folder" onclick="switchFolder('sent',this)"><span>📤</span> Sent</div>
-          <div class="gm-folder" onclick="switchFolder('drafts',this)"><span>📝</span> Drafts</div>
-          <div class="gm-folder" onclick="switchFolder('trash',this)"><span>🗑️</span> Trash <span class="gm-folder__count" id="gmCountTrash">0</span></div>
-        </div>
-
-        {% comment %} RIGHT: GMAIL MAIN {% endcomment %}
-        <div class="gm-main">
-          {% comment %} Mobile top bar {% endcomment %}
-          <div class="gm-mobile-topbar">
-            <button class="gm-mobile-topbar__menu" onclick="openMailDrawer()">☰</button>
-            <div class="gm-mobile-topbar__search"><span>🔍</span> Search in mail</div>
-            <div class="gm-mobile-avatar">RK</div>
-          </div>
-          {% comment %} Desktop toolbar {% endcomment %}
-          <div class="gm-toolbar gm-desktop-toolbar">
-            <div class="gm-search"><span>🔍</span><input type="text" placeholder="Search mail" oninput="searchMail(this.value)"></div>
-          </div>
-
-          {% comment %} EMAIL LIST (rendered by JS) {% endcomment %}
-          <div class="gm-list" id="mailContent"></div>
-
-          {% comment %} READING VIEW {% endcomment %}
-          <div class="gm-reading" id="gmReading">
-            <div class="gm-reading__toolbar">
-              <button class="gm-reading__back" onclick="backToInbox()">←</button>
-              <div class="gm-reading__toolbar-right">
-                <span style="cursor:pointer;" onclick="deleteCurrentReadingEmail()" title="Delete">🗑️</span>
-                <span title="Archive">📥</span>
-                <span title="Mark unread">✉️</span>
-              </div>
-            </div>
-            <div class="gm-reading__body">
-              <div class="gm-reading__subject" id="gmSubject">Offer Letter — Django Backend Engineer</div>
-              <div class="gm-reading__meta">
-                <div class="gm-reading__avatar" id="gmAvatar" style="background:#4a148c;">W</div>
-                <div style="flex:1;">
-                  <div class="gm-reading__from" id="gmFrom">Wipro HR</div>
-                  <div class="gm-reading__to">to me</div>
-                </div>
-                <div class="gm-reading__date" id="gmDate">Today, 2:30 PM</div>
-              </div>
-              <div class="gm-reading__content" id="gmContent">Dear Ravi,
-
-We are pleased to send you the offer letter for the Django Backend Engineer position. Please review the attached document carefully and confirm your acceptance at your earliest convenience.
-
-Looking forward to having you on our team.
-
-Best regards,
-Wipro HR Team</div>
-              <div class="gm-reading__attach" id="gmAttachArea">
-                <div class="gm-reading__attach-chip" style="cursor:pointer;" onclick="previewAttachment('OfferLetter.pdf','doc')">📎 OfferLetter.pdf</div>
-              </div>
-              <button class="gm-reply-btn" onclick="openComposeModal()">↩️ Reply</button>
-            </div>
-          </div>
-
-          {% comment %} FAB (mobile only) {% endcomment %}
-          <button class="gm-fab" onclick="openComposeModal()">✏️</button>
-        </div>
-      </div>
-    </div>
-
-    {% comment %} MOBILE FOLDER DRAWER {% endcomment %}
-    <div class="gm-mobile-drawer-overlay" id="gmDrawerOverlay" onclick="closeMailDrawer()"></div>
-    <div class="gm-mobile-drawer" id="gmDrawer">
-      <button class="gm-compose-btn" onclick="closeMailDrawer();openComposeModal();">✏️ Compose</button>
-      <div class="gm-folder active" id="gmDrawerInbox" onclick="switchFolder('inbox',this)"><span>📥</span> Inbox</div>
-      <div class="gm-folder" onclick="switchFolder('starred',this)"><span>⭐</span> Starred</div>
-      <div class="gm-folder" onclick="switchFolder('sent',this)"><span>📤</span> Sent</div>
-      <div class="gm-folder" onclick="switchFolder('drafts',this)"><span>📝</span> Drafts</div>
-      <div class="gm-folder" onclick="switchFolder('trash',this)"><span>🗑️</span> Trash</div>
-    </div>
-
-    {% comment %} ATTACHMENT PREVIEW MODAL {% endcomment %}
-    <div class="attach-preview-overlay" id="attachPreviewOverlay">
-      <div class="attach-preview-box">
-        <div class="attach-preview-box__hdr">
-          <span id="attachPreviewName">File.pdf</span>
-          <button onclick="closeAttachPreview()">✕</button>
-        </div>
-        <div class="attach-preview-box__body">
-          <div class="attach-preview-box__icon" id="attachPreviewIcon">📄</div>
-          <div id="attachPreviewImgWrap"></div>
-          <div style="color:#5f6368;font-size:13px;">Preview not available in demo mode</div>
-          <button class="attach-preview-box__download" onclick="alert('⬇️ Downloading...')">⬇️ Download</button>
-        </div>
-      </div>
-    </div>
-
-    {% comment %} GMAIL COMPOSE MODAL {% endcomment %}
-    <div class="gm-compose-overlay" id="gmComposeOverlay">
-      <div class="gm-compose-modal">
-        <div class="gm-compose__hdr">
-          <span>New Message</span>
-          <div><button onclick="closeComposeModal()">✕</button></div>
-        </div>
-        <div class="gm-compose__body">
-          <div class="gm-compose__field"><input type="text" placeholder="To" id="composeTo"></div>
-          <div class="gm-compose__field"><input type="text" placeholder="Subject" id="composeSubject"></div>
-          <textarea placeholder="Compose your message..." id="composeBody"></textarea>
-          <div class="gm-compose__attachlist" id="composeAttachList"></div>
-        </div>
-        <div class="gm-compose__ftr">
-          <button class="gm-compose__send" onclick="sendComposedMail()">Send</button>
-          <span style="cursor:pointer;" onclick="document.getElementById('composeFileInput').click()" title="Attach files">📎</span>
-        </div>
-      </div>
-    </div>
-    <input type="file" id="composeFileInput" accept="image/*,video/*,.pdf,.doc,.docx,.xlsx,.zip,.txt" multiple style="display:none" onchange="handleComposeFileSelect(this)">
-
-    {% comment %} NEW GROUP MODAL (WhatsApp-style) {% endcomment %}
-    <div class="wa-group-overlay" id="waGroupOverlay">
-      <div class="wa-group-modal">
-        <div class="wa-group-modal__hdr">
-          <button onclick="closeNewGroupModal()">✕</button>
-          <span>New Group</span>
-        </div>
-        <div class="wa-group-modal__body">
-          <div class="wa-group-modal__label">Add participants</div>
-          <div class="wa-group-contact-list" id="waGroupContactList">
-            <label class="wa-group-contact"><input type="checkbox" value="TCS HR" class="wa-group-checkbox"><div class="wa-avatar" style="width:36px;height:36px;font-size:12px;background:#0050b3;">TCS</div><span>TCS HR Team</span></label>
-            <label class="wa-group-contact"><input type="checkbox" value="Wipro HR" class="wa-group-checkbox"><div class="wa-avatar" style="width:36px;height:36px;font-size:12px;background:#4a148c;">WPR</div><span>Wipro HR</span></label>
-            <label class="wa-group-contact"><input type="checkbox" value="Infosys HR" class="wa-group-checkbox"><div class="wa-avatar" style="width:36px;height:36px;font-size:12px;background:#1b5e20;">INF</div><span>Infosys Recruiter</span></label>
-          </div>
-          <div class="wa-group-modal__label" style="margin-top:16px;">Group name</div>
-          <input type="text" class="wa-group-name-input" id="waGroupNameInput" placeholder="e.g. Placement Cell 2026" maxlength="40">
-        </div>
-        <div class="wa-group-modal__ftr">
-          <button class="wa-group-create-btn" onclick="createGroup()">✅ Create Group</button>
-        </div>
-      </div>
     </div>
 
     <div class="section-page" id="section-profile">
@@ -496,8 +393,8 @@ Wipro HR Team</div>
                 </div>
                 {% empty %}
                 <p style="font-size:13px;color:var(--muted);">
-                  ఇంకా విద్యార్హత వివరాలు జోడించలేదు —
-                  <a href="{% url 'candidates:candidate_profile_edit' %}">ఇక్కడ జోడించండి</a>.
+                  No education details added yet —
+                  <a href="{% url 'candidates:candidate_profile_edit' %}">add here</a>.
                 </p>
                 {% endfor %}
               </div>
@@ -541,28 +438,13 @@ Wipro HR Team</div>
   <a class="mobile-nav-item" id="mNav-chat" href="{% url 'messaging:candidate_messages' %}" style="text-decoration:none;">
     <span class="nav-icon">⚡</span>Chat
   </a>
-  <button class="mobile-nav-item" id="mNav-mail" onclick="mobileNav('mail',this)">
+  <a class="mobile-nav-item" id="mNav-mail" href="{% url 'webmail:candidate_mail' %}" style="text-decoration:none;">
     <span class="nav-icon">📧</span>Mail
+  </a>
+  <button class="mobile-nav-item mobile-nav-item--more" onclick="toggleMobileDrawer()">
+    <span class="nav-icon">☰</span>More
   </button>
 </nav>
-
-<div class="otp-overlay" id="otpOverlay">
-  <div class="otp-modal">
-    <div style="font-size:44px;margin-bottom:10px;">🔒</div>
-    <h3 style="font-size:18px;font-weight:800;color:var(--primary);margin-bottom:6px;">Security Verification</h3>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Verify email OTP for profile update</p>
-    <div class="otp-inputs-row">
-      <input type="text" class="otp-digit" maxlength="1" oninput="moveProfileOtp(this,1)">
-      <input type="text" class="otp-digit" maxlength="1" oninput="moveProfileOtp(this,2)">
-      <input type="text" class="otp-digit" maxlength="1" oninput="moveProfileOtp(this,3)">
-      <input type="text" class="otp-digit" maxlength="1" oninput="moveProfileOtp(this,4)">
-      <input type="text" class="otp-digit" maxlength="1" oninput="moveProfileOtp(this,5)">
-      <input type="text" class="otp-digit" maxlength="1" oninput="moveProfileOtp(this,6)">
-    </div>
-    <button class="btn-sm btn-sm--accent" style="width:100%;padding:11px;font-size:14px;border-radius:8px;" onclick="confirmProfileUpdate()">✅ Verify & Save</button>
-    <div style="margin-top:10px;font-size:12px;color:var(--muted);cursor:pointer;" onclick="document.getElementById('otpOverlay').classList.remove('open')">Cancel</div>
-  </div>
-</div>
 
 {% endblock %}
 

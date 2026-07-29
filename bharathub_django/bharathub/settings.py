@@ -83,8 +83,10 @@ INSTALLED_APPS = [
     "jobs",         # Job listings & the "Applications" inbox
     "vendor",       # Vendor registration, login & dashboard
     "shopping",     # B2B marketplace: product listings, cart, orders
-    "messaging",    # Chat & Mail between employer / vendor / candidate
+    "messaging",    # Chat between employer / vendor / candidate
+    "webmail",      # BharatHub Mail (@bharathub.com) -- Gmail-style inbox
     "videos",       # Facebook-style company culture video feed
+    "meetings",     # Zoom-style WebRTC video meeting rooms
 ]
 
 # ═══════════════════════════════════════════════════════════════════
@@ -123,6 +125,32 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "bharathub.urls"
 
+# ═══════════════════════════════════════════════════════════════════
+# ── LOGIN_URL: 404 బగ్ కి fix (accounts/login/ ఉనికిలో లేదు) ────────
+# ═══════════════════════════════════════════════════════════════════
+# BharatHub కి ఒక్క యూనివర్సల్ లాగిన్ పేజీ లేదు -- Employee/Employer/
+# Vendor ప్రతి రోల్ కీ దాని సొంత లాగిన్ పేజీ ఉంది (employee_login.html,
+# employer_login.html, vendor_login.html). అందుకే చాలా వరకు views లో
+# LoginRequiredMixin తో పాటు login_url ని ఆ రోల్ కి తగ్గట్టుగా
+# ఇప్పటికే సెట్ చేశాం (ఉదా: login_url = "accounts:employer_login").
+#
+# కానీ కొన్ని views (ఉదా: meetings/views.py: MeetingRoomView -- ఒక
+# మీటింగ్ లింక్ Employee/Employer/Vendor ముగ్గురిలో ఎవరైనా తెరవొచ్చు,
+# ఏ రోల్ దో ముందే తెలియదు) ఉద్దేశపూర్వకంగానే login_url సెట్ చేయవు.
+# అలాంటప్పుడు Django తన డిఫాల్ట్ LOGIN_URL కి ("/accounts/login/")
+# redirect చేస్తుంది -- కానీ ఈ ప్రాజెక్ట్ లో ఆ URL పేటర్న్ అస్సలు
+# లేదు కాబట్టి, లాగిన్ కాని యూజర్ ఒక మీటింగ్ లింక్ తెరిస్తే
+# "Page not found (404)" వచ్చేది (ఖచ్చితంగా ఇదే బగ్ స్క్రీన్‌షాట్
+# లో కనిపించింది).
+#
+# దీన్ని ఫిక్స్ చేయడానికి, ఏ నిర్దిష్ట రోల్ తెలియని ప్రతి చోటికీ ఒక
+# సురక్షితమైన, ఎప్పుడూ పనిచేసే ఫాల్‌బ్యాక్‌గా Home పేజీ నే
+# LOGIN_URL గా సెట్ చేస్తున్నాం -- Home పేజీలో ఇప్పటికే మూడు రోల్స్
+# కీ లాగిన్ లింక్‌లు (Login / "🏢 I am Employer" / "🛍️ I am Vendor")
+# స్పష్టంగా కనిపిస్తాయి, కాబట్టి యూజర్ తనకి సరైన లాగిన్ పేజీ ని
+# అక్కడి నుండి ఎంచుకోగలరు -- 404 బదులు.
+LOGIN_URL = "home:bharathub_home"
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -160,10 +188,21 @@ ASGI_APPLICATION = "bharathub.asgi.application"
 # injection. Never build raw SQL by string-concatenating user input;
 # if you ever need .raw() or connection.cursor(), always pass values
 # via the params=[...] argument, never f-strings/% formatting.
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#     }
+# }
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'bharathub',
+        'USER': 'root',
+        'PASSWORD': 'Thanvika@1816',
+        'HOST': 'localhost',
+        'PORT': '3306',
     }
 }
 
@@ -194,12 +233,12 @@ PASSWORD_HASHERS = [
 # ═══════════════════════════════════════════════════════════════════
 # ── LOGIN BRUTE-FORCE / LOCKOUT ─────────────────────────────────────
 # ═══════════════════════════════════════════════════════════════════
-# Django's login view has no built-in rate limit. For real traffic,
-# add "django-axes" or "django-ratelimit" (pip install + INSTALLED_APPS
-# + a few settings) to auto-lock an account/IP after N failed logins.
-# Left as a TODO here because it needs a 3rd-party package.
-# AXES_FAILURE_LIMIT = 5
-# AXES_COOLOFF_TIME = 1  # hours
+# ఇది ఇక TODO కాదు -- ఇప్పటికే మన సొంత lockout సిస్టమ్ బిల్డ్ చేశాం:
+# accounts/models.py::LoginSecurity (per-account, DB-persistent, 3
+# తప్పు ప్రయత్నాల తర్వాత must_reset_password=True) + accounts/
+# login_throttle.py (లాజిక్) + accounts/password_reset.py (అన్‌లాక్
+# చేసే ఏకైక మార్గం). ఏ 3rd-party package (django-axes వంటివి) అవసరం
+# లేదు.
 
 # ═══════════════════════════════════════════════════════════════════
 # ── SESSION & CSRF COOKIES ──────────────────────────────────────────
@@ -288,12 +327,36 @@ USE_TZ = True
 # ═══════════════════════════════════════════════════════════════════
 # ── STATIC FILES (CSS, JS extracted from the original HTML) ────────
 # ═══════════════════════════════════════════════════════════════════
-STATIC_URL = "static/"
+# BUG FIX: ఇది ఇంతకుముందు "static/" (leading slash లేకుండా) గా
+# ఉండేది -- అంటే {% static %} టాగ్ "static/messaging/css/chat.css"
+# లాంటి *relative* href నే జనరేట్ చేసేది, "/static/..." లాంటి
+# absolute path కాదు. Browser దీన్ని ప్రస్తుత పేజీ URL కి సాపేక్షంగా
+# (relative) రిజాల్వ్ చేస్తుంది -- root-level పేజీలకి (home/accounts/
+# candidates/employers/vendor -- bharathub/urls.py లో అన్నీ ""
+# prefix తోనే mount అయ్యాయి కాబట్టి) ఇది యాదృచ్ఛికంగా సరిగ్గానే
+# పనిచేసేది. కానీ URL prefix ఉన్న ఏ పేజీ అయినా (jobs/, shop/,
+# messages/, videos/ -- ఇవి bharathub/urls.py లో ఒక extra path
+# సెగ్మెంట్ తో mount అయ్యాయి) దీని వల్ల అన్ని CSS/JS రిక్వెస్ట్‌లూ
+# తప్పు URL కి వెళ్ళి (ఉదా: /messages/candidate_messages.html పేజీ
+# లో "static/..." అనేది "/messages/static/..." గా రిజాల్వ్ అయ్యేది,
+# "/static/..." కాదు) 404 వచ్చేవి -- పేజీ మొత్తం అన్‌స్టైల్డ్ గా
+# కనిపించేది (నావ్/సైడ్‌బార్‌తో సహా, ఎందుకంటే dashboard CSS ఫైల్ కూడా
+# అదే విధంగా 404 అయ్యేది). ఇప్పుడు లీడింగ్ స్లాష్ తో, ప్రతి {% static %}
+# href ఎప్పుడూ డొమైన్ రూట్ నుండే (పేజీ ఎంత లోతుగా nest అయినా సరే)
+# సరిగ్గా రిజాల్వ్ అవుతుంది.
+STATIC_URL = "/static/"
 # Each app ships its own static/<app_label>/css|js/*.* folder
 # (e.g. home/static/home/css/about.css, vendor/static/vendor/js/vendor_login.js).
 # These are auto-discovered because "django.contrib.staticfiles" scans
 # every installed app's static/ folder.
-STATICFILES_DIRS = []
+#
+# STATICFILES_DIRS below adds ONE extra folder for assets that don't
+# belong to a single app -- same idea as TEMPLATES->DIRS above for
+# dashboard_base.html. Right now it holds the mobile navigation
+# drawer (CSS+JS) shared by all three dashboards (candidate/employer/
+# vendor) and their standalone sub-pages (Applications, Messages,
+# Candidate Search, ...) that also extend dashboard_base.html.
+STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"  # used by `collectstatic` in production
 # In production, serve STATIC_ROOT via nginx/whitenoise with far-future
 # cache headers -- never let Django itself serve static files when
@@ -310,7 +373,11 @@ STATIC_ROOT = BASE_DIR / "staticfiles"  # used by `collectstatic` in production
 # అప్పుడే bharathub/urls.py లోని static() హెల్పర్ (DEBUG=True లో
 # మాత్రమే) సురక్షితంగా వీటిని సర్వ్ చేయగలదు. ప్రొడక్షన్ లో (DEBUG=False)
 # ఈ ఫైళ్ళని nginx/S3 వంటి వాటితో సర్వ్ చేయాలి, Django తో కాదు.
-MEDIA_URL = "media/"
+# BUG FIX: STATIC_URL లో పైన వివరించిన సమస్యే ఇక్కడ కూడా ఉండేది
+# ("media/" -- leading slash లేకుండా) -- ప్రొఫైల్ ఫోటోలు, రెజ్యూమ్‌లు,
+# చాట్ attachments వంటివి /messages/, /jobs/ వంటి nested పేజీలలో
+# తప్పు URL కి రిజాల్వ్ అయ్యేవి. లీడింగ్ స్లాష్ తో ఫిక్స్ చేశాం.
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -355,12 +422,49 @@ else:
 ASGI_APPLICATION = "bharathub.asgi.application"
 
 # REDIS_URL: ఒకటే env variable, Channels (presence/broadcast) మరియు
-# Celery (task queue) రెండూ వాడతాయి. Redis లేని లోకల్ dev మెషీన్
-# మీద కూడా సర్వర్ crash కాకుండా, InMemoryChannelLayer కి fallback
-# అవుతుంది -- కానీ ఆ మోడ్ లో ఒకే ప్రాసెస్‌లో మాత్రమే broadcast
-# పనిచేస్తుంది (multi-worker production కి REDIS_URL తప్పనిసరి).
+# Celery (task queue) రెండూ వాడతాయి.
 REDIS_URL = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379/0")
-_use_redis_channel_layer = os.environ.get("USE_REDIS_CHANNEL_LAYER", "True") == "True"
+
+
+def _redis_is_reachable(url, timeout=0.2):
+    """Redis నిజంగా రన్ అవుతుందో లేదో ఒక చిన్న (200ms) TCP కనెక్షన్
+    చెక్ తో చూస్తాం -- ఇది Django స్టార్టప్ టైమ్‌లో ఒక్కసారే
+    రన్ అవుతుంది (ప్రతి రిక్వెస్ట్ కి కాదు), కాబట్టి పెర్ఫార్మెన్స్
+    మీద ప్రభావం ఉండదు.
+
+    ⚠️ ఇదే ఫిక్స్ ఈ బగ్ కి: ఇంతకుముందు USE_REDIS_CHANNEL_LAYER అనే
+    env variable డిఫాల్ట్‌గా "True" గా ఉండేది -- అంటే Redis నిజంగా
+    రన్ అవుతుందో లేదో చెక్ చేయకుండానే, ఎప్పుడూ దాన్నే వాడటానికి
+    ప్రయత్నించేది. లోకల్ dev మెషీన్ (Redis ఇన్‌స్టాల్ చేయని Windows
+    మెషీన్ లాంటివి) మీద ఇది ప్రతిసారీ
+    "ConnectionError: Error 22 connecting to 127.0.0.1:6379" తో
+    పేజీ లోడ్ అవ్వకుండా క్రాష్ అయ్యేలా చేసేది (chat, meetings అన్నీ
+    దీనిపైనే ఆధారపడతాయి కాబట్టి). ఇప్పుడు నిజంగా Redis reachable
+    అయితేనే దాన్ని వాడతాం, లేకపోతే ఆటోమేటిక్‌గా (ఏ env variable
+    సెట్ చేయాల్సిన అవసరం లేకుండానే) InMemoryChannelLayer కి
+    సురక్షితంగా fallback అవుతాం."""
+    import socket
+    from urllib.parse import urlparse
+
+    try:
+        parsed = urlparse(url)
+        host = parsed.hostname or "127.0.0.1"
+        port = parsed.port or 6379
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
+# USE_REDIS_CHANNEL_LAYER env variable ఇచ్చి ఉంటే దాన్నే గౌరవిస్తాం
+# (ఉదా: production లో REDIS_URL సెట్ చేసినా, ఏదో కారణంగా బలవంతంగా
+# InMemory వాడాలంటే "False" పెట్టొచ్చు). ఏమీ ఇవ్వకపోతే, ఆటోమేటిక్‌గా
+# Redis reachable అవుతుందో లేదో చెక్ చేసి నిర్ణయిస్తాం.
+_use_redis_env = os.environ.get("USE_REDIS_CHANNEL_LAYER")
+if _use_redis_env is not None:
+    _use_redis_channel_layer = _use_redis_env == "True"
+else:
+    _use_redis_channel_layer = _redis_is_reachable(REDIS_URL)
 
 if _use_redis_channel_layer:
     CHANNEL_LAYERS = {
@@ -396,9 +500,16 @@ CELERY_TASK_ALWAYS_EAGER = os.environ.get("CELERY_TASK_ALWAYS_EAGER", "True") ==
 # "from" అడ్రస్. DEBUG=True లో నిజంగా ఈమెయిల్ పంపకుండా, కేవలం
 # కన్సోల్ లో ప్రింట్ చేస్తుంది (console backend) -- production లో
 # EMAIL_BACKEND ని SMTP కి మార్చాలి.
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "no-reply@bharathub.local")
-if DEBUG:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "no-reply@bharathub.local")
+# if DEBUG:
+#    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'bharathubproject1@gmail.com'
+EMAIL_HOST_PASSWORD = 'rjrdlzghnxwfiddo'
+DEFAULT_FROM_EMAIL = 'bharathubproject1@gmail.com'
 
 # ═══════════════════════════════════════════════════════════════════
 # ── WEB PUSH NOTIFICATIONS (browser desktop notifications) ─────────
@@ -422,3 +533,4 @@ if DEBUG:
 VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
 VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
 VAPID_CLAIM_EMAIL = os.environ.get("VAPID_CLAIM_EMAIL", "mailto:admin@bharathub.local")
+

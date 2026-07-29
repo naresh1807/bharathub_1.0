@@ -59,7 +59,7 @@ body { font-family: var(--font); background: var(--light-bg); color: #1a1a2e; fo
   width: 38px; height: 38px; border-radius: 10px;
   background: var(--accent); border: 2px solid rgba(255,255,255,0.25);
   display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 13px; color: white;
+  font-weight: 800; font-size: 13px; color: white; overflow: hidden;
 }
 .topnav__company-info { text-align: right; }
 .topnav__company-name { font-size: 13px; font-weight: 600; color: white; line-height: 1.2; }
@@ -85,7 +85,7 @@ body { font-family: var(--font); background: var(--light-bg); color: #1a1a2e; fo
   background: linear-gradient(135deg, var(--primary), #2a4a7f);
   margin: 0 auto 10px; display: flex; align-items: center;
   justify-content: center; font-size: 22px; font-weight: 800; color: white;
-  border: 3px solid var(--accent);
+  border: 3px solid var(--accent); overflow: hidden;
 }
 .sidebar__name { font-size: 14px; font-weight: 700; color: var(--primary); }
 .sidebar__id { font-size: 12px; color: var(--accent); font-weight: 600; margin-top: 2px; }
@@ -134,7 +134,13 @@ body { font-family: var(--font); background: var(--light-bg); color: #1a1a2e; fo
   background: white; border-radius: var(--radius);
   padding: 16px 18px; box-shadow: var(--shadow);
   border: 1px solid var(--border); transition: all 0.2s;
+  /* BUG FIX: కొన్ని stat-card లు <a href="..."> గా వాడబడతాయి
+     (applications/shortlisted/interview కార్డులు) -- ఇక్కడ
+     text-decoration:none లేకపోవడం వల్ల ఆ కార్డుల టెక్స్ట్ కి
+     బ్రౌజర్ డిఫాల్ట్ లింక్ అండర్‌లైన్ కనిపించేది. */
+  text-decoration: none; color: inherit; display: block;
 }
+.stat-card:visited { color: inherit; }
 .stat-card.clickable { cursor: pointer; }
 .stat-card.clickable:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--accent); }
 .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
@@ -223,6 +229,7 @@ body { font-family: var(--font); background: var(--light-bg); color: #1a1a2e; fo
 .badge--rejected { background: rgba(220,38,38,0.1); color: var(--error); }
 .badge--interview { background: rgba(26,54,93,0.1); color: var(--primary); }
 .badge--offered { background: rgba(22,163,74,0.12); color: var(--success); }
+.badge--hired { background: rgba(26,54,93,0.12); color: var(--primary); font-weight: 700; }
 
 /* CANDIDATE CARD */
 .candidate-card {

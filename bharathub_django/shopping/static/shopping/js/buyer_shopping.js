@@ -50,6 +50,11 @@ function notifyRestock(name) {
 
 // ── SHOPPING FUNCTIONS ─────────────────────────
 let cartItems = {}; // { productId: { productId, name, price, qty, icon } }
+// చెక్‌అవుట్ మోడల్ లో యూజర్ టైప్ చేసిన/ఎడిట్ చేసిన డెలివరీ అడ్రస్ --
+// cartChangeQty() లాంటివి మోడల్ ని re-render చేసినా విలువ పోకుండా
+// ఇక్కడ ఉంచుతాం. మొదటిసారి employer.address తో ప్రీఫిల్ అవుతుంది
+// (shop.html: window.BHARATHUB_EMPLOYER_ADDRESS).
+let deliveryAddressValue = window.BHARATHUB_EMPLOYER_ADDRESS || '';
 
 function changeQty(btn, delta) {
   const inp = btn.closest('div').querySelector('.qty-input');
@@ -168,6 +173,10 @@ function renderCartModal(modal) {
       ${items.length > 0 ? `
       <!-- Footer -->
       <div style="border-top:1px solid rgba(26,54,93,0.1);padding:16px 20px;">
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px;font-weight:700;color:var(--primary);display:block;margin-bottom:6px;">📍 Delivery Address</label>
+          <textarea id="deliveryAddressInput" oninput="deliveryAddressValue = this.value;" placeholder="Enter the full address this order should be delivered to..." style="width:100%;min-height:56px;border:1.5px solid rgba(26,54,93,0.15);border-radius:8px;padding:8px 10px;font-family:var(--font);font-size:12.5px;resize:vertical;">${deliveryAddressValue}</textarea>
+        </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <span style="font-size:13px;color:var(--muted);">Items (${totalItems})</span>
           <span style="font-size:13px;font-weight:600;">₹${total.toLocaleString('en-IN')}</span>
@@ -210,8 +219,13 @@ function proceedCheckout() {
   const items = Object.values(cartItems);
   if (items.length === 0) { alert('⚠️ Cart is empty! Add products.'); return; }
 
+  const addressInput = document.getElementById('deliveryAddressInput');
+  const address = (addressInput ? addressInput.value : deliveryAddressValue).trim();
+  if (!address) { alert('⚠️ Please enter a delivery address before placing the order.'); return; }
+  deliveryAddressValue = address;
+
   const form = document.getElementById('checkoutForm');
-  if (!form) { alert('⚠️ Checkout form కనబడలేదు, పేజీ రిఫ్రెష్ చేసి మళ్ళీ ప్రయత్నించండి.'); return; }
+  if (!form) { alert('⚠️ Checkout form not found, please refresh the page and try again.'); return; }
 
   // ఇంతకుముందు ఇక్కడ ఒక ఫేక్ ఆర్డర్ ఐడి తయారుచేసి in-memory array లో
   // పెట్టేవాళ్ళం -- ఇప్పుడు కార్ట్ లోని ప్రతి ఐటమ్ కీ ఒక product_id +
@@ -219,7 +233,14 @@ function proceedCheckout() {
   // చేస్తాం. ఇది shopping:place_order కి POST అవుతుంది (real Order/
   // OrderItem create + stock decrement), తర్వాత My Orders పేజీ కి
   // రీడైరెక్ట్ అవుతుంది.
-  form.querySelectorAll('input[name="product_id"], input[name="qty"]').forEach(el => el.remove());
+  form.querySelectorAll('input[name="product_id"], input[name="qty"], input[name="delivery_address"]').forEach(el => el.remove());
+
+  const addressField = document.createElement('input');
+  addressField.type = 'hidden';
+  addressField.name = 'delivery_address';
+  addressField.value = address;
+  form.appendChild(addressField);
+
   items.forEach(item => {
     const pidInput = document.createElement('input');
     pidInput.type = 'hidden';

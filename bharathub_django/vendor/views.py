@@ -75,9 +75,9 @@ class VendorLoginView(TemplateView):
             if resolved_user is not None and is_locked_out(resolved_user):
                 messages.error(
                     request,
-                    "🔒 ఈ ఖాతాలో 3 సార్లు తప్పు పాస్‌వర్డ్ ఎంటర్ చేశారు. భద్రత కోసం "
-                    "ఖాతా లాక్ చేయబడింది -- కింద ఉన్న 'Forgot Password?' తో గుర్తింపు "
-                    "నిర్ధారించుకుని, కొత్త పాస్‌వర్డ్ సెట్ చేసుకుంటేనే మళ్ళీ లాగిన్ అవ్వగలరు.",
+                    "🔒 You have entered the wrong password 3 times on this account. For security, "
+                    "the account has been locked -- please verify your identity via 'Forgot Password?' "
+                    "below and set a new password to log in again.",
                 )
                 return self.render_to_response(self.get_context_data(form=form))
 
@@ -98,9 +98,9 @@ class VendorLoginView(TemplateView):
                 if attempts >= MAX_FAILED_ATTEMPTS:
                     messages.error(
                         request,
-                        "🔒 3 సార్లు తప్పు పాస్‌వర్డ్ ఎంటర్ చేశారు. మీ ఖాతా భద్రత "
-                        "కోసం లాక్ చేయబడింది. దయచేసి కింద ఉన్న 'Forgot Password?' "
-                        "లింక్ తో మీ పాస్‌వర్డ్ ని తప్పనిసరిగా రీసెట్ చేసుకోండి.",
+                        "🔒 You entered the wrong password 3 times. For your account's security, "
+                        "it has been locked. Please use the 'Forgot Password?' link "
+                        "below to reset your password.",
                     )
                 else:
                     messages.error(request, "⚠️ Invalid credentials. Please try again.")
@@ -262,6 +262,6 @@ class VendorProfileCompletionView(View):
             profile = form.save(commit=False)
             profile.profile_completed = True
             profile.save()
-            messages.success(request, "✅ మీ ప్రొఫైల్ పూర్తయింది! ఇక పూర్తి యాక్సెస్ మీది.")
+            messages.success(request, "✅ Your profile is complete! You now have full access.")
             return redirect("vendor:vendor_dashboard")
         return render(request, self.template_name, {"form": form})

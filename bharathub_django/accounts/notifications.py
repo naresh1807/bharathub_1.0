@@ -19,14 +19,14 @@ def send_bharathub_id_email(user, id_value: str, id_label: str) -> None:
     if not user.email:
         return  # ఇమెయిల్ లేని యూజర్ కి పంపడానికి ఏమీ లేదు
     send_mail(
-        subject=f"🎉 BharatHub — మీ {id_label} ఇదిగో",
+        subject=f"🎉 BharatHub — Here is your {id_label}",
         message=(
-            f"నమస్కారం {user.first_name or ''},\n\n"
-            "BharatHub లో మీ రిజిస్ట్రేషన్ విజయవంతమైంది!\n\n"
-            f"మీ {id_label}: {id_value}\n\n"
-            "లాగిన్ చేయడానికి ఈ ID ని లేదా మీ రిజిస్టర్డ్ ఇమెయిల్ ని "
-            "వాడొచ్చు (పాస్‌వర్డ్ తో పాటు). దీన్ని భద్రంగా దాచుకోండి --\n"
-            "ఇది మీ ఖాతా గుర్తింపు.\n\n"
+            f"Hello {user.first_name or ''},\n\n"
+            "Your registration on BharatHub was successful!\n\n"
+            f"Your {id_label}: {id_value}\n\n"
+            "You can use this ID or your registered email to log in "
+            "(along with your password). Please keep it safe --\n"
+            "this is your account identifier.\n\n"
             "— Team BharatHub"
         ),
         from_email=settings.DEFAULT_FROM_EMAIL,

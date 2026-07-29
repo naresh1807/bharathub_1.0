@@ -103,7 +103,7 @@
           <label class="form-label">Vendor ID / Registered Email <span style="color:var(--error)">*</span></label>
           <div class="input-wrap">
             <span class="input-icon">🛍️</span>
-            <input type="text" class="form-input" id="loginId" name="login_id" placeholder="VND20261001 or business@email.com">
+            <input type="text" class="form-input" id="loginId" name="login_id" placeholder="BHVND26070001234 or business@email.com">
           </div>
           <div class="form-hint">💡 Use the Vendor ID or registered email assigned after registration</div>
         </div>
@@ -216,7 +216,7 @@
             <label class="form-label">Vendor ID <span style="color:var(--error)">*</span></label>
             <div class="input-wrap">
               <span class="input-icon">🆔</span>
-              <input type="text" class="form-input" id="fVndId" placeholder="VND20261001">
+              <input type="text" class="form-input" id="fVndId" placeholder="BHVND26070001234">
             </div>
           </div>
 
@@ -300,6 +300,16 @@
 
   </div>{% comment %} end login-card {% endcomment %}
 </div>{% comment %} end login-layout {% endcomment %}
+
+{% comment %} PAGE FOOTER -- లాగిన్ చేసేటప్పుడు Terms/Privacy చదవడం
+   తప్పనిసరి కాదు (అది registration సమయంలో అవసరం), కానీ అందుబాటులో
+   ఉండాలి కాబట్టి పేజీ కింద footer లో పెట్టాం (reCAPTCHA బ్యాడ్జ్
+   కింద కాదు -- అది కేవలం విజువల్ reCAPTCHA లోగోకి సంబంధించినది). {% endcomment %}
+<footer class="page-footer">
+  <span>© 2026 BharatHub</span>
+  <a href="{% url 'home:privacy' %}" target="_blank">Privacy Policy</a>
+  <a href="{% url 'home:terms' %}" target="_blank">Terms of Service</a>
+</footer>
 
 {% comment %} NOTE: ఇంతకుముందు ఇక్కడ ఉన్న "LOGIN OTP MODAL" తీసివేశాం -- అది
    doLogin() ద్వారా మాత్రమే తెరుచుకునేది, లాగిన్ బటన్ ఇప్పుడు నిజమైన

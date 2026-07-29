@@ -1,0 +1,214 @@
+/* ══════════════════════════════════════════════════════════════════
+   webmail/mail.css
+   మూడు రోల్స్ (candidate/employer/vendor) లోనూ ఒకే మెయిల్ UI --
+   candidate_dashboard.css / employer_dashboard.css / vendor_dashboard.css
+   మూడూ :root లో --primary/--accent/--border/--muted/--success/--error
+   ఒకే విలువలతో define చేస్తాయి (ఇప్పటికే వెరిఫై చేశాం), కాబట్టి ఇక్కడ
+   వాటినే వాడొచ్చు -- కానీ .btn/.btn-sm లాంటి రోల్-స్పెసిఫిక్ బటన్
+   క్లాసుల మీద ఆధారపడం (అవి ఒక్క రోల్ CSS లోనే ఉన్నాయి, మూడింటిలో
+   కాదు) -- ఈ ఫైల్ తనకి కావాల్సినవి అన్నీ తనలోనే స్వయం సమృద్ధిగా
+   define చేసుకుంటుంది.
+   ══════════════════════════════════════════════════════════════════ */
+
+.mail-layout { display: flex; height: 74vh; min-height: 460px; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: #fff; }
+
+.mail-layout { display: flex; height: 74vh; min-height: 460px; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: #fff; position: relative; }
+
+/* ── SIDEBAR: Compose + folder list ── */
+.mail-sidebar {
+  width: 210px; flex-shrink: 0; border-right: 1px solid var(--border);
+  background: #fafbfc; padding: 18px 10px; display: flex; flex-direction: column;
+}
+.mail-hamburger {
+  display: none; background: none; border: none; font-size: 20px; cursor: pointer;
+  color: var(--primary); padding: 4px 8px;
+}
+.mail-drawer-overlay { display: none; }
+
+.mail-compose-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 12px 16px; border-radius: 24px; border: none;
+  background: var(--accent); color: white; font-weight: 700; font-size: 13px;
+  cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: transform 0.15s, opacity 0.15s;
+}
+.mail-compose-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.mail-folder {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 9px 14px; border-radius: 0 20px 20px 0; text-decoration: none;
+  color: #333; font-size: 13px; font-weight: 600; transition: background 0.15s;
+}
+.mail-folder:hover { background: rgba(0,0,0,0.05); }
+.mail-folder.active { background: rgba(26,54,93,0.1); color: var(--primary); }
+.mail-folder__badge {
+  background: var(--primary); color: white; font-size: 11px; font-weight: 700;
+  padding: 1px 7px; border-radius: 10px;
+}
+
+/* ── EMAIL LIST ── */
+.mail-row {
+  display: flex; align-items: center; gap: 14px; padding: 11px 20px;
+  border-bottom: 1px solid var(--border); cursor: pointer; font-size: 13px;
+  color: #333; transition: background 0.15s, box-shadow 0.15s;
+}
+.mail-row:hover { background: #f5f6f8; box-shadow: inset 0 0 0 1px var(--border); }
+.mail-row--unread { font-weight: 700; background: #fff; }
+.mail-row--unread .mail-row__snippet { font-weight: 400; }
+
+.mail-star {
+  background: none; border: none; cursor: pointer; font-size: 15px;
+  opacity: 0.25; filter: grayscale(1); flex-shrink: 0; padding: 2px;
+}
+.mail-star--on { opacity: 1; filter: none; }
+
+.mail-avatar--sm { width: 32px; height: 32px; font-size: 13px; flex-shrink: 0; }
+
+.mail-row__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mail-row__line1 { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.mail-row__line2 { display: flex; align-items: center; gap: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.mail-row__from { width: 190px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-row__subject { flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 55%; }
+.mail-row__snippet { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-row__date { flex-shrink: 0; color: var(--muted); font-size: 12px; }
+
+/* Gmail తరహా floating action button (పెన్సిల్ compose) -- మొబైల్ లో
+   మాత్రమే కనిపిస్తుంది (media query చూడండి), డెస్క్‌టాప్ లో సైడ్‌బార్
+   compose బటన్ ఇప్పటికే ఉంది కాబట్టి దాక్కుని ఉంటుంది. */
+.mail-fab {
+  display: none; position: fixed; bottom: 24px; right: 20px; width: 56px; height: 56px;
+  border-radius: 50%; background: var(--accent); color: white; border: none;
+  font-size: 22px; box-shadow: 0 4px 14px rgba(0,0,0,0.3); cursor: pointer; z-index: 400;
+  align-items: center; justify-content: center;
+}
+
+/* ── EMAIL DETAIL ── */
+.mail-icon-btn {
+  background: none; border: none; cursor: pointer; font-size: 15px;
+  padding: 6px 8px; border-radius: 6px; color: var(--muted); transition: background 0.15s;
+}
+.mail-icon-btn:hover { background: rgba(0,0,0,0.06); color: #222; }
+
+.mail-avatar {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  background: var(--primary); color: white; font-weight: 800; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.mail-btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 9px 20px;
+  border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer;
+  border: none; text-decoration: none; transition: opacity 0.15s, transform 0.15s;
+}
+.mail-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+.mail-btn--primary { background: var(--accent); color: white; }
+.mail-btn--outline { background: none; border: 1.5px solid var(--border); color: var(--muted); }
+
+/* ── ONBOARDING (first-time "choose your Mail ID") ── */
+.mail-suggestion {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+  border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer;
+  font-size: 14px; font-weight: 600; transition: border-color 0.15s, background 0.15s;
+}
+.mail-suggestion:has(input:checked) { border-color: var(--accent); background: rgba(255,153,0,0.06); }
+.mail-suggestion input { accent-color: var(--accent); }
+
+/* ── COMPOSE PANEL (Gmail-style bottom-right floating box) ── */
+.mail-compose-panel {
+  position: fixed; bottom: 0; right: 24px; width: 400px; max-width: calc(100vw - 32px);
+  background: #fff; border: 1px solid var(--border); border-bottom: none;
+  border-radius: 10px 10px 0 0; box-shadow: 0 6px 28px rgba(0,0,0,0.22);
+  z-index: 500; flex-direction: column;
+}
+.mail-compose-panel__header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; background: var(--primary); color: white;
+  border-radius: 10px 10px 0 0; font-size: 13px; font-weight: 700;
+}
+.mail-compose-panel__header .mail-icon-btn { color: white; }
+.mail-compose-panel__field {
+  width: 100%; box-sizing: border-box; border: none; border-bottom: 1px solid var(--border);
+  padding: 10px 16px; font-size: 13px; font-family: inherit;
+}
+.mail-compose-panel__field:focus { outline: none; border-bottom-color: var(--accent); }
+.mail-compose-panel__body {
+  width: 100%; box-sizing: border-box; border: none; padding: 14px 16px;
+  font-size: 13px; font-family: inherit; resize: none; height: 180px;
+}
+.mail-compose-panel__body:focus { outline: none; }
+
+/* ── ATTACHMENTS ── */
+.mail-attach-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 0 16px;
+}
+.mail-attach-chips:not(:empty) { padding-bottom: 8px; }
+.mail-attach-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--light-bg, #f5f6f8); border: 1px solid var(--border);
+  border-radius: 16px; padding: 5px 10px;
+  font-size: 12px; color: var(--dark-text, #222);
+  max-width: 100%;
+}
+.mail-attach-chip__size { color: var(--muted); font-size: 11px; }
+.mail-attach-chip__remove {
+  border: none; background: none; cursor: pointer;
+  color: var(--muted); font-size: 12px; padding: 0 0 0 2px; line-height: 1;
+}
+.mail-attach-chip__remove:hover { color: var(--error); }
+.mail-attach-chip--link {
+  text-decoration: none; color: var(--primary); font-weight: 600;
+  cursor: pointer;
+}
+.mail-attach-chip--link:hover { background: rgba(26,54,93,0.06); }
+
+.mail-compose-panel__attach-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 16px; border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.mail-compose-panel__actions { display: flex; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--border); }
+
+@media (max-width: 720px) {
+  /* పేజీ మొత్తం (topnav కింద) ఒక్క ఫుల్-స్క్రీన్ యాప్ లా అనిపించేలా --
+     కార్డ్ బోర్డర్/రేడియస్/ఖాళీ స్థలం తీసేసి, viewport నిండా వాడతాం. */
+  .mail-layout {
+    border: none; border-radius: 0; height: calc(100vh - 130px); min-height: 0;
+    margin: 0 -16px; width: calc(100% + 32px);
+  }
+
+  .mail-hamburger { display: inline-block; }
+
+  /* ఫోల్డర్ జాబితా ఇక horizontal స్క్రోల్ బార్ కాదు -- Gmail app లో
+     ఎలా ఉంటుందో అలాగే, ఎడమవైపు నుండి స్లైడ్ అయ్యి వచ్చే ఫుల్-హైట్
+     డ్రాయర్ (హ్యామ్‌బర్గర్ నొక్కితేనే కనిపిస్తుంది). */
+  .mail-sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 78vw; max-width: 300px;
+    z-index: 600; transform: translateX(-100%); transition: transform 0.25s ease;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.15); padding-top: 60px;
+  }
+  .mail-sidebar--open { transform: translateX(0); }
+
+  .mail-drawer-overlay {
+    display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    z-index: 550; opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+  }
+  .mail-drawer-overlay--visible { opacity: 1; pointer-events: auto; }
+
+  /* కంపోజ్ పిల్ బటన్ (సైడ్‌బార్ లోపల) బదులు కుడి-కింద తేలే FAB --
+     ఇన్‌బాక్స్ లిస్ట్ మీద ఉన్నప్పుడు మాత్రమే (ఒక మెయిల్ తెరిచి ఉంటే
+     దాక్కుంటుంది, template లోని {% if not open_email %} చూడండి). */
+  .mail-fab { display: flex; }
+
+  /* లిస్ట్ రో: Gmail తరహా avatar + రెండు లైన్లు (from+date, subject+snippet) */
+  .mail-row { padding: 12px 14px; gap: 10px; }
+  .mail-row__from { width: auto; max-width: 55%; font-weight: 700; }
+  .mail-row__subject { max-width: 70%; }
+
+  /* మెయిల్ చదివే వ్యూ: పూర్తి స్క్రీన్, తక్కువ padding */
+  .mail-detail-body { padding: 16px !important; }
+
+  .mail-compose-panel { right: 0; left: 0; bottom: 0; width: 100%; max-width: none; border-radius: 0; height: 100%; }
+  .mail-compose-panel__body { height: calc(100vh - 220px); }
+}

@@ -1,4 +1,5 @@
 {% load static %}
+{% load webmail_extras %}
 {% load employer_extras %}
 {% comment %} ══════════════════════════════════════════════════════════════════
    employers/_nav.html
@@ -23,11 +24,12 @@
 
    `active` tells this partial which single item to highlight as the
    current page/tab. Recognised values: home, postjob, videos,
-   applications, chat, mail, shopping, myorders.
+   applications, chat, mail, shopping, myorders, meetings.
    ══════════════════════════════════════════════════════════════════ {% endcomment %}
 <nav class="topnav">
+  <button type="button" class="mobile-menu-btn" onclick="toggleMobileDrawer()" aria-label="Open menu">☰</button>
   <a href="{% url 'home:bharathub_home' %}" class="topnav__brand">
-    <div class="topnav__brand-icon">BH</div>
+    <div class="topnav__brand-icon">{% include "_logo_mark.html" %}</div>
     Bharat<span>Hub</span>
   </a>
 
@@ -76,13 +78,27 @@
       <a class="topnav__tab" href="{% url 'employers:candidate_search' %}">🔍 Search Candidates</a>
     {% endif %}
 
-    {% comment %} Chat + Mail used to be two separate JS tabs; they are now ONE
-       real page (messaging app) covering both, since they share a
-       lot of UI/behaviour (contacts list, the "new group" modal). {% endcomment %}
+    {% pending_resignations_count request.user as pending_resignations %}
+    {% if active == "hires" %}
+      <span class="topnav__tab active">👥 My Hires{% if pending_resignations %} <span class="badge">{{ pending_resignations }}</span>{% endif %}</span>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'jobs:my_hires' %}">👥 My Hires{% if pending_resignations %} <span class="badge">{{ pending_resignations }}</span>{% endif %}</a>
+    {% endif %}
+
+    {% comment %} Chat and Mail are two separate real pages -- Chat (messaging
+       app) for quick back-and-forth, Mail (webmail app, @bharathub.com
+       addresses) for a Gmail-style inbox. {% endcomment %}
     {% if active == "messages" %}
       <span class="topnav__tab active">💬 Messages{% if unread_message_count %} <span class="badge">{{ unread_message_count }}</span>{% endif %}</span>
     {% else %}
       <a class="topnav__tab" href="{% url 'messaging:employer_messages' %}">💬 Messages{% if unread_message_count %} <span class="badge">{{ unread_message_count }}</span>{% endif %}</a>
+    {% endif %}
+
+    {% unread_mail_count request.user as mail_badge %}
+    {% if active == "mail" %}
+      <span class="topnav__tab active">📧 Mail{% if mail_badge %} <span class="badge">{{ mail_badge }}</span>{% endif %}</span>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'webmail:employer_mail' %}">📧 Mail{% if mail_badge %} <span class="badge">{{ mail_badge }}</span>{% endif %}</a>
     {% endif %}
 
     {% if active == "shopping" %}
@@ -96,11 +112,23 @@
     {% else %}
       <a class="topnav__tab" href="{% url 'shopping:my_orders' %}">📦 My Orders{% if pending_orders_count %} <span class="badge">{{ pending_orders_count }}</span>{% endif %}</a>
     {% endif %}
+
+    {% if active == "meetings" %}
+      <span class="topnav__tab active">🎥 Meetings</span>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'meetings:meeting_list' %}">🎥 Meetings</a>
+    {% endif %}
   </div>
 
   <div class="topnav__right">
     <div class="topnav__company">
-      <div class="topnav__logo">{{ request.user.employer_profile.company_name|slice:":2"|upper }}</div>
+      <div class="topnav__logo">
+        {% if request.user.employer_profile.company_logo %}
+          <img src="{{ request.user.employer_profile.company_logo.url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+        {% else %}
+          {{ request.user.employer_profile.company_name|slice:":2"|upper }}
+        {% endif %}
+      </div>
       <div class="topnav__company-info">
         <div class="topnav__company-name">{{ request.user.employer_profile.company_name }}</div>
         <div class="topnav__company-id">{{ request.user.employer_profile.employer_id }}</div>
@@ -115,7 +143,27 @@
   {% comment %} SIDEBAR {% endcomment %}
   <aside class="sidebar">
     <div class="sidebar__company">
-      <div class="sidebar__logo">{{ request.user.employer_profile.company_name|slice:":2"|upper }}</div>
+      <div style="position:relative;width:64px;margin:0 auto 10px;">
+        <div class="sidebar__logo" style="margin:0;">
+          {% if request.user.employer_profile.company_logo %}
+            <img src="{{ request.user.employer_profile.company_logo.url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:11px;">
+          {% else %}
+            {{ request.user.employer_profile.company_name|slice:":2"|upper }}
+          {% endif %}
+        </div>
+        {% comment %} "🏢 Company Logo" అప్‌లోడ్ -- పెన్సిల్ చిహ్నం నొక్కగానే
+           ఫైల్ పికర్ తెరుచుకుంటుంది, ఫైల్ ఎంచుకోగానే (ప్రత్యేకంగా
+           "Upload" బటన్ నొక్కాల్సిన అవసరం లేకుండా) ఆటోమేటిక్‌గా
+           సబ్మిట్ అవుతుంది -- candidates/_profile-edit-btn తరహాలోనే,
+           కానీ ఎంప్లాయర్ కి ప్రత్యేక సెట్టింగ్స్ పేజీ లేదు కాబట్టి
+           ఇక్కడే (నావ్ లో ఎప్పుడూ కనిపించే చోటే) ఉంచాం. {% endcomment %}
+        <label for="companyLogoInput" title="Change Company Logo"
+               style="position:absolute;bottom:-2px;right:-2px;width:24px;height:24px;border-radius:50%;background:var(--primary);color:white;border:2px solid white;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;text-decoration:none;">✏️</label>
+        <form method="post" action="{% url 'employers:update_company_logo' %}" enctype="multipart/form-data" style="display:none;">
+          {% csrf_token %}
+          <input type="file" name="company_logo" id="companyLogoInput" accept="image/*" onchange="this.form.submit()">
+        </form>
+      </div>
       <div class="sidebar__name">{{ request.user.employer_profile.company_name }}</div>
       <div class="sidebar__id">{{ request.user.employer_profile.employer_id }}</div>
       {% if request.user.employer_profile.industry_sector %}
@@ -155,11 +203,23 @@
         <a class="sidebar__item" href="{% url 'employers:candidate_search' %}"><span class="nav-icon">🔍</span> Search Candidates</a>
       {% endif %}
 
+      {% if active == "hires" %}
+        <span class="sidebar__item active"><span class="nav-icon">👥</span> My Hires{% if pending_resignations %} <span class="nav-badge">{{ pending_resignations }}</span>{% endif %}</span>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'jobs:my_hires' %}"><span class="nav-icon">👥</span> My Hires{% if pending_resignations %} <span class="nav-badge">{{ pending_resignations }}</span>{% endif %}</a>
+      {% endif %}
+
 
       {% if active == "messages" %}
         <span class="sidebar__item active"><span class="nav-icon">💬</span> Messages{% if unread_message_count %} <span class="nav-badge">{{ unread_message_count }}</span>{% endif %}</span>
       {% else %}
         <a class="sidebar__item" href="{% url 'messaging:employer_messages' %}"><span class="nav-icon">💬</span> Messages{% if unread_message_count %} <span class="nav-badge">{{ unread_message_count }}</span>{% endif %}</a>
+      {% endif %}
+
+      {% if active == "mail" %}
+        <span class="sidebar__item active"><span class="nav-icon">📧</span> Mail{% if mail_badge %} <span class="nav-badge">{{ mail_badge }}</span>{% endif %}</span>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'webmail:employer_mail' %}"><span class="nav-icon">📧</span> Mail{% if mail_badge %} <span class="nav-badge">{{ mail_badge }}</span>{% endif %}</a>
       {% endif %}
 
       <div class="sidebar__section-label">B2B</div>
@@ -174,6 +234,12 @@
         <span class="sidebar__item active"><span class="nav-icon">📦</span> My Orders{% if pending_orders_count %} <span class="nav-badge" style="background:var(--accent);color:white;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:auto;">{{ pending_orders_count }}</span>{% endif %}</span>
       {% else %}
         <a class="sidebar__item" href="{% url 'shopping:my_orders' %}"><span class="nav-icon">📦</span> My Orders{% if pending_orders_count %} <span class="nav-badge" style="background:var(--accent);color:white;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:auto;">{{ pending_orders_count }}</span>{% endif %}</a>
+      {% endif %}
+
+      {% if active == "meetings" %}
+        <span class="sidebar__item active"><span class="nav-icon">🎥</span> Meetings</span>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'meetings:meeting_list' %}"><span class="nav-icon">🎥</span> Meetings</a>
       {% endif %}
 
       <div class="sidebar__section-label">Account</div>

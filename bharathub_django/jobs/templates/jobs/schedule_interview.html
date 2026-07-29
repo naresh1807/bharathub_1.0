@@ -1,0 +1,98 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   jobs/schedule_interview.html
+   Employer picks date/time/mode/location for a candidate's interview.
+   Saving this ALSO sets JobApplication.status = "interview" (see
+   jobs/views.py::ScheduleInterviewView) so there's one save, one
+   source of truth -- the candidate's "My Applications" page reads
+   these exact same fields. ══════════════════════════════════════ {% endcomment %}
+
+{% block title %}BharatHub — Schedule Interview{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'employers/css/employer_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include "employers/_nav.html" with active="applications" %}
+
+<main class="main" style="padding:24px;max-width:560px;margin:0 auto;">
+  <a href="{% url 'jobs:applications' %}" style="font-size:13px;color:var(--muted);text-decoration:none;">← Back to Applications</a>
+
+  <div class="card" style="margin-top:12px;">
+    <div class="card__header">
+      <div class="card__title">📅 Schedule Interview</div>
+    </div>
+    <div class="card__body" style="padding:20px;">
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+        <div class="candidate-avatar">{{ application.candidate.user.first_name|default:application.candidate.user.username|slice:":2"|upper }}</div>
+        <div>
+          <div style="font-weight:700;color:var(--primary);">{{ application.candidate.user.get_full_name|default:application.candidate.user.username }}</div>
+          <div style="font-size:12px;color:var(--muted);">Applied for: {{ application.job.title }}</div>
+        </div>
+      </div>
+
+      {% if form.non_field_errors %}
+      <div style="background:#fee2e2;color:#991b1b;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px;">⚠️ {% for error in form.non_field_errors %}{{ error }}{% endfor %}</div>
+      {% endif %}
+
+      <form method="post">
+        {% csrf_token %}
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">{{ form.interview_datetime.label }} <span style="color:var(--error);">*</span></label>
+          {{ form.interview_datetime }}
+          {% if form.interview_datetime.errors %}<div style="color:var(--error);font-size:12px;margin-top:4px;">⚠️ {{ form.interview_datetime.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">{{ form.interview_mode.label }} <span style="color:var(--error);">*</span></label>
+          {{ form.interview_mode }}
+          {% if form.interview_mode.errors %}<div style="color:var(--error);font-size:12px;margin-top:4px;">⚠️ {{ form.interview_mode.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">{{ form.interview_location.label }} <span style="color:var(--error);">*</span></label>
+          {{ form.interview_location }}
+          <div id="video-location-hint" style="display:none;font-size:12px;color:var(--muted);margin-top:4px;">
+            🎥 A BharatHub Meet video call link will be created automatically when you save — no need to type one.
+          </div>
+          {% if form.interview_location.errors %}<div style="color:var(--error);font-size:12px;margin-top:4px;">⚠️ {{ form.interview_location.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">{{ form.interview_notes.label }}</label>
+          {{ form.interview_notes }}
+        </div>
+
+        <button type="submit" class="btn btn--accent" style="width:100%;padding:11px;">✅ Confirm & Notify Candidate</button>
+      </form>
+    </div>
+  </div>
+</main>
+
+<script>
+  (function () {
+    var modeSelect = document.getElementById("{{ form.interview_mode.id_for_label }}");
+    var locationInput = document.getElementById("{{ form.interview_location.id_for_label }}");
+    var hint = document.getElementById("video-location-hint");
+    if (!modeSelect || !locationInput || !hint) return;
+
+    function syncForVideoMode() {
+      var isVideo = modeSelect.value === "video";
+      hint.style.display = isVideo ? "block" : "none";
+      if (isVideo) {
+        if (!locationInput.value) locationInput.value = "🎥 BharatHub Meet (auto-generated on save)";
+        locationInput.readOnly = true;
+      } else {
+        if (locationInput.value === "🎥 BharatHub Meet (auto-generated on save)") locationInput.value = "";
+        locationInput.readOnly = false;
+      }
+    }
+    modeSelect.addEventListener("change", syncForVideoMode);
+    syncForVideoMode();
+  })();
+</script>
+{% endblock %}

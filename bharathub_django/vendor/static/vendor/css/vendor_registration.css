@@ -23,25 +23,25 @@ body {
 }
 
 /* ── HEADER ── */
-.header {
+.top-bar {
   background: var(--primary);
   padding: 0 40px; height: 60px;
   display: flex; align-items: center; justify-content: space-between;
   box-shadow: 0 2px 12px rgba(0,0,0,0.15);
   position: sticky; top: 0; z-index: 100;
 }
-.header__logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-.header__logo-icon {
+.top-bar__logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.top-bar__icon {
   width: 36px; height: 36px; background: var(--accent);
   border-radius: 8px; display: flex; align-items: center;
   justify-content: center; font-weight: 800; font-size: 14px; color: white;
 }
-.header__brand { font-size: 20px; font-weight: 700; color: white; }
-.header__brand span { color: var(--accent); }
-.header__links { display: flex; gap: 16px; align-items: center; }
-.header__links a { color: rgba(255,255,255,0.7); font-size: 13px; text-decoration: none; transition: color 0.2s; }
-.header__links a:hover { color: var(--accent); }
-.header__links .btn-reg {
+.top-bar__name { font-size: 20px; font-weight: 700; color: white; }
+.top-bar__name span { color: var(--accent); }
+.top-bar__links { display: flex; gap: 16px; align-items: center; }
+.top-bar__links a { color: rgba(255,255,255,0.7); font-size: 13px; text-decoration: none; transition: color 0.2s; }
+.top-bar__links a:hover { color: var(--accent); }
+.top-bar__links .btn-reg {
   background: var(--accent); color: white; padding: 7px 16px;
   border-radius: 7px; font-size: 13px; font-weight: 600;
 }
@@ -226,6 +226,8 @@ body {
   .form-card__body { padding: 18px; }
   .page-wrapper { padding: 0 12px 40px; }
   .otp-input { width: 42px; height: 48px; font-size: 18px; }
+  .top-bar { padding: 0 16px; }
+  .top-bar__name { font-size: 17px; }
 }
 
 /* ── TERMS MODAL ─────────────────────────────── */

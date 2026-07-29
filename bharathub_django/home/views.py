@@ -120,7 +120,7 @@ class ContactView(TemplateView):
             form.save()
             messages.success(
                 request,
-                "✅ ధన్యవాదాలు! మీ సందేశం అందింది. 24 గంటల్లో స్పందిస్తాం.",
+                "✅ Thank you! Your message has been received. We will respond within 24 hours.",
             )
             # POST తర్వాత redirect చేయడం (PRG pattern: Post/Redirect/Get)
             # -- యూజర్ పేజీ రిఫ్రెష్ చేసినా మెసేజ్ మళ్ళీ డూప్లికేట్‌గా

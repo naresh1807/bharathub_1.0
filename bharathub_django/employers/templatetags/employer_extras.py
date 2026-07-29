@@ -47,3 +47,17 @@ def pending_orders_count(user):
     return Order.objects.filter(
         buyer=employer_profile, status__in=[Order.Status.NEW, Order.Status.PROCESSING],
     ).count()
+
+
+@register.simple_tag
+def pending_resignations_count(user):
+    """"My Hires" నావ్ బ్యాడ్జ్ -- ఈ employer దగ్గర resignation
+    accept/decline కోసం ఎదురుచూస్తున్న Employment రికార్డుల సంఖ్య."""
+    employer_profile = getattr(user, "employer_profile", None)
+    if employer_profile is None:
+        return 0
+    from jobs.models import Employment
+    return Employment.objects.filter(
+        application__job__employer=employer_profile,
+        status=Employment.Status.RESIGNATION_REQUESTED,
+    ).count()

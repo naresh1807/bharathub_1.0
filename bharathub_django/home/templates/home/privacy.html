@@ -12,7 +12,7 @@
 <body>
 <header class="header">
   <a href="{% url 'home:bharathub_home' %}" class="logo">
-    <div class="logo-icon">BH</div>
+    <div class="logo-icon">{% include "_logo_mark.html" %}</div>
     <span class="logo-name">Bharat<span>Hub</span></span>
   </a>
   <a href="{% url 'home:bharathub_home' %}" class="back-btn">← Back to Home</a>
@@ -91,7 +91,7 @@
       <li>All data transmission is secured with TLS/SSL encryption (HTTPS)</li>
       <li>Two-Factor Authentication (2FA) via OTP is mandatory for all account logins</li>
       <li>Regular security audits and vulnerability assessments</li>
-      <li>Unique BharatHub IDs (BH2026XXXX) add an additional layer of identity verification</li>
+      <li>Unique BharatHub IDs (e.g. BHEMP26070001234) add an additional layer of identity verification</li>
       <li>Session management with HttpOnly cookies to prevent XSS attacks</li>
     </ul>
     <p>Despite these measures, no internet transmission is 100% secure. We encourage you to use strong passwords and never share your OTP with anyone.</p>

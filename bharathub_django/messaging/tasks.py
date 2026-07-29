@@ -46,10 +46,10 @@ def send_new_message_email(self, recipient_id, conversation_id, message_id):
 
     try:
         send_mail(
-            subject=f"BharatHub — కొత్త సందేశం {sender_name} నుండి",
+            subject=f"BharatHub — New message from {sender_name}",
             message=(
                 f"{sender_name}: {preview}\n\n"
-                f"జవాబు ఇవ్వడానికి BharatHub లో లాగిన్ అవ్వండి."
+                f"Log in to BharatHub to reply."
             ),
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[recipient.email],

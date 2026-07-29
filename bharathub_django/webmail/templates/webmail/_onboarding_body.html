@@ -1,0 +1,43 @@
+{% comment %}
+webmail/_onboarding_body.html
+మొదటిసారి Mail యాప్ తెరిచినప్పుడు -- MailAddress లేని యూజర్ కి
+కనిపిస్తుంది (webmail/views.py -- context["needs_setup"]). 3
+సజెషన్స్ లో ఒకటి ఎంచుకోవచ్చు, లేదా కిందున్న ఇన్‌పుట్ లో సొంత ID
+టైప్ చేయొచ్చు. సబ్మిట్ అయ్యాక webmail:mail_setup (POST-only) దీన్ని
+క్రియేట్ చేసి, ఇదే పేజీ కి తిరిగి redirect చేస్తుంది -- అప్పుడు
+needs_setup అనేది False అవుతుంది కాబట్టి నేరుగా ఇన్‌బాక్స్ కనిపిస్తుంది.
+{% endcomment %}
+<div style="max-width:520px;margin:40px auto;text-align:center;">
+  <div style="font-size:44px;">📧</div>
+  <h2 style="margin:10px 0 6px;color:var(--primary);">Welcome to BharatHub Mail</h2>
+  <p style="color:var(--muted);font-size:14px;margin-bottom:26px;">
+    Choose your Mail ID to get started — every address ends with <strong>@{{ mail_domain }}</strong>
+  </p>
+
+  <form method="post" action="{% url 'webmail:mail_setup' %}">
+    {% csrf_token %}
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
+      {% for s in suggestions %}
+        <label class="mail-suggestion">
+          <input type="radio" name="chosen_suggestion" value="{{ s }}" {% if forloop.first %}checked{% endif %}
+                 onclick="document.getElementById('customLocalPart').value='';">
+          <span>{{ s }}@{{ mail_domain }}</span>
+        </label>
+      {% endfor %}
+    </div>
+
+    <div style="text-align:left;margin-bottom:22px;">
+      <label style="font-size:12px;font-weight:700;color:var(--muted);">Or create your own</label>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:6px;border:1.5px solid var(--border);border-radius:10px;padding:4px 4px 4px 14px;">
+        <input type="text" name="custom_local_part" id="customLocalPart" placeholder="yourname"
+               style="flex:1;border:none;outline:none;font-size:14px;padding:8px 0;font-family:inherit;"
+               oninput="document.querySelectorAll('input[name=chosen_suggestion]').forEach(function(r){r.checked=false;});">
+        <span style="color:var(--muted);font-size:13px;padding-right:8px;">@{{ mail_domain }}</span>
+      </div>
+    </div>
+
+    <button type="submit" class="mail-btn mail-btn--primary" style="width:100%;justify-content:center;">
+      Create my BharatHub Mail →
+    </button>
+  </form>
+</div>

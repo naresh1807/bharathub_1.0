@@ -39,5 +39,5 @@ class VideoUploadForm(forms.ModelForm):
         # ఇప్పుడు నిజంగా ఇక్కడ అమలు (enforce) అవుతుంది.
         max_bytes = 500 * 1024 * 1024
         if video_file.size > max_bytes:
-            raise forms.ValidationError("వీడియో సైజ్ 500MB కన్నా తక్కువ ఉండాలి.")
+            raise forms.ValidationError("Video size must be under 500MB.")
         return video_file

@@ -21,12 +21,12 @@ Employer dashboard లోని కొత్త "Search Candidates" పేజీ
     <div class="page-header">
       <div>
         <h1>🔍 Search Candidates</h1>
-        <p>BharatHub ID లేదా మొబైల్ నెంబర్ తో ఒక candidate ని వెతకండి -- వాళ్ళు ఏ job కి apply చేయకపోయినా, నేరుగా సంప్రదించి Hire Request పంపొచ్చు.</p>
+        <p>Search for a candidate by BharatHub ID or mobile number -- you can contact them directly and send a Hire Request even if they haven't applied to any job.</p>
       </div>
     </div>
 
     <form method="get" style="display:flex;gap:10px;max-width:520px;margin-bottom:24px;">
-      <input type="text" name="q" value="{{ query }}" placeholder="ఉదా: BH20260001 లేదా 9000000001"
+      <input type="text" name="q" value="{{ query }}" placeholder="e.g. BHEMP26070001234"
              style="flex:1;padding:12px 16px;border-radius:10px;border:1px solid var(--border);font-family:var(--font);font-size:14px;">
       <button type="submit" class="btn btn--primary">🔍 Search</button>
     </form>
@@ -51,7 +51,7 @@ Employer dashboard లోని కొత్త "Search Candidates" పేజీ
         </div>
       {% else %}
         <div style="padding:24px;color:#888;">
-          "{{ query }}" కి సరిపోలిన candidate కనిపించలేదు. BharatHub ID (BH...) లేదా పూర్తి 10-అంకెల మొబైల్ నెంబర్ కరెక్ట్‌గా ఎంటర్ చేశారో చెక్ చేయండి.
+          No candidate found matching "{{ query }}". Please check that you entered a correct BharatHub ID (BH...) or the full 10-digit mobile number.
         </div>
       {% endif %}
     {% endif %}

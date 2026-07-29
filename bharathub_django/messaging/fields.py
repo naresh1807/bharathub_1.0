@@ -55,7 +55,7 @@ class EncryptedTextField(models.TextField):
         except InvalidToken:
             # తప్పు/పాత encryption key తో decrypt కావట్లేదంటే అర్థం --
             # ఖచ్చితంగా క్రాష్ కాకుండా, ఇది కనిపించేలా చూపిస్తాం.
-            return "⚠️ [ఈ సందేశం డీక్రిప్ట్ చేయలేకపోయాం]"
+            return "⚠️ [Could not decrypt this message]"
 
     def to_python(self, value):
         return value

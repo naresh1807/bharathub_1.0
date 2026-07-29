@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ meeting.title }} — BharatHub Meet</title>
+  <link rel="stylesheet" href="{% static 'meetings/css/room.css' %}">
+</head>
+<body>
+
+  {% comment %} ══════════════════════════════════════════════════════════
+     PRE-JOIN SCREEN -- Zoom/Meet తరహాలోనే, నేరుగా రూమ్ లోకి ఎవరినీ
+     పంపం. ముందు కెమెరా/మైక్ ప్రివ్యూ చూపించి, "Join" నొక్కాకే మీటింగ్
+     WebSocket కనెక్ట్ అవుతుంది -- అప్పటివరకూ ఎవరూ మీ వీడియో/ఆడియో ని
+     చూడలేరు/వినలేరు.
+     ══════════════════════════════════════════════════════════════════ {% endcomment %}
+  <div id="prejoin-screen" class="prejoin-screen">
+    <div class="prejoin-card">
+      <div class="prejoin-card__title">{{ meeting.title }}</div>
+      <div class="prejoin-card__subtitle">{{ meeting.get_meeting_type_display }} · Room ID: {{ meeting.room_code }}</div>
+
+      <div class="prejoin-preview">
+        <video id="preview-video" autoplay muted playsinline></video>
+        <div id="preview-avatar" class="prejoin-preview__avatar" style="display:none;">{{ display_name|slice:":2"|upper }}</div>
+        <div id="preview-error" class="prejoin-preview__error" style="display:none;"></div>
+      </div>
+
+      <div class="prejoin-controls">
+        <button id="prejoin-mic-btn" class="prejoin-toggle-btn active" title="Toggle Microphone">🎤</button>
+        <button id="prejoin-cam-btn" class="prejoin-toggle-btn active" title="Toggle Camera">📷</button>
+      </div>
+
+      <div class="prejoin-name">Joining as <strong>{{ display_name }}</strong></div>
+      <button id="join-btn" class="prejoin-join-btn">🚀 Join Meeting</button>
+    </div>
+  </div>
+
+  {% comment %} ══════════════════════════════════════════════════════════
+     MEETING ROOM (hidden until "Join" is clicked)
+     ══════════════════════════════════════════════════════════════════ {% endcomment %}
+  <div id="room-screen" class="room-screen" style="display:none;">
+
+    <div class="room-topbar">
+      <div class="room-topbar__title">
+        <span>{{ meeting.title }}</span>
+        <span class="room-topbar__code" id="room-code-display" title="Click to copy invite link">🔗 {{ meeting.room_code }}</span>
+      </div>
+      <div class="room-topbar__timer" id="room-timer">00:00</div>
+    </div>
+
+    <div class="room-main">
+      <div id="video-grid" class="video-grid">
+        {% comment %} local + remote <div class="video-tile"> లు room.js డైనమిక్‌గా ఇక్కడ జోడిస్తుంది {% endcomment %}
+      </div>
+
+      {% comment %} SIDE PANEL: Chat / Participants (room.js టాగుల్ చేస్తుంది) {% endcomment %}
+      <div id="side-panel" class="side-panel" style="display:none;">
+        <div class="side-panel__tabs">
+          <button class="side-panel__tab active" data-tab="chat" id="tab-chat">💬 Chat</button>
+          <button class="side-panel__tab" data-tab="participants" id="tab-participants">👥 Participants (<span id="participant-count">1</span>)</button>
+        </div>
+        <div id="panel-chat" class="side-panel__body">
+          <div id="chat-messages" class="side-panel__chat-messages"></div>
+          <form id="chat-form" class="side-panel__chat-form">
+            <input id="chat-input" type="text" placeholder="Type a message..." maxlength="500" autocomplete="off">
+            <button type="submit">➤</button>
+          </form>
+        </div>
+        <div id="panel-participants" class="side-panel__body" style="display:none;">
+          <div id="participant-list" class="side-panel__participant-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="room-controls">
+      <button id="mic-btn" class="room-control-btn active" title="Mute/Unmute">🎤</button>
+      <button id="cam-btn" class="room-control-btn active" title="Camera On/Off">📷</button>
+      <button id="chat-toggle-btn" class="room-control-btn" title="Chat">💬</button>
+      <button id="participants-toggle-btn" class="room-control-btn" title="Participants">👥</button>
+      <button id="leave-btn" class="room-control-btn room-control-btn--leave" title="Leave Meeting">📞 Leave</button>
+    </div>
+  </div>
+
+  <script>
+    window.MEETING_CONFIG = {
+      roomCode: "{{ meeting.room_code|escapejs }}",
+      wsPath: "{{ room_ws_path|escapejs }}",
+      displayName: "{{ display_name|escapejs }}",
+      iceServers: [
+        {% for server in ice_servers %}{ urls: "{{ server.urls|escapejs }}" }{% if not forloop.last %},{% endif %}{% endfor %}
+      ]
+    };
+  </script>
+  <script src="{% static 'meetings/js/room.js' %}"></script>
+</body>
+</html>

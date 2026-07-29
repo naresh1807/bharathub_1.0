@@ -1,4 +1,5 @@
 {% load static %}
+{% load webmail_extras %}
 {% load vendor_extras %}
 {% comment %} ══════════════════════════════════════════════════════════════════
    vendor/_nav.html
@@ -15,8 +16,9 @@
    for the fuller explanation of this split.
    ══════════════════════════════════════════════════════════════════ {% endcomment %}
 <nav class="topnav">
+  <button type="button" class="mobile-menu-btn" onclick="toggleMobileDrawer()" aria-label="Open menu">☰</button>
   <a href="{% url 'home:bharathub_home' %}" class="topnav__brand">
-    <div class="topnav__brand-icon">BH</div>
+    <div class="topnav__brand-icon">{% include "_logo_mark.html" %}</div>
     Bharat<span>Hub</span>
   </a>
   {% pending_orders_count request.user as orders_badge_count %}
@@ -50,6 +52,13 @@
       <a class="topnav__tab" href="{% url 'messaging:vendor_messages' %}">💬 Messages{% if unread_message_count %} <span class="badge">{{ unread_message_count }}</span>{% endif %}</a>
     {% endif %}
 
+    {% unread_mail_count request.user as mail_badge %}
+    {% if active == "mail" %}
+      <span class="topnav__tab active">📧 Mail{% if mail_badge %} <span class="badge">{{ mail_badge }}</span>{% endif %}</span>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'webmail:vendor_mail' %}">📧 Mail{% if mail_badge %} <span class="badge">{{ mail_badge }}</span>{% endif %}</a>
+    {% endif %}
+
     {% if active == "analytics" %}
       <button class="topnav__tab active" onclick="showSection('analytics',this)">📊 Analytics</button>
     {% else %}
@@ -58,7 +67,13 @@
   </div>
   <div class="topnav__right">
     <div class="topnav__vendor">
-      <div class="topnav__vlogo">{{ request.user.vendor_profile.shop_name|slice:":2"|upper }}</div>
+      <div class="topnav__vlogo">
+        {% if request.user.vendor_profile.shop_photo %}
+          <img src="{{ request.user.vendor_profile.shop_photo.url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+        {% else %}
+          {{ request.user.vendor_profile.shop_name|slice:":2"|upper }}
+        {% endif %}
+      </div>
       <div class="topnav__vinfo">
         <div class="topnav__vname">{{ request.user.vendor_profile.shop_name }}</div>
         <div class="topnav__vid">{{ request.user.vendor_profile.vendor_id }}</div>
@@ -73,7 +88,13 @@
   {% comment %} SIDEBAR {% endcomment %}
   <aside class="sidebar">
     <div class="sidebar__vendor">
-      <div class="sidebar__logo">{{ request.user.vendor_profile.shop_name|slice:":2"|upper }}</div>
+      <div class="sidebar__logo">
+        {% if request.user.vendor_profile.shop_photo %}
+          <img src="{{ request.user.vendor_profile.shop_photo.url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:11px;">
+        {% else %}
+          {{ request.user.vendor_profile.shop_name|slice:":2"|upper }}
+        {% endif %}
+      </div>
       <div class="sidebar__name">{{ request.user.vendor_profile.shop_name }}</div>
       <div class="sidebar__id">{{ request.user.vendor_profile.vendor_id }}</div>
       {% if request.user.vendor_profile.category %}
@@ -108,6 +129,12 @@
         <span class="sidebar__item active"><span class="nav-icon">💬</span> Messages{% if unread_message_count %} <span class="nav-badge">{{ unread_message_count }}</span>{% endif %}</span>
       {% else %}
         <a class="sidebar__item" href="{% url 'messaging:vendor_messages' %}"><span class="nav-icon">💬</span> Messages{% if unread_message_count %} <span class="nav-badge">{{ unread_message_count }}</span>{% endif %}</a>
+      {% endif %}
+
+      {% if active == "mail" %}
+        <span class="sidebar__item active"><span class="nav-icon">📧</span> Mail{% if mail_badge %} <span class="nav-badge">{{ mail_badge }}</span>{% endif %}</span>
+      {% else %}
+        <a class="sidebar__item" href="{% url 'webmail:vendor_mail' %}"><span class="nav-icon">📧</span> Mail{% if mail_badge %} <span class="nav-badge">{{ mail_badge }}</span>{% endif %}</a>
       {% endif %}
 
       <div class="sidebar__section-label">Analytics</div>

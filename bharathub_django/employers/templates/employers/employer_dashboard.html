@@ -98,7 +98,7 @@
               </div>
               {% empty %}
               <div style="padding:24px 12px;text-align:center;color:var(--muted);font-size:13px;">
-                ఇంకా జాబ్ పోస్ట్ చేయలేదు. కుడివైపు "+ Post Job" నొక్కి మొదటి జాబ్ పోస్ట్ చేయండి.
+                No jobs posted yet. Click "+ Post Job" on the right to post your first job.
               </div>
               {% endfor %}
             </div>
@@ -126,7 +126,7 @@
               </div>
             </div>
             {% empty %}
-            <p style="color:var(--muted);font-size:13px;">ఇంకా ఏ అప్లికేషన్‌లు రాలేదు.</p>
+            <p style="color:var(--muted);font-size:13px;">No applications yet.</p>
             {% endfor %}
           </div>
         </div>
@@ -290,6 +290,7 @@
   <button class="mobile-nav-item" onclick="window.location.href='{% url 'messaging:employer_messages' %}'"><span class="nav-icon">💬</span>Messages</button>
   <button class="mobile-nav-item" onclick="window.location.href='{% url 'shopping:shop' %}'"><span class="nav-icon">🛍️</span>Shop</button>
   <button class="mobile-nav-item" onclick="window.location.href='{% url 'shopping:my_orders' %}'"><span class="nav-icon">📦</span>Orders</button>
+  <button class="mobile-nav-item mobile-nav-item--more" onclick="toggleMobileDrawer()"><span class="nav-icon">☰</span>More</button>
 </nav>{% endblock %}
 
 {% block page_js %}

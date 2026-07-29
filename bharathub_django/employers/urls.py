@@ -5,6 +5,7 @@ app_name = "employers"
 
 urlpatterns = [
     path("employer_dashboard.html", views.EmployerDashboardView.as_view(), name="employer_dashboard"),
+    path("company/logo/", views.EmployerLogoUpdateView.as_view(), name="update_company_logo"),
 
     # Candidate Search (headhunting) -- Employer dashboard కి మాత్రమే.
     path("candidates/search/", views.CandidateSearchView.as_view(), name="candidate_search"),

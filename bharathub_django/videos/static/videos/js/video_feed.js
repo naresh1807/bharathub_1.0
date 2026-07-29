@@ -68,7 +68,7 @@ function vfToggleLike(el, reaction) {
         iconEl.textContent = "👍";
       }
     })
-    .catch(() => alert("ఏదో పొరపాటు జరిగింది, మళ్ళీ ప్రయత్నించండి."));
+    .catch(() => alert("Something went wrong, please try again."));
 }
 
 function vfSubmitComment(event, form) {
@@ -107,7 +107,7 @@ function vfSubmitComment(event, form) {
       const countEl = card.querySelector(".vf-comment-count");
       if (countEl) countEl.textContent = data.comment_count;
     })
-    .catch(() => alert("కామెంట్ పోస్ట్ కాలేదు, మళ్ళీ ప్రయత్నించండి."));
+    .catch(() => alert("Comment could not be posted, please try again."));
 
   return false;
 }

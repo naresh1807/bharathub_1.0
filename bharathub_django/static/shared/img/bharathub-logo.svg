@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="BharatHub logo">
+  <!--
+    BharatHub monogram: a bold "B" built from a solid stem + two open
+    ring "bumps" (drawn as thick rounded strokes, not filled shapes) so
+    it never needs a background-colour-matched "hole" -- whatever sits
+    behind (accent-orange badge, navy top-bar, white footer chip) shows
+    through the counters correctly in every context this mark is used.
+    A small hub/node dot at the top-right nods to "Hub" -- a connection
+    point -- without cluttering the glyph at small badge sizes (28-40px).
+  -->
+  <rect x="17" y="13" width="15" height="74" rx="7.5" fill="currentColor"/>
+  <path d="M27 20 C 54 12, 77 21, 77 36 C 77 49, 60 54, 33 51"
+        fill="none" stroke="currentColor" stroke-width="15"
+        stroke-linecap="round"/>
+  <path d="M27 51 C 60 46, 84 57, 84 70 C 84 84, 60 90, 27 82"
+        fill="none" stroke="currentColor" stroke-width="15"
+        stroke-linecap="round"/>
+  <circle cx="80" cy="18" r="6" fill="currentColor"/>
+</svg>

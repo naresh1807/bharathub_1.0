@@ -21,7 +21,7 @@ class MessageForm(forms.ModelForm):
         # ఖాళీ / కేవలం స్పేస్‌లు ఉన్న సందేశాలు పంపకుండా ఆపడం.
         body = self.cleaned_data["body"].strip()
         if not body:
-            raise forms.ValidationError("సందేశం ఖాళీగా ఉండకూడదు.")
+            raise forms.ValidationError("Message cannot be empty.")
         return body
 
 
@@ -30,12 +30,12 @@ class GroupForm(forms.Form):
     views.py లో CreateGroupView/RenameGroupView రెండూ దీన్నే వాడతాయి."""
     name = forms.CharField(
         max_length=150,
-        widget=forms.TextInput(attrs={"placeholder": "గ్రూప్ పేరు", "maxlength": 150}),
+        widget=forms.TextInput(attrs={"placeholder": "Group name", "maxlength": 150}),
     )
     photo = forms.ImageField(required=False)
 
     def clean_name(self):
         name = self.cleaned_data["name"].strip()
         if not name:
-            raise forms.ValidationError("గ్రూప్ పేరు తప్పనిసరి.")
+            raise forms.ValidationError("Group name is required.")
         return name

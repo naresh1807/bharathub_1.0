@@ -1,0 +1,72 @@
+{% load static %}
+{% comment %}
+webmail/_mail_body.html
+మూడు రోల్స్ (Candidate/Employer/Vendor) కి షేర్డ్ Mail UI --
+messaging/_messages_body.html లాగే, ఒక్కో రోల్ తన సొంత nav +
+dashboard CSS లోడ్ చేసుకుని ఇదే body ని include చేస్తుంది.
+needs_setup అయితే ఆన్‌బోర్డింగ్ (Mail ID ఎంచుకోవడం) చూపిస్తాం,
+లేకపోతే నేరుగా Gmail-తరహా ఇన్‌బాక్స్.
+{% endcomment %}
+
+<div class="page-header">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button type="button" class="mail-hamburger" onclick="bhToggleDrawer()" aria-label="Folders">☰</button>
+    <div>
+      <h1>📧 BharatHub Mail</h1>
+      {% if mail_address %}<p>{{ mail_address.address }}</p>{% endif %}
+    </div>
+  </div>
+</div>
+
+{% for message in messages %}
+  <div class="alert alert--{{ message.tags }}" style="margin-bottom:14px;">{{ message }}</div>
+{% endfor %}
+
+{% if needs_setup %}
+  {% include "webmail/_onboarding_body.html" %}
+{% else %}
+  {% comment %} మొబైల్ లో సైడ్‌బార్ (ఫోల్డర్ లిస్ట్) off-canvas డ్రాయర్ గా
+     ఉంటుంది -- హ్యామ్‌బర్గర్ నొక్కితేనే స్లైడ్ అయ్యి వస్తుంది (Gmail
+     app లో ఎలా ఉంటుందో సరిగ్గా అలాగే), డెస్క్‌టాప్ లో ఎప్పటిలాగే
+     ఎడమవైపు స్థిరంగా కనిపిస్తుంది. {% endcomment %}
+  <div class="mail-drawer-overlay" id="bhDrawerOverlay" onclick="bhToggleDrawer()"></div>
+  <div class="mail-layout">
+    <div class="mail-sidebar" id="bhMailSidebar">
+      <button type="button" class="mail-compose-btn" onclick="bhOpenCompose(); bhCloseDrawer();">✏️ Compose</button>
+      <nav style="margin-top:20px;display:flex;flex-direction:column;gap:2px;">
+        <a href="?folder=inbox" class="mail-folder{% if folder == 'inbox' %} active{% endif %}">
+          <span>📥 Inbox</span>{% if unread_count %}<span class="mail-folder__badge">{{ unread_count }}</span>{% endif %}
+        </a>
+        <a href="?folder=starred" class="mail-folder{% if folder == 'starred' %} active{% endif %}">⭐ Starred</a>
+        <a href="?folder=sent" class="mail-folder{% if folder == 'sent' %} active{% endif %}">📤 Sent</a>
+        <a href="?folder=drafts" class="mail-folder{% if folder == 'drafts' %} active{% endif %}">📝 Drafts</a>
+        <a href="?folder=trash" class="mail-folder{% if folder == 'trash' %} active{% endif %}">🗑️ Trash</a>
+      </nav>
+    </div>
+
+    <div class="mail-main" style="flex:1;display:flex;flex-direction:column;min-width:0;">
+      {% if open_email %}
+        {% include "webmail/_email_detail.html" %}
+      {% else %}
+        {% include "webmail/_email_list.html" %}
+      {% endif %}
+    </div>
+  </div>
+
+  {% comment %} మొబైల్ లో Gmail app లోని పెన్సిల్ FAB బటన్ -- కుడి కింద
+     మూలన తేలుతూ ఉంటుంది; డెస్క్‌టాప్ లో దాక్కుని ఉంటుంది (అక్కడ
+     సైడ్‌బార్ లోని Compose పిల్ బటన్ ఇప్పటికే ఉంది కాబట్టి). {% endcomment %}
+  {% if not open_email %}
+  <button type="button" class="mail-fab" onclick="bhOpenCompose()" aria-label="Compose" title="Compose">✏️</button>
+  {% endif %}
+
+  {% include "webmail/_compose_panel.html" %}
+
+  {% if compose_to or compose_subject or compose_body %}
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    bhOpenCompose('{{ compose_to|escapejs }}', '{{ compose_subject|escapejs }}', '{{ compose_body|escapejs }}');
+  });
+  </script>
+  {% endif %}
+{% endif %}

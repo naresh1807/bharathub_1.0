@@ -56,6 +56,6 @@ class ContactForm(forms.ModelForm):
         message = self.cleaned_data.get("message", "").strip()
         if len(message) < 10:
             raise forms.ValidationError(
-                "దయచేసి కనీసం 10 అక్షరాలతో వివరంగా మీ సందేశం రాయండి."
+                "Please write your message in detail, with at least 10 characters."
             )
         return message

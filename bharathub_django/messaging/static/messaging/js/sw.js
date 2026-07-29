@@ -13,7 +13,7 @@
  */
 
 self.addEventListener("push", (event) => {
-  let payload = { title: "BharatHub", body: "మీకు కొత్త సందేశం వచ్చింది." };
+  let payload = { title: "BharatHub", body: "You have a new message." };
   try {
     if (event.data) payload = event.data.json();
   } catch (e) {

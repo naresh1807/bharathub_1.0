@@ -76,7 +76,7 @@
             <div class="product-price">₹{{ product.price|floatformat:0 }}{% if product.unit == 'per_month' %}/month{% elif product.unit == 'per_hour' %}/hr{% elif product.unit == 'per_day' %}/day{% endif %}</div>
             <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Stock: {{ product.stock }}</div>
             <div class="product-actions">
-              <form method="post" action="{% url 'shopping:vendor_product_delete' product.pk %}" onsubmit="return confirm('ఈ ప్రొడక్ట్ ని తొలగించాలా?');" style="display:inline;">
+              <form method="post" action="{% url 'shopping:vendor_product_delete' product.pk %}" onsubmit="return confirm('Delete this product?');" style="display:inline;">
                 {% csrf_token %}
                 <button class="btn btn--sm btn--danger" type="submit">🗑️</button>
               </form>
@@ -84,7 +84,7 @@
           </div>
         </div>
         {% empty %}
-        <p style="color:var(--muted);grid-column:1/-1;">ఇంకా ఏ ప్రొడక్ట్ యాడ్ చేయలేదు — పైన "Add New Product" నొక్కి మొదటిది జోడించండి.</p>
+        <p style="color:var(--muted);grid-column:1/-1;">No products added yet — click "Add New Product" above to add your first one.</p>
         {% endfor %}
 
         <div class="product-card" id="addProductCard" style="border:2px dashed rgba(26,54,93,0.2);cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:200px;" onclick="toggleAddProduct()">

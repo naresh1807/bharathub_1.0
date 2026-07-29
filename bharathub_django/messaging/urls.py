@@ -9,6 +9,12 @@ urlpatterns = [
     path("vendor_messages.html", views.VendorMessagesView.as_view(), name="vendor_messages"),
     path("candidate_messages.html", views.CandidateMessagesView.as_view(), name="candidate_messages"),
 
+    # ⚠️ N+1/scalability ఫిక్స్: సెర్చ్ బాక్స్ లో టైప్ చేసినప్పుడల్లా
+    # AJAX ద్వారా ఇక్కడికి పిలుస్తారు -- ఇది ఇక page-load-time లో
+    # contacts_for() ని (మొత్తం యూజర్ బేస్ ని లోడ్ చేసేది) పిలవాల్సిన
+    # అవసరాన్ని పూర్తిగా తీసేసింది.
+    path("contacts/search/", views.ContactSearchView.as_view(), name="contact_search"),
+
     # Fallback (no-JS) send + start-new-chat
     path("conversation/<int:pk>/send/", views.SendMessageView.as_view(), name="send_message"),
     path("start/", views.StartConversationView.as_view(), name="start_conversation"),

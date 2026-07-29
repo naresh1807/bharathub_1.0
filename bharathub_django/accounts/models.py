@@ -20,11 +20,11 @@ from django.utils import timezone
 
 def generate_bharathub_id():
     """
-    BharatHub ID ఫార్మాట్ (Candidate/Employee): BHEPM + YY + MM + 6-అంకెల నంబర్
-      BHEPM = స్థిర ప్రిఫిక్స్ (Employee)
+    BharatHub ID ఫార్మాట్ (Candidate/Employee): BHEMP + YY + MM + 6-అంకెల నంబర్
+      BHEMP = స్థిర ప్రిఫిక్స్ (Employee)
       YY    = రిజిస్ట్రేషన్ సంవత్సరం చివరి 2 అంకెలు (ఉదా: 2026 → "26")
       MM    = రిజిస్ట్రేషన్ నెల, 2-అంకెలు (ఏప్రిల్ అయితే "04")
-      తర్వాత 6 random అంకెలు -- మొత్తం 15 అక్షరాలు (ఉదా: BHEPM2604123456)
+      తర్వాత 6 random అంకెలు -- మొత్తం 15 అక్షరాలు (ఉదా: BHEMP2604123456)
 
     యూనిక్‌నెస్: 6-అంకెల భాగం random గా వస్తుంది కాబట్టి, అదే
     నెలలో ఇద్దరు వేర్వేరు అభ్యర్థులకు కాకతాళీయంగా ఒకే నంబర్ రాకుండా,
@@ -33,7 +33,7 @@ def generate_bharathub_id():
     అయినా, డేటాబేస్-లెవెల్ unique=True constraint కూడా ఒక అదనపు
     రక్షణ గా ఉంది).
     """
-    prefix = f"BHEPM{timezone.now().strftime('%y%m')}"
+    prefix = f"BHEMP{timezone.now().strftime('%y%m')}"
     for _ in range(20):
         candidate = f"{prefix}{''.join(random.choices(string.digits, k=6))}"
         if not EmployeeProfile.objects.filter(bharathub_id=candidate).exists():
@@ -165,12 +165,12 @@ class EmployerProfile(models.Model):
     )
     contact_person = models.CharField(
         max_length=150, blank=True,
-        help_text="HR / ప్రధాన సంప్రదింపు వ్యక్తి పేరు",
+        help_text="HR / primary point of contact name",
     )
     mobile_number = models.CharField(max_length=10, blank=True)
     address = models.TextField(blank=True)
     other_branch_location = models.TextField(
-        blank=True, help_text="ఇతర శాఖల ప్రదేశాలు (ఏదైనా ఉంటే, ఐచ్ఛికం)",
+        blank=True, help_text="Other branch locations (if any, optional)",
     )
 
     # కార్పొరేట్ ఇమెయిల్ ప్రత్యేకంగా ఉంచాం (User.email తో పాటు) ఎందుకంటే
@@ -192,6 +192,15 @@ class EmployerProfile(models.Model):
 
     industry_sector = models.CharField(max_length=100, blank=True)
     hq_state = models.CharField(max_length=100, blank=True)
+
+    # Employee (candidate) కి profile_photo, Vendor కి shop_photo ఉన్నట్టే,
+    # Employer కి company logo -- messaging/permissions.py లోని
+    # avatar_url_for() చాట్ UI లో ఈ కంపెనీ తరపున ఇదే చూపిస్తుంది,
+    # లేకపోతే కంపెనీ పేరు మొదటి 2 అక్షరాల initials చూపిస్తుంది
+    # (employers/_nav.html లో ఇప్పటికే ఉన్న fallback).
+    company_logo = models.ImageField(
+        upload_to="employer_logos/%Y/%m/", blank=True, null=True,
+    )
 
     # ఇది False గా ఉన్నంత వరకూ (అంటే PAN/GST/CIN/HQ వంటి మిగతా కంపెనీ
     # వివరాలు ఇంకా నింపలేదు), ProfileCompletionMiddleware డాష్‌బోర్డ్

@@ -4,8 +4,9 @@ messaging/tests.py
 కవర్ చేసేవి:
   - Conversation: 1-1 (direct) get_or_create_between idempotency, group create
   - Message: soft_delete, delivery_state_for (direct వర్సెస్ group సెమాంటిక్స్)
-  - permissions.can_message: candidate<->employer (JobApplication ఉంటేనే),
-    employer<->vendor (Order ఉంటేనే), సంబంధం లేని వాళ్ళు బ్లాక్
+  - permissions.can_message: రిజిస్టర్ అయిన ఎవరైనా ఇద్దరు వేర్వేరు
+    యూజర్లు చాట్ చేసుకోగలరు (వ్యాపార సంబంధం అవసరం లేదు), తనని తాను
+    మెసేజ్ చేసుకోలేరు
   - views.unread_total_for
   - ChatConsumer: auth లేని వాళ్ళు connect కాలేరు, participant కాని వాళ్ళు
     connect కాలేరు
@@ -23,13 +24,11 @@ from django.test import TestCase, TransactionTestCase
 from accounts.models import EmployeeProfile, EmployerProfile
 from candidates.models import CandidateProfile
 from employers.models import Job
-from jobs.models import JobApplication
-from shopping.models import Order
 from vendor.models import VendorProfile
 
 from .consumers import ChatConsumer
 from .models import Conversation, Message, PushSubscription, UserPresence
-from .permissions import avatar_url_for, can_message, contacts_for
+from .permissions import avatar_url_for, can_message, contacts_for, search_contacts, valid_contact_ids
 from .views import unread_total_for
 
 User = get_user_model()
@@ -125,8 +124,10 @@ class UnreadCountTests(TestCase):
 
 
 class PermissionsTests(TestCase):
-    """can_message() -- ఇద్దరు యూజర్ల మధ్య ఒక వ్యాపార సంబంధం
-    (job application / order) ఉంటేనే చాట్ చేయగలరు, లేకపోతే బ్లాక్."""
+    """can_message() -- సైట్ లో రిజిస్టర్ అయిన ఎవరైనా ఇద్దరు వేర్వేరు
+    యూజర్లు (Candidate/Employer/Vendor ఏ రోల్ అయినా) ఎప్పుడైనా చాట్
+    చేసుకోగలరు -- వ్యాపార సంబంధం (job application / order) ఇక అవసరం
+    లేదు."""
 
     def setUp(self):
         self.employee_user = _make_user("employee1")
@@ -157,36 +158,63 @@ class PermissionsTests(TestCase):
             status=Job.Status.ACTIVE,
         )
 
-    def test_candidate_and_employer_blocked_without_application(self):
-        self.assertFalse(can_message(self.employee_user, self.employer_user))
-
-    def test_candidate_and_employer_allowed_after_application(self):
-        JobApplication.objects.create(job=self.job, candidate=self.candidate_profile)
+    def test_candidate_and_employer_allowed_without_application(self):
         self.assertTrue(can_message(self.employee_user, self.employer_user))
         self.assertTrue(can_message(self.employer_user, self.employee_user))  # రెండు దిశలా
 
-    def test_candidate_blocked_from_unrelated_employer(self):
-        JobApplication.objects.create(job=self.job, candidate=self.candidate_profile)
-        self.assertFalse(can_message(self.employee_user, self.unrelated_employer_user))
+    def test_candidate_allowed_with_unrelated_employer(self):
+        self.assertTrue(can_message(self.employee_user, self.unrelated_employer_user))
 
-    def test_employer_and_vendor_blocked_without_order(self):
-        self.assertFalse(can_message(self.employer_user, self.vendor_user))
-
-    def test_employer_and_vendor_allowed_after_order(self):
-        Order.objects.create(vendor=self.vendor_profile, buyer=self.employer_profile)
+    def test_employer_and_vendor_allowed_without_order(self):
         self.assertTrue(can_message(self.employer_user, self.vendor_user))
 
-    def test_candidate_and_vendor_never_allowed(self):
-        """స్పెక్ ప్రకారం candidate<->vendor మధ్య ఏ వ్యాపార సంబంధం
-        లేదు కాబట్టి, ఎప్పటికీ చాట్ చేయలేరు."""
-        self.assertFalse(can_message(self.employee_user, self.vendor_user))
+    def test_candidate_and_vendor_allowed(self):
+        """ఇప్పుడు candidate<->vendor మధ్య కూడా అనుమతి ఉంది -- సైట్
+        లో రిజిస్టర్ అయిన ఎవరితోనైనా చాట్ చేయొచ్చు."""
+        self.assertTrue(can_message(self.employee_user, self.vendor_user))
 
-    def test_contacts_for_only_returns_related_users(self):
-        JobApplication.objects.create(job=self.job, candidate=self.candidate_profile)
+    def test_cannot_message_self(self):
+        self.assertFalse(can_message(self.employee_user, self.employee_user))
+
+    def test_contacts_for_returns_every_registered_user(self):
         contacts = [c["user"] for c in contacts_for(self.employee_user)]
         self.assertIn(self.employer_user, contacts)
-        self.assertNotIn(self.unrelated_employer_user, contacts)
-        self.assertNotIn(self.vendor_user, contacts)
+        self.assertIn(self.unrelated_employer_user, contacts)
+        self.assertIn(self.vendor_user, contacts)
+        self.assertNotIn(self.employee_user, contacts)  # తనని తాను చూపించదు
+
+    def test_search_contacts_empty_query_returns_nothing(self):
+        """⚠️ ఈ టెస్టే అసలైన బగ్ ఫిక్స్ ని నిర్ధారిస్తుంది: ఖాళీ query
+        కి (అంటే పేజీ ఇప్పుడే లోడ్ అయినప్పుడు, యూజర్ ఏమీ టైప్ చేయక
+        ముందు) ఖాళీ లిస్ట్ రావాలి -- contacts_for() లా మొత్తం యూజర్
+        బేస్ ని eager గా లోడ్ చేయకూడదు."""
+        self.assertEqual(search_contacts(self.employee_user, ""), [])
+        self.assertEqual(search_contacts(self.employee_user, "   "), [])
+
+    def test_search_contacts_matches_by_name(self):
+        results = search_contacts(self.employee_user, "Acme")
+        names = [r["name"] for r in results]
+        self.assertIn("Acme Corp", names)
+        self.assertNotIn("Other Corp", names)
+
+    def test_search_contacts_matches_by_mobile_number(self):
+        results = search_contacts(self.employee_user, "9000000004")
+        names = [r["name"] for r in results]
+        self.assertIn("Vendor Shop", names)
+
+    def test_search_contacts_excludes_self(self):
+        results = search_contacts(self.employer_user, "Acme")
+        user_ids = [r["user"].id for r in results]
+        self.assertNotIn(self.employer_user.id, user_ids)
+
+    def test_valid_contact_ids_filters_to_real_profiles_only(self):
+        real_ids = {self.employer_user.id, self.vendor_user.id}
+        fake_ids = {"999999", "not-a-number"}
+        result = valid_contact_ids(real_ids | fake_ids)
+        self.assertEqual(result, real_ids)
+
+    def test_valid_contact_ids_empty_input_returns_empty_set(self):
+        self.assertEqual(valid_contact_ids([]), set())
 
     def test_avatar_url_for_no_photo_returns_none(self):
         """ఫోటో అప్‌లోడ్ చేయని యూజర్ కి None వస్తుంది (JS/template

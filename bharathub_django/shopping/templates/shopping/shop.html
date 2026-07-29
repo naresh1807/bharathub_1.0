@@ -29,5 +29,10 @@
 {% endblock %}
 
 {% block page_js %}
+<script>
+  // చెక్‌అవుట్ లో డెలివరీ అడ్రస్ టెక్స్ట్‌బాక్స్ ని ప్రీఫిల్ చేయడానికి
+  // (కావాలంటే మార్చుకోవచ్చు) -- buyer_shopping.js: renderCartModal().
+  window.BHARATHUB_EMPLOYER_ADDRESS = "{{ request.user.employer_profile.address|default:''|escapejs }}";
+</script>
 <script src="{% static 'shopping/js/buyer_shopping.js' %}"></script>
 {% endblock %}

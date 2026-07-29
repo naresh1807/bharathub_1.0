@@ -33,16 +33,15 @@
 {% endblock %}
 
 {% block content %}
-<div class="profile-form-wrap">
+{% include "candidates/_nav.html" %}
 
-  <p style="margin-bottom:14px;">
-    <a href="{% url 'candidates:candidate_dashboard' %}" class="back-link">← Back to Dashboard</a>
-  </p>
+  <main class="main" style="padding:24px;">
+  <div class="profile-form-wrap" style="margin:0;max-width:780px;">
 
   <div class="page-header">
     <div>
       <h1>✏️ Edit Candidate Profile</h1>
-      <p>ఈ పేజీ నిజమైన Django ఫారమ్ + CSRF రక్షణ తో పనిచేస్తుంది</p>
+      <p>This page works with a real Django form + CSRF protection</p>
     </div>
   </div>
 
@@ -200,14 +199,14 @@
              ద్వారా కాదు) -- CSRF token తో పాటు, view.py లో
              profile__user=request.user ఓనర్‌షిప్ చెక్ కూడా ఉంది. {% endcomment %}
           <form method="post" action="{% url 'candidates:candidate_education_delete' edu.pk %}"
-                onsubmit="return confirm('ఈ ఎంట్రీ ని తొలగించాలా?');">
+                onsubmit="return confirm('Delete this entry?');">
             {% csrf_token %}
             <button type="submit" class="btn-sm btn-sm--outline">🗑️ Delete</button>
           </form>
         </div>
         {% endfor %}
       {% else %}
-        <p style="color:var(--muted);font-size:13px;">ఇంకా ఏ విద్యార్హత వివరాలు జోడించలేదు.</p>
+        <p style="color:var(--muted);font-size:13px;">No education details added yet.</p>
       {% endif %}
 
       {% comment %} కొత్త ఎడ్యుకేషన్ ఎంట్రీ జోడించే చిన్న ఫారమ్ --
@@ -257,5 +256,7 @@
     </div>
   </div>
 
+  </div>
+  </main>
 </div>
 {% endblock %}

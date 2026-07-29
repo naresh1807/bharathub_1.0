@@ -1,12 +1,14 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 from django.views.generic import TemplateView
 
 from accounts.models import EmployeeProfile
-from employers.models import Job
-from jobs.models import JobApplication
+from employers.models import HireRequest, Job
+from jobs.models import Employment, JobApplication
 from messaging.views import unread_total_for
 from videos.utils import published_videos_for
 from .forms import CandidateEducationForm, CandidateProfileForm
@@ -52,8 +54,8 @@ class CandidateDashboardView(LoginRequiredMixin, TemplateView):
             logout(request)
             messages.error(
                 request,
-                "⚠️ ఈ అకౌంట్ కి Employee ప్రొఫైల్ లేదు. దయచేసి Employee ఖాతాతో లాగిన్ అవ్వండి "
-                "లేదా ముందు రిజిస్టర్ చేసుకోండి.",
+                "⚠️ This account has no Employee profile. Please log in with an Employee "
+                "account, or register first.",
             )
             return redirect("accounts:employee_login")
         return super().dispatch(request, *args, **kwargs)
@@ -115,12 +117,27 @@ class CandidateDashboardView(LoginRequiredMixin, TemplateView):
         # కాలేదు) -- కాబట్టి దాన్ని నిజమైన డేటాతో నింపలేము; టెంప్లేట్
         # లో "—" గా చూపిస్తాం (తప్పుడు నంబర్ చూపించే బదులు, ఫీచర్
         # లేదని స్పష్టంగా).
-        recommended_jobs = (
-            Job.objects.filter(status=Job.Status.ACTIVE)
-            .exclude(pk__in=applied_job_ids)
-            .select_related("employer")
-            .order_by("-created_at")[:3]
-        )
+        # candidate ఇప్పుడు HIRED అయితే కొత్త job offers చూపించం (ఇప్పటికే
+        # ఏదో ఒక కంపెనీలో పని చేస్తున్నారు కాబట్టి) -- బదులుగా
+        # "Currently Employed" కార్డు + Resign బటన్ చూపిస్తాం (దిగువ
+        # current_employment చూడండి). resign చేసి, employer ఆ resignation
+        # accept చేశాకే candidate.hire_status మళ్ళీ AVAILABLE అవుతుంది,
+        # అప్పుడే ఇక్కడ recommended_jobs మళ్ళీ కనిపించడం మొదలవుతుంది
+        # (jobs/views.py: ResignationRespondView చూడండి).
+        if candidate_profile.hire_status == CandidateProfile.HireStatus.HIRED:
+            recommended_jobs = Job.objects.none()
+        else:
+            recommended_jobs = (
+                Job.objects.filter(status=Job.Status.ACTIVE)
+                .exclude(pk__in=applied_job_ids)
+                .select_related("employer")
+                .order_by("-created_at")[:3]
+            )
+
+        current_employment = Employment.objects.filter(
+            candidate=candidate_profile,
+            status__in=[Employment.Status.ACTIVE, Employment.Status.RESIGNATION_REQUESTED],
+        ).select_related("application__job__employer").first()
 
         context.update({
             "employee_profile": employee_profile,
@@ -136,6 +153,7 @@ class CandidateDashboardView(LoginRequiredMixin, TemplateView):
                 status=JobApplication.Status.SHORTLISTED,
             ).count(),
             "recommended_jobs": recommended_jobs,
+            "current_employment": current_employment,
             "recent_applications": applications.order_by("-updated_at")[:4],
             # 🎥 "Videos" ట్యాబ్ -- Employer లు పోస్ట్ చేసిన కంపెనీ కల్చర్/
             # అచీవ్‌మెంట్ వీడియోల ఫీడ్, Home పేజీలో కనిపించే అదే videos యాప్
@@ -207,7 +225,7 @@ class CandidateProfileEditView(LoginRequiredMixin, View):
                 education = education_form.save(commit=False)
                 education.profile = profile
                 education.save()
-                messages.success(request, "✅ విద్యార్హత వివరాలు జోడించబడ్డాయి.")
+                messages.success(request, "✅ Education details added.")
                 return redirect("candidates:candidate_profile_edit")
         else:
             profile_form = CandidateProfileForm(
@@ -216,13 +234,32 @@ class CandidateProfileEditView(LoginRequiredMixin, View):
             education_form = CandidateEducationForm()
             if profile_form.is_valid():
                 profile_form.save()
+
+                # BUG FIX: ఈ ఫారమ్ CandidateProfile.profile_photo కి
+                # మాత్రమే సేవ్ చేస్తుంది -- కానీ డాష్‌బోర్డ్ (సైడ్‌బార్,
+                # టాప్‌నావ్, ప్రొఫైల్ కార్డ్) మరియు మెసేజింగ్ యాప్
+                # (avatar_url_for(), messaging/permissions.py) రెండూ
+                # EmployeeProfile.profile_photo నే కానానికల్ అవతార్
+                # గా చదువుతాయి -- ఆ ఫీల్డ్ ఇక్కడ ఎప్పుడూ అప్‌డేట్
+                # అయ్యేది కాదు, కాబట్టి యూజర్ కొత్త ఫోటో అప్‌లోడ్
+                # చేసినా అది తన సొంత డాష్‌బోర్డ్ లోనూ, చాట్ లోనూ
+                # ఎక్కడా కనిపించేది కాదు. కొత్త ఫోటో అప్‌లోడ్ అయినప్పుడు
+                # (ఖాళీగా ఉంచేసినప్పుడు కాదు) దాన్ని కానానికల్ ఫీల్డ్
+                # లోకి కూడా కాపీ చేస్తాం -- రెండూ ఒకే ఫైల్ storage
+                # (MEDIA_ROOT) వాడతాయి కాబట్టి, ఫైల్ మళ్ళీ అప్‌లోడ్
+                # అవదు, కేవలం రెండో ఫీల్డ్ కూడా అదే పాత్ ని పాయింట్
+                # చేస్తుంది.
+                if "profile_photo" in request.FILES:
+                    request.user.employee_profile.profile_photo = profile.profile_photo
+                    request.user.employee_profile.save(update_fields=["profile_photo"])
+
                 # ప్రొఫైల్ ని ఒకసారి సేవ్ చేసిన తర్వాత "పూర్తయింది" గా
                 # మార్క్ చేస్తాం -- ఇక ProfileCompletionMiddleware ఈ
                 # యూజర్ ని బలవంతంగా ఇక్కడికే పంపదు, డాష్‌బోర్డ్ కి
                 # పూర్తి యాక్సెస్ వస్తుంది.
                 request.user.employee_profile.profile_completed = True
                 request.user.employee_profile.save(update_fields=["profile_completed"])
-                messages.success(request, "✅ మీ ప్రొఫైల్ అప్‌డేట్ అయ్యింది.")
+                messages.success(request, "✅ Your profile has been updated.")
                 return redirect("candidates:candidate_profile_edit")
 
         context = {
@@ -253,7 +290,7 @@ class CandidateEducationDeleteView(LoginRequiredMixin, View):
             CandidateEducation, pk=pk, profile__user=request.user,
         )
         education.delete()
-        messages.success(request, "🗑️ విద్యార్హత ఎంట్రీ తొలగించబడింది.")
+        messages.success(request, "🗑️ Education entry deleted.")
         return redirect("candidates:candidate_profile_edit")
 
 
@@ -274,9 +311,169 @@ class HireRequestRespondView(LoginRequiredMixin, View):
         if action == "accept":
             hire_request.status = HireRequest.Status.ACCEPTED
             hire_request.save(update_fields=["status", "updated_at"])
-            messages.success(request, "✅ Hire Request accept చేశారు. ఇప్పుడు వాళ్ళతో చాట్ చేసుకోవచ్చు.")
+            messages.success(request, "✅ Hire Request accepted. You can now chat with them.")
         elif action == "decline":
             hire_request.status = HireRequest.Status.DECLINED
             hire_request.save(update_fields=["status", "updated_at"])
-            messages.info(request, "ℹ️ Hire Request decline చేశారు.")
+            messages.info(request, "ℹ️ Hire Request declined.")
         return redirect("candidates:candidate_dashboard")
+
+
+# ══════════════════════════════════════════════════════════════════════
+# Downloads (Resume + employment letters)
+#
+# candidate_dashboard.html సైడ్‌బార్ లో "Downloads" నావ్ ఐటమ్ ఇక్కడికే
+# లింక్ చేస్తుంది. ఇందులో రెండు రకాల డాక్యుమెంట్లు:
+#
+#   1. Resume -- CandidateProfile + CandidateEducation లో ఇప్పటికే ఉన్న
+#      నిజమైన డేటా తో ఆటోమేటిక్‌గా జనరేట్ అవుతుంది (ఎప్పుడూ లభ్యం).
+#
+#   2. Appointment Letter -- ఒక Employer, ఈ candidate కి పంపిన
+#      HireRequest ని candidate Accept చేసుంటే మాత్రమే జనరేట్ అవుతుంది
+#      (real record ఆధారంగా -- ఏ ఖాళీ/ఫేక్ డేటా వాడము).
+#
+#   3. Joining Letter / Relieving Letter / Experience Letter -- వీటికి
+#      joining date, designation, CTC, relieving date లాంటి నిజమైన
+#      Employment రికార్డు కావాలి, అది ప్రస్తుతం ఈ సిస్టమ్ లో ఎక్కడా
+#      ట్రాక్ చేయడం లేదు (HireRequest కేవలం ఇన్విటేషన్ మాత్రమే, actual
+#      hiring/joining/relieving వివరాలు కాదు). కాబట్టి వీటిని ఖాళీ లేదా
+#      కల్పిత (fake) డేటాతో జనరేట్ చేయం -- బదులుగా Downloads పేజీలో
+#      "Not available yet" అని స్పష్టంగా చూపిస్తాం. (నిజమైన Employment
+#      రికార్డ్ ఫీచర్ యాడ్ చేయాలంటే వేరే టాస్క్ గా చేయాలి.)
+# ══════════════════════════════════════════════════════════════════════
+
+
+class DownloadsListView(LoginRequiredMixin, TemplateView):
+    """Downloads హోమ్ పేజీ. Resume ఎప్పుడూ అందుబాటులో ఉంటుంది. Offer
+    Letter -- Employer 'Mark as Hired' నొక్కిన ప్రతి Employment కీ ఒక
+    కార్డ్ కనిపిస్తుంది (Pending/Accepted). Appointment Letter
+    అందుబాటులో ఉండాలంటే కనీసం ఒక్క ACCEPTED HireRequest (job attached
+    గా) ఉండాలి. Joining/Relieving/Experience Letter మూడూ ఒక Employment
+    RELIEVED అయ్యాకే కలిసి అందుబాటులోకి వస్తాయి."""
+
+    template_name = "candidates/downloads_list.html"
+    login_url = "accounts:employee_login"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        candidate_profile = get_object_or_404(CandidateProfile, user=self.request.user)
+        context["candidate_profile"] = candidate_profile
+        context["accepted_hire_requests"] = list(
+            HireRequest.objects.filter(
+                candidate=candidate_profile,
+                status=HireRequest.Status.ACCEPTED,
+                job__isnull=False,
+            ).select_related("employer", "job").order_by("-updated_at"),
+        )
+        # Joining/Relieving/Experience Letter లు -- ఒక Employment RELIEVED
+        # అయిన వెంటనే (jobs/views.py: ResignationRespondView, Accept
+        # చర్య) మూడూ కలిసి ఇక్కడ ఆటోమేటిక్‌గా అందుబాటులోకి వస్తాయి,
+        # ఇంకా ఖాళీ/కల్పిత లెటర్ల అవసరం లేకుండా -- ఇప్పుడు నిజమైన
+        # joining_date + relieving_date రెండూ రికార్డు లో ఉన్నాయి కాబట్టి.
+        context["relieved_employments"] = list(
+            Employment.objects.filter(
+                candidate=candidate_profile, status=Employment.Status.RELIEVED,
+            ).select_related("application__job__employer").order_by("-relieving_date"),
+        )
+        # Offer Letter -- Employer 'Mark as Hired' నొక్కిన ప్రతిసారీ (ఏ
+        # Employment అయినా, ప్రస్తుత ఉద్యోగం అయినా గత చరిత్ర అయినా) ఒక
+        # ఆఫర్ లెటర్ కార్డ్ కనిపిస్తుంది -- Pending/Accepted స్టేటస్ తో.
+        context["all_employments"] = list(
+            Employment.objects.filter(candidate=candidate_profile)
+            .select_related("application__job__employer").order_by("-created_at"),
+        )
+        return context
+
+
+class ResumeDocumentView(LoginRequiredMixin, TemplateView):
+    """Candidate ప్రొఫైల్ డేటా తో ఆటోమేటిక్‌గా జనరేట్ అయ్యే Resume --
+    ప్రింట్-ఫ్రెండ్లీ పేజీ (BharatHub లోగో + Print/Download బటన్లు).
+    'Download' బటన్ కూడా బ్రౌజర్ ప్రింట్ డైలాగ్ నే తెరుస్తుంది -- అక్కడ
+    'Save as PDF' ఎంచుకుంటే అదే డౌన్లోడ్ అవుతుంది (సర్వర్ సైడ్ PDF
+    లైబ్రరీ ఏదీ ఇప్పుడు ఈ ప్రాజెక్ట్ లో లేదు కాబట్టి, కొత్త heavy
+    dependency యాడ్ చేయకుండా, ప్రతి బ్రౌజర్ లోనూ నమ్మకంగా పనిచేసే ఈ
+    పద్ధతినే వాడాం)."""
+
+    template_name = "candidates/document_resume.html"
+    login_url = "accounts:employee_login"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        candidate_profile = get_object_or_404(CandidateProfile, user=self.request.user)
+        context["candidate_profile"] = candidate_profile
+        context["education_entries"] = candidate_profile.education_entries.all()
+        context["full_name"] = self.request.user.get_full_name() or self.request.user.username
+        return context
+
+
+class AppointmentLetterView(LoginRequiredMixin, TemplateView):
+    """ఒక Accepted HireRequest ఆధారంగా Appointment Letter చూపిస్తుంది.
+    get_object_or_404(candidate__user=...) ఓనర్‌షిప్ చెక్ -- వేరే
+    candidate కి పంపిన HireRequest ని ఎవరూ చూడలేరు (IDOR గార్డ్,
+    HireRequestRespondView లో వాడిన పద్ధతినే ఇక్కడా వాడాం)."""
+
+    template_name = "candidates/document_appointment_letter.html"
+    login_url = "accounts:employee_login"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        hire_request = get_object_or_404(
+            HireRequest.objects.select_related("employer", "job", "candidate__user"),
+            pk=kwargs["pk"], candidate__user=self.request.user,
+            status=HireRequest.Status.ACCEPTED, job__isnull=False,
+        )
+        context["hire_request"] = hire_request
+        context["full_name"] = self.request.user.get_full_name() or self.request.user.username
+        return context
+
+
+class EmploymentLetterView(LoginRequiredMixin, TemplateView):
+    """Joining / Relieving / Experience Letter -- మూడూ ఒకే వ్యూ, URL లోని
+    'letter_type' బట్టి టెంప్లేట్ లో వేరే సెక్షన్ చూపిస్తాం. ఈ మూడూ ఒక
+    Employment RELIEVED అయ్యాకే (candidate.employments...status=='relieved')
+    అందుబాటులోకి వస్తాయి -- ఎందుకో candidates/views.py: DownloadsListView
+    పైన ఉన్న కామెంట్ చూడండి. get_object_or_404(candidate__user=...,
+    status=RELIEVED) ఒకేసారి ఓనర్‌షిప్ + అందుబాటు రెండిటినీ చెక్ చేస్తుంది."""
+
+    template_name = "candidates/document_employment_letter.html"
+    login_url = "accounts:employee_login"
+
+    VALID_TYPES = {"joining", "relieving", "experience"}
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        letter_type = kwargs.get("letter_type")
+        if letter_type not in self.VALID_TYPES:
+            raise Http404("Unknown letter type.")
+
+        employment = get_object_or_404(
+            Employment.objects.select_related("application__job__employer", "candidate__user"),
+            pk=kwargs["pk"], candidate__user=self.request.user,
+            status=Employment.Status.RELIEVED,
+        )
+        context["employment"] = employment
+        context["letter_type"] = letter_type
+        context["full_name"] = self.request.user.get_full_name() or self.request.user.username
+        return context
+
+
+class OfferLetterView(LoginRequiredMixin, TemplateView):
+    """Offer Letter -- Employer 'Mark as Hired' నొక్కిన వెంటనే ఆటోమేటిక్‌గా
+    జనరేట్ అయ్యి ఇక్కడ కనిపిస్తుంది (jobs/views.py: MarkAsHiredView).
+    ఇంకా Accept చేయకపోతే 'Accept Offer' బటన్ చూపిస్తాం (POST అవుతుంది
+    jobs:offer_letter_accept కి -- OfferLetterAcceptView, అది
+    ఓనర్‌షిప్ మళ్ళీ చెక్ చేస్తుంది). Accept అయ్యాక ఆ బటన్ బదులు
+    '✅ Accepted' బ్యాడ్జ్ + Print/Download బటన్లు మాత్రమే కనిపిస్తాయి."""
+
+    template_name = "candidates/document_offer_letter.html"
+    login_url = "accounts:employee_login"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        employment = get_object_or_404(
+            Employment.objects.select_related("application__job__employer", "candidate__user"),
+            pk=kwargs["pk"], candidate__user=self.request.user,
+        )
+        context["employment"] = employment
+        context["full_name"] = self.request.user.get_full_name() or self.request.user.username
+        return context

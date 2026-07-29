@@ -27,10 +27,11 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "bharathub.settings")
 django_asgi_app = get_asgi_application()
 
 import messaging.routing  # noqa: E402  (see comment above)
+import meetings.routing  # noqa: E402
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
     "websocket": AuthMiddlewareStack(
-        URLRouter(messaging.routing.websocket_urlpatterns)
+        URLRouter(messaging.routing.websocket_urlpatterns + meetings.routing.websocket_urlpatterns)
     ),
 })

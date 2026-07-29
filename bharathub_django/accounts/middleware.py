@@ -58,8 +58,8 @@ class ProfileCompletionMiddleware:
                     if request.method == "POST":
                         messages.warning(
                             request,
-                            "⚠️ మీ ప్రొఫైల్ ఇంకా పూర్తి కాలేదు కాబట్టి ఈ యాక్షన్ సేవ్ కాలేదు -- "
-                            "ముందు కింద ఇచ్చిన వివరాలు పూర్తి చేయండి.",
+                            "⚠️ This action was not saved because your profile is not yet complete -- "
+                            "please fill in the details below first.",
                         )
                     return redirect("candidates:candidate_profile_edit")
 
@@ -68,9 +68,9 @@ class ProfileCompletionMiddleware:
                     if request.method == "POST":
                         messages.warning(
                             request,
-                            "⚠️ మీ ప్రొఫైల్ ఇంకా పూర్తి కాలేదు కాబట్టి ఈ యాక్షన్ (ఉదా: జాబ్ పోస్ట్) "
-                            "సేవ్ కాలేదు -- ముందు కింద ఇచ్చిన కంపెనీ వివరాలు పూర్తి చేయండి, ఆ "
-                            "తర్వాత జాబ్ ని మళ్ళీ పోస్ట్ చేయండి.",
+                            "⚠️ This action (e.g. job post) was not saved because your profile is not yet "
+                            "complete -- please fill in the company details below first, then "
+                            "post the job again.",
                         )
                     return redirect("accounts:employer_complete_profile")
 
@@ -79,8 +79,8 @@ class ProfileCompletionMiddleware:
                     if request.method == "POST":
                         messages.warning(
                             request,
-                            "⚠️ మీ ప్రొఫైల్ ఇంకా పూర్తి కాలేదు కాబట్టి ఈ యాక్షన్ సేవ్ కాలేదు -- "
-                            "ముందు కింద ఇచ్చిన వివరాలు పూర్తి చేయండి.",
+                            "⚠️ This action was not saved because your profile is not yet complete -- "
+                            "please fill in the details below first.",
                         )
                     return redirect("vendor:vendor_complete_profile")
 

@@ -10,7 +10,7 @@ User = get_user_model()
 
 mobile_validator = RegexValidator(
     regex=r"^[6-9]\d{9}$",
-    message="దయచేసి సరైన 10-అంకెల భారతీయ మొబైల్ నెంబర్ ఇవ్వండి.",
+    message="Please enter a valid 10-digit Indian mobile number.",
 )
 
 
@@ -71,7 +71,7 @@ class VendorRegistrationForm(forms.Form):
     def clean_vendor_email(self):
         email = self.cleaned_data["vendor_email"].lower().strip()
         if User.objects.filter(email__iexact=email).exists():
-            raise ValidationError("ఈ ఇమెయిల్ తో ఇప్పటికే ఒక వెండర్ ఖాతా ఉంది.")
+            raise ValidationError("A vendor account with this email already exists.")
         return email
 
     def clean_password1(self):
@@ -82,7 +82,7 @@ class VendorRegistrationForm(forms.Form):
     def clean(self):
         cleaned_data = super().clean()
         if cleaned_data.get("password1") != cleaned_data.get("password2"):
-            self.add_error("password2", "పాస్‌వర్డ్‌లు రెండూ సరిపోలలేదు.")
+            self.add_error("password2", "The two passwords did not match.")
         return cleaned_data
 
     # save(): వాలిడేషన్ పూర్తయ్యాక User + VendorProfile రెండిటినీ
@@ -149,5 +149,5 @@ class VendorProfileCompletionForm(forms.ModelForm):
     def clean_vendor_mobile(self):
         mobile = self.cleaned_data["vendor_mobile"].strip()
         if VendorProfile.objects.filter(vendor_mobile=mobile).exclude(pk=self.instance.pk).exists():
-            raise ValidationError("ఈ మొబైల్ నెంబర్ తో ఇప్పటికే ఒక వెండర్ ఖాతా ఉంది.")
+            raise ValidationError("A vendor account with this mobile number already exists.")
         return mobile

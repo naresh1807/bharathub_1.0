@@ -1,0 +1,177 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ letter_type|title }} Letter — {{ full_name }} — BharatHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  {% comment %}
+  candidates/document_employment_letter.html -- ఒక్కటే టెంప్లేట్, మూడు లెటర్
+  రకాలకీ (Joining/Relieving/Experience) -- letter_type బట్టి కింద మూడు
+  {% if %} బ్లాక్‌లలో ఒక్కటే body టెక్స్ట్ చూపిస్తాం, మిగతా లేఅవుట్
+  (హెడర్/ఫుటర్/ఫ్యాక్ట్స్ టేబుల్) అన్ని మూడిటికీ ఉమ్మడి. ఇది ఒక Employment
+  RELIEVED అయ్యాకే జనరేట్ అవుతుంది (candidates/views.py: EmploymentLetterView
+  చూడండి) -- joining_date + relieving_date రెండూ నిజమైన రికార్డు నుండే.
+  {% endcomment %}
+  <style>
+    :root { --primary:#1a365d; --accent:#ff8c00; --muted:#6b7280; --border:#e5e7eb; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; margin: 0; background: #f3f4f6; color: #1f2937; }
+
+    .toolbar {
+      position: sticky; top: 0; z-index: 10; background: #fff;
+      border-bottom: 1px solid var(--border); padding: 12px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .toolbar__back { font-size: 13px; color: var(--muted); text-decoration: none; }
+    .toolbar__back:hover { color: var(--primary); }
+    .toolbar__actions { display: flex; gap: 10px; }
+    .toolbar__btn {
+      border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px;
+      font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .toolbar__btn--primary { background: var(--primary); color: #fff; }
+    .toolbar__btn--outline { background: none; border: 1.5px solid var(--border); color: #374151; }
+
+    .sheet {
+      max-width: 800px; margin: 28px auto 60px; background: #fff;
+      border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 46px 52px;
+    }
+    .sheet__header {
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 3px solid var(--primary); padding-bottom: 18px; margin-bottom: 26px;
+    }
+    .sheet__brand { display: flex; align-items: center; gap: 8px; color: var(--primary); }
+    .sheet__brand-icon {
+      width: 26px; height: 26px; border-radius: 6px; background: var(--primary);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+    }
+    .sheet__brand-name { font-size: 13px; font-weight: 700; letter-spacing: 0.3px; }
+
+    .al-title { font-size: 20px; font-weight: 800; color: var(--primary); margin: 0 0 4px; text-align: center; }
+    .al-subtitle { font-size: 12.5px; color: var(--muted); text-align: center; margin: 0 0 30px; }
+
+    .al-body { font-size: 13.5px; line-height: 1.9; color: #1f2937; }
+    .al-facts { margin: 18px 0; border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .al-facts__row { display: flex; padding: 10px 16px; font-size: 13px; }
+    .al-facts__row:nth-child(even) { background: #f9fafb; }
+    .al-facts__label { width: 180px; flex-shrink: 0; color: var(--muted); font-weight: 600; }
+    .al-facts__value { color: #1f2937; font-weight: 600; }
+
+    .al-note {
+      margin-top: 22px; font-size: 12px; color: var(--muted); background: #fffbeb;
+      border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; line-height: 1.6;
+    }
+
+    .sheet__footer {
+      margin-top: 34px; padding-top: 14px; border-top: 1px solid var(--border);
+      font-size: 10.5px; color: var(--muted); text-align: center;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .no-print { display: none !important; }
+      .sheet { box-shadow: none; margin: 0; padding: 0; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar no-print">
+    <a href="{% url 'candidates:downloads_list' %}" class="toolbar__back">← Back to Downloads</a>
+    <div class="toolbar__actions">
+      <button type="button" class="toolbar__btn toolbar__btn--outline" onclick="window.print()">⬇️ Download</button>
+      <button type="button" class="toolbar__btn toolbar__btn--primary" onclick="window.print()">🖨️ Print</button>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <div class="sheet__header">
+      <div class="sheet__brand">
+        <div class="sheet__brand-icon">{% include "_logo_mark.html" %}</div>
+        <span class="sheet__brand-name">BharatHub</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);">Issued {{ employment.relieving_date|date:"M d, Y" }}</div>
+    </div>
+
+    {% if letter_type == "joining" %}
+      <h1 class="al-title">Joining Letter</h1>
+      <p class="al-subtitle">Confirmation of employment start date</p>
+      <div class="al-body">
+        <p>Dear {{ full_name }},</p>
+        <p>
+          This letter confirms that you joined <strong>{{ employment.employer.company_name }}</strong> as
+          <strong>{{ employment.designation }}</strong> on {{ employment.joining_date|date:"F d, Y" }},
+          through a hiring process conducted via BharatHub.
+        </p>
+      </div>
+    {% elif letter_type == "relieving" %}
+      <h1 class="al-title">Relieving Letter</h1>
+      <p class="al-subtitle">Confirmation of employment end date</p>
+      <div class="al-body">
+        <p>Dear {{ full_name }},</p>
+        <p>
+          This letter confirms that you have been relieved from your role as
+          <strong>{{ employment.designation }}</strong> at <strong>{{ employment.employer.company_name }}</strong>,
+          effective {{ employment.relieving_date|date:"F d, Y" }}, following your resignation request which was
+          accepted by the employer. All dues, if any, are to be settled directly with the employer.
+        </p>
+      </div>
+    {% else %}
+      <h1 class="al-title">Experience Letter</h1>
+      <p class="al-subtitle">Confirmation of tenure and role</p>
+      <div class="al-body">
+        <p>Dear {{ full_name }},</p>
+        <p>
+          This letter confirms that you were employed at <strong>{{ employment.employer.company_name }}</strong>
+          as <strong>{{ employment.designation }}</strong> from {{ employment.joining_date|date:"F d, Y" }} to
+          {{ employment.relieving_date|date:"F d, Y" }}. During this period, your conduct and performance were
+          found to be satisfactory.
+        </p>
+      </div>
+    {% endif %}
+
+    <div class="al-facts">
+      <div class="al-facts__row">
+        <div class="al-facts__label">Candidate Name</div>
+        <div class="al-facts__value">{{ full_name }}</div>
+      </div>
+      <div class="al-facts__row">
+        <div class="al-facts__label">BharatHub ID</div>
+        <div class="al-facts__value">{{ employment.candidate.user.employee_profile.bharathub_id }}</div>
+      </div>
+      <div class="al-facts__row">
+        <div class="al-facts__label">Company</div>
+        <div class="al-facts__value">{{ employment.employer.company_name }}</div>
+      </div>
+      <div class="al-facts__row">
+        <div class="al-facts__label">Designation</div>
+        <div class="al-facts__value">{{ employment.designation }}</div>
+      </div>
+      <div class="al-facts__row">
+        <div class="al-facts__label">Date of Joining</div>
+        <div class="al-facts__value">{{ employment.joining_date|date:"F d, Y" }}</div>
+      </div>
+      {% if letter_type != "joining" %}
+      <div class="al-facts__row">
+        <div class="al-facts__label">Date of Relieving</div>
+        <div class="al-facts__value">{{ employment.relieving_date|date:"F d, Y" }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="al-note">
+      ℹ️ This document is generated by BharatHub based on the employment record filed by
+      {{ employment.employer.company_name }} on the platform. It is not a substitute for the
+      employer's own official letterhead documentation where required.
+    </div>
+
+    <div class="sheet__footer">
+      This document was generated by BharatHub based on platform records · Reference: EMP-{{ employment.pk }}
+    </div>
+  </div>
+
+</body>
+</html>

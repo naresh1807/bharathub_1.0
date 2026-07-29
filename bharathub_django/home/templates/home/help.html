@@ -12,7 +12,7 @@
 <body>
 <header class="header">
   <a href="{% url 'home:bharathub_home' %}" class="logo">
-    <div class="logo-icon">BH</div>
+    <div class="logo-icon">{% include "_logo_mark.html" %}</div>
     <span class="logo-name">Bharat<span>Hub</span></span>
   </a>
   <a href="{% url 'home:bharathub_home' %}" class="back-btn">← Back to Home</a>
@@ -71,7 +71,7 @@
     </div>
     <div class="faq-item" data-cat="account">
       <div class="faq-question" onclick="toggleFAQ(this)">What is a BharatHub ID?<span class="faq-arrow">▼</span></div>
-      <div class="faq-answer">After successful registration, you receive a unique BharatHub ID: BH2026XXXX for employees, EMP2026XXXX for employers, and VND2026XXXX for vendors. This ID is permanent and is used for login and identification on the platform.</div>
+      <div class="faq-answer">After successful registration, you receive a unique BharatHub ID: BHEMP26070001234 for employees, BHEMR26070001234 for employers, and BHVND26070001234 for vendors (prefix + year + month + a unique number). This ID is permanent and is used for login and identification on the platform.</div>
     </div>
     <div class="faq-item" data-cat="login">
       <div class="faq-question" onclick="toggleFAQ(this)">Why do I need OTP every time I login?<span class="faq-arrow">▼</span></div>

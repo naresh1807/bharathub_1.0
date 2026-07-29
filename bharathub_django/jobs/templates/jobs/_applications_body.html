@@ -62,16 +62,23 @@
                   {% for skill in candidate.skills_list|slice:":3" %}<span class="skill-chip">{{ skill }}</span>{% endfor %}
                 </div>
                 <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Applied for: <strong style="color:var(--primary);">{{ application.job.title }}</strong></div>
+                {% if application.status == "interview" and application.interview_datetime %}
+                <div style="font-size:12px;color:#6366f1;font-weight:600;margin-bottom:10px;">📅 {{ application.interview_datetime|date:"d M Y, h:i A" }} · {{ application.get_interview_mode_display }}</div>
+                {% endif %}
                 <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  {% if application.status == "interview" and application.interview_mode == "video" %}
+                    <a class="btn btn--sm btn--accent" href="{{ application.interview_location }}" target="_blank">🎥 Join Video Interview</a>
+                  {% endif %}
                   <form method="post" action="{% url 'jobs:application_status_update' application.pk %}">
                     {% csrf_token %}<input type="hidden" name="status" value="shortlisted">
                     <button type="submit" class="btn btn--sm btn--success">✅ Shortlist</button>
                   </form>
-                  <form method="post" action="{% url 'jobs:application_status_update' application.pk %}">
-                    {% csrf_token %}<input type="hidden" name="status" value="interview">
-                    <button type="submit" class="btn btn--sm btn--primary">📅 Interview</button>
-                  </form>
+                  <a class="btn btn--sm btn--primary" href="{% url 'jobs:schedule_interview' application.pk %}">📅 Interview</a>
+                  {% if application.status == "offered" %}
+                    <a class="btn btn--sm btn--success" href="{% url 'jobs:mark_as_hired' application.pk %}">🎉 Mark as Hired</a>
+                  {% endif %}
                   <a class="btn btn--sm btn--outline" href="{% url 'messaging:employer_messages' %}">💬 Chat</a>
+                  <a class="btn btn--sm btn--outline" href="{% url 'webmail:employer_mail' %}?compose_to={{ candidate.user.mail_address.address|default:'' }}&subject=Regarding your application for {{ application.job.title|urlencode }}">✉️ Mail</a>
                   <form method="post" action="{% url 'jobs:application_status_update' application.pk %}">
                     {% csrf_token %}<input type="hidden" name="status" value="rejected">
                     <button type="submit" class="btn btn--sm btn--danger">❌</button>
@@ -80,7 +87,7 @@
               </div>
               {% endwith %}
             {% empty %}
-              <p style="color:var(--muted);">ఇంకా ఏ అప్లికేషన్స్ రాలేదు.</p>
+              <p style="color:var(--muted);">No applications yet.</p>
             {% endfor %}
           </div>
 
@@ -102,6 +109,11 @@
                     <td><span class="status-badge badge--{{ application.status }}">{{ application.get_status_display }}</span></td>
                     <td>
                       <div style="display:flex;gap:4px;">
+                        <a class="btn btn--sm btn--outline" href="{% url 'webmail:employer_mail' %}?compose_to={{ candidate.user.mail_address.address|default:'' }}&subject=Regarding your application for {{ application.job.title|urlencode }}">✉️</a>
+                        <a class="btn btn--sm btn--primary" href="{% url 'jobs:schedule_interview' application.pk %}">📅</a>
+                        {% if application.status == "offered" %}
+                          <a class="btn btn--sm btn--success" href="{% url 'jobs:mark_as_hired' application.pk %}">🎉</a>
+                        {% endif %}
                         <form method="post" action="{% url 'jobs:application_status_update' application.pk %}">
                           {% csrf_token %}<input type="hidden" name="status" value="shortlisted">
                           <button type="submit" class="btn btn--sm btn--success">✅</button>
@@ -115,7 +127,7 @@
                   </tr>
                   {% endwith %}
                 {% empty %}
-                  <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;">ఇంకా ఏ అప్లికేషన్స్ రాలేదు.</td></tr>
+                  <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;">No applications yet.</td></tr>
                 {% endfor %}
               </tbody>
             </table>

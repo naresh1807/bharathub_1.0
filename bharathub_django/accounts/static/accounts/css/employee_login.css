@@ -365,4 +365,18 @@ body::before {
   .glass-card__body { padding: 20px 20px 24px; }
   .glass-card__header { padding: 22px 20px 18px; }
   .otp-input { width: 42px; height: 48px; font-size: 18px; }
+  .top-bar { padding: 0 16px; }
 }
+
+/* ── PAGE FOOTER ──
+   లాగిన్ చేసేటప్పుడు Terms/Privacy చదవడం తప్పనిసరి కాదు, కానీ
+   అందుబాటులో ఉండాలి కాబట్టి పేజీ కింద ఒక చిన్న footer. */
+.page-footer {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  gap: 18px; flex-wrap: wrap;
+  padding: 18px 20px 26px;
+  font-size: 12px; color: rgba(255,255,255,0.45);
+}
+.page-footer a { color: rgba(255,255,255,0.65); text-decoration: none; }
+.page-footer a:hover { color: white; text-decoration: underline; }

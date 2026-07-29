@@ -1,0 +1,65 @@
+{% comment %}
+webmail/_email_list.html -- ఎంచుకున్న folder (inbox/starred/sent/
+drafts/trash) లోని మెయిల్స్ జాబితా. Draft రో నొక్కితే compose panel
+ఎడిట్ మోడ్ లో తెరుచుకుంటుంది (bhEditDraft) -- మిగతా ఏ రో నొక్కినా
+ఆ మెయిల్ ని ?open=<id> తో తెరుస్తుంది (webmail/_email_detail.html).
+{% endcomment %}
+<div style="padding:12px 24px;border-bottom:1px solid var(--border);font-weight:700;color:var(--primary);text-transform:capitalize;font-size:14px;">
+  {{ folder }}
+</div>
+
+<div style="flex:1;overflow-y:auto;">
+  {% if not emails %}
+    <div style="padding:70px 20px;text-align:center;color:var(--muted);font-size:13px;">
+      {% if folder == "inbox" %}📭 Inbox is empty.
+      {% elif folder == "starred" %}⭐ No starred mail.
+      {% elif folder == "sent" %}📤 No sent mail yet.
+      {% elif folder == "drafts" %}📝 No drafts.
+      {% else %}🗑️ Trash is empty.
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% for e in emails %}
+    <div class="mail-row{% if folder == 'inbox' and not e.is_read %} mail-row--unread{% endif %}"
+      {% if folder == "drafts" %}
+         data-attachments='[{% for a in e.attachments.all %}{"id":{{ a.pk }},"name":"{{ a.original_filename|escapejs }}","size":"{{ a.human_size|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'
+         onclick="bhEditDraft({{ e.pk }}, '{{ e.to_raw|escapejs }}', '{{ e.subject|escapejs }}', '{{ e.body|escapejs }}', this)"
+      {% else %}
+         onclick="location.href='?folder={{ folder }}&open={{ e.pk }}'"
+      {% endif %}>
+
+      {% if folder == "inbox" or folder == "starred" %}
+        <form method="post" action="{% url 'webmail:toggle_star' e.pk %}" onclick="event.stopPropagation();" style="display:contents;">
+          {% csrf_token %}
+          <input type="hidden" name="folder" value="{{ folder }}">
+          <button type="submit" class="mail-star{% if e.is_starred %} mail-star--on{% endif %}" title="Star">⭐</button>
+        </form>
+      {% else %}
+        <span style="width:19px;flex-shrink:0;"></span>
+      {% endif %}
+
+      <div class="mail-avatar mail-avatar--sm">
+        {% if folder == "sent" or folder == "drafts" %}{{ e.to_raw|default:"?"|slice:":1"|upper }}{% else %}{{ e.sender.address|slice:":1"|upper }}{% endif %}
+      </div>
+
+      <div class="mail-row__main">
+        <div class="mail-row__line1">
+          <span class="mail-row__from">
+            {% if folder == "sent" or folder == "drafts" %}
+              {{ e.to_raw|default:"(no recipient)" }}
+            {% else %}
+              {{ e.sender.address }}
+            {% endif %}
+          </span>
+          <span class="mail-row__date">{{ e.created_at|date:"M d" }}</span>
+        </div>
+        <div class="mail-row__line2">
+          <span class="mail-row__subject">{{ e.subject|default:"(no subject)" }}</span>
+          <span class="mail-row__snippet"> — {{ e.snippet }}</span>
+          {% if e.attachments.exists %}<span title="Has attachments">📎</span>{% endif %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>

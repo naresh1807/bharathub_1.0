@@ -16,17 +16,69 @@
 <header class="header">
   <div class="header__inner">
     <a href="{% url 'home:bharathub_home' %}" class="header__logo">
-      <div class="header__logo-icon">BH</div>
+      <div class="header__logo-icon">{% include "_logo_mark.html" %}</div>
       <span class="header__brand">Bharat<span>Hub</span></span>
     </a>
     <div class="header__actions">
       <a href="{% url 'accounts:employee_login' %}" class="btn btn--outline">Login</a>
       <a href="{% url 'accounts:employee_registration' %}" class="btn btn--accent">Register Free</a>
     </div>
+    {% comment %} మొబైల్ నావిగేషన్ టోగుల్ (☰) -- ఇంతకుముందు మొబైల్ లో
+       ఏ నావిగేషన్ మెనూ లేదు; Login/Register/Employer/Vendor/Search
+       అన్నీ చిన్న స్క్రీన్ లో ఒకదాని పక్కన ఒకటి నొక్కుకుపోయి
+       కనిపించేవి (లేదా అస్సలు కనిపించకుండా ఓవర్‌ఫ్లో అయ్యేవి).
+       ఇప్పుడు ఈ బటన్ (CSS లో డెస్క్‌టాప్ లో దాచిపెట్టి, 768px కన్నా
+       తక్కువ స్క్రీన్ లో మాత్రమే చూపిస్తాం) కింద ఉన్న
+       #mobileNavDrawer ని తెరుస్తుంది. {% endcomment %}
+    <button type="button" class="header__menu-toggle" id="mobileMenuToggle"
+            aria-label="Open menu" aria-expanded="false" aria-controls="mobileNavDrawer"
+            onclick="toggleMobileNav()">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </header>
 
-{% comment %} ═══ SUB-HEADER ═══ {% endcomment %}
+{% comment %} ═══ MOBILE NAV DRAWER ═══
+   మొబైల్ లో (768px కన్నా తక్కువ స్క్రీన్) హెడర్/సబ్-హెడర్ లోని అన్ని
+   యాక్షన్లు ఇక్కడికి తరలివచ్చాయి -- Login, Register, Employer/Vendor
+   లాగిన్, సెర్చ్, మరియు ముఖ్యమైన పేజీ లింకులు ఒకే చోట, పెద్ద
+   టచ్-ఫ్రెండ్లీ లిస్ట్ గా. {% endcomment %}
+<div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileNav()"></div>
+<nav class="mobile-nav-drawer" id="mobileNavDrawer" aria-hidden="true">
+  <div class="mobile-nav-drawer__header">
+    <span class="mobile-nav-drawer__brand">Bharat<span>Hub</span></span>
+    <button type="button" class="mobile-nav-drawer__close" aria-label="Close menu" onclick="closeMobileNav()">✕</button>
+  </div>
+
+  <form class="mobile-nav-drawer__search" role="search" onsubmit="return false;">
+    <svg width="15" height="15" fill="none" stroke="#9ca3af" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="text" placeholder="Search jobs, companies, vendors...">
+  </form>
+
+  <div class="mobile-nav-drawer__section">
+    <a href="{% url 'accounts:employee_login' %}" class="mobile-nav-drawer__btn mobile-nav-drawer__btn--outline">Login</a>
+    <a href="{% url 'accounts:employee_registration' %}" class="mobile-nav-drawer__btn mobile-nav-drawer__btn--accent">📝 Register Free</a>
+  </div>
+
+  <div class="mobile-nav-drawer__label">I am a:</div>
+  <div class="mobile-nav-drawer__section">
+    <a href="{% url 'accounts:employer_login' %}" class="mobile-nav-drawer__btn mobile-nav-drawer__btn--employer">🏢 I am Employer</a>
+    <a href="{% url 'vendor:vendor_login' %}" class="mobile-nav-drawer__btn mobile-nav-drawer__btn--vendor">🛍️ I am Vendor</a>
+  </div>
+
+  <div class="mobile-nav-drawer__label">Explore</div>
+  <div class="mobile-nav-drawer__links">
+    <a href="{% url 'home:about' %}">About Us</a>
+    <a href="{% url 'home:contact' %}">Contact</a>
+    <a href="{% url 'home:help' %}">Help Center</a>
+    <a href="{% url 'home:privacy' %}">Privacy Policy</a>
+    <a href="{% url 'home:terms' %}">Terms of Service</a>
+  </div>
+</nav>
+
+{% comment %} ═══ SUB-HEADER (డెస్క్‌టాప్/టాబ్లెట్ లో మాత్రమే కనిపిస్తుంది --
+   మొబైల్ లో పైన ఉన్న Drawer లోనే ఇవన్నీ ఉన్నాయి కాబట్టి డూప్లికేట్
+   అవ్వకుండా CSS media query తో దీన్ని దాచిపెడతాం) ═══ {% endcomment %}
 <div class="sub-header">
   <div class="sub-header__inner">
     <span class="sub-header__label">I am a:</span>
@@ -47,8 +99,8 @@
       <h1>India's <span>Premium</span><br>Professional Ecosystem</h1>
       <p>Connecting students, job seekers, and professionals with smart profiles and verified branding.</p>
       <div class="hero-banner__actions">
-        <button class="btn btn--accent">🚀 Get Started Free</button>
-        <button class="btn btn--outline">Watch Demo</button>
+        <a href="{% url 'accounts:employee_registration' %}" class="btn btn--accent">🚀 Get Started Free</a>
+        <a href="#feed-section" class="btn btn--outline">Watch Demo</a>
       </div>
     </div>
     <div class="hero-banner__stats">
@@ -63,7 +115,7 @@
 <div class="main-container">
 
   {% comment %} 70% FEED {% endcomment %}
-  <div class="feed-section">
+  <div class="feed-section" id="feed-section">
 
     <h2>🎬 Company Achievements & Culture Feed</h2>
 
@@ -99,8 +151,8 @@
           {% empty %}
           <div class="ticker-item">
             <div>
-              <div class="ticker-item__role">ఇంకా active job postings ఏమీ లేవు</div>
-              <div class="ticker-item__company">తాజా ఉద్యోగాల కోసం మళ్ళీ చెక్ చేయండి</div>
+              <div class="ticker-item__role">No active job postings yet</div>
+              <div class="ticker-item__company">Check back soon for new openings</div>
             </div>
           </div>
           {% endfor %}
@@ -131,10 +183,6 @@
         📊 Live BharatHub Analytics
       </div>
       <div class="analytics-widget">
-        <div class="live-counter">
-          <div class="live-counter__number" id="viewerCount">1,240</div>
-          <div class="live-counter__label">Professionals Currently Watching</div>
-        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div style="background:rgba(26,54,93,0.06);border-radius:10px;padding:12px;text-align:center;">
             <div style="font-size:20px;font-weight:800;color:var(--primary-color);">{{ stat_employers }}</div>
@@ -145,16 +193,6 @@
             <div style="font-size:11px;color:var(--muted);">Active Job Postings</div>
           </div>
         </div>
-      </div>
-    </div>
-
-    {% comment %} QUICK ACTIONS {% endcomment %}
-    <div class="widget" style="padding:18px;">
-      <div class="section-title" style="margin-bottom:14px;font-size:14px;">Quick Actions</div>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <button class="btn btn--accent" style="justify-content:flex-start;gap:10px;">🔍 Search Jobs</button>
-        <button class="btn btn--primary" style="justify-content:flex-start;gap:10px;">📝 Upload Resume</button>
-        <button class="btn btn--outline" style="justify-content:flex-start;gap:10px;border-color:rgba(26,54,93,0.2);color:var(--primary-color);">📊 View Dashboard</button>
       </div>
     </div>
 
@@ -172,7 +210,7 @@
         {% for chip in employer_chips %}
         <div class="company-logo-chip"><div class="company-logo-chip__icon" style="background:{{ chip.color }};">{{ chip.initials }}</div><span class="company-logo-chip__name">{{ chip.name }}</span></div>
         {% empty %}
-        <div class="company-logo-chip"><span class="company-logo-chip__name">ఇంకా కంపెనీలు ఎవరూ చేరలేదు — మీరే మొదటి వారు అవ్వండి!</span></div>
+        <div class="company-logo-chip"><span class="company-logo-chip__name">No companies have joined yet — be the first!</span></div>
         {% endfor %}
         {% comment %} duplicate the same DB company list once more so the CSS
            slideLeft animation (translateX(-50%), bharathub_home.css) loops
@@ -215,10 +253,6 @@
       </div>
     </div>
 
-    <div style="margin-top:16px;padding:12px;background:rgba(255,153,0,0.12);border-radius:10px;border:1px solid rgba(255,153,0,0.25);">
-      <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px;">🟢 Platform Status</div>
-      <div style="font-size:13px;font-weight:600;color:var(--accent-color);">All Systems Operational</div>
-    </div>
   </div>
 
 </div>
@@ -227,7 +261,7 @@
 <footer class="footer">
   <div class="footer__inner">
     <div class="footer__brand">
-      <div class="footer__logo">BH</div>
+      <div class="footer__logo">{% include "_logo_mark.html" %}</div>
       <span class="footer__brand-name">Bharat<span>Hub</span></span>
     </div>
     <div class="footer__links">

@@ -87,9 +87,9 @@ def send_otp(request, user) -> None:
     send_mail(
         subject="BharatHub — Password Reset OTP",
         message=(
-            f"మీ BharatHub పాస్‌వర్డ్ రీసెట్ OTP: {otp}\n"
-            f"ఇది {OTP_VALID_MINUTES} నిమిషాల్లో గడువు ముగుస్తుంది.\n\n"
-            "మీరు ఈ రిక్వెస్ట్ చేయకపోతే, ఈ ఈమెయిల్ ని పట్టించుకోకండి."
+            f"Your BharatHub password reset OTP: {otp}\n"
+            f"This will expire in {OTP_VALID_MINUTES} minutes.\n\n"
+            "If you did not request this, please ignore this email."
         ),
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user.email],

@@ -1,0 +1,166 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ full_name }} — Resume — BharatHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  {% comment %}
+  candidates/document_resume.html -- CandidateProfile + CandidateEducation లోని
+  నిజమైన డేటా తో ఆటోమేటిక్‌గా జనరేట్ అయ్యే రెజ్యూమ్ పేజీ. Print/Download రెండూ
+  బ్రౌజర్ ప్రింట్ డైలాగ్ నే వాడతాయి (window.print()) -- అక్కడ యూజర్
+  "Save as PDF" ఎంచుకుంటే అదే డౌన్లోడ్ అవుతుంది. ఈ ప్రాజెక్ట్ లో సర్వర్-సైడ్
+  PDF లైబ్రరీ ఏదీ లేదు కాబట్టి, కొత్త heavy dependency యాడ్ చేయకుండా ప్రతి
+  బ్రౌజర్ లోనూ నమ్మకంగా పనిచేసే ఈ పద్ధతినే వాడాం. .no-print క్లాస్ ఉన్నవన్నీ
+  ప్రింట్/PDF అవుట్‌పుట్ లో కనిపించవు (కింద @media print రూల్ చూడండి).
+  {% endcomment %}
+  <style>
+    :root { --primary:#1a365d; --accent:#ff8c00; --muted:#6b7280; --border:#e5e7eb; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; margin: 0; background: #f3f4f6; color: #1f2937; }
+
+    .toolbar {
+      position: sticky; top: 0; z-index: 10; background: #fff;
+      border-bottom: 1px solid var(--border); padding: 12px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .toolbar__back { font-size: 13px; color: var(--muted); text-decoration: none; }
+    .toolbar__back:hover { color: var(--primary); }
+    .toolbar__actions { display: flex; gap: 10px; }
+    .toolbar__btn {
+      border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px;
+      font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .toolbar__btn--primary { background: var(--primary); color: #fff; }
+    .toolbar__btn--outline { background: none; border: 1.5px solid var(--border); color: #374151; }
+
+    .sheet {
+      max-width: 800px; margin: 28px auto 60px; background: #fff;
+      border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 46px 52px;
+    }
+    .sheet__header {
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 3px solid var(--primary); padding-bottom: 18px; margin-bottom: 22px;
+    }
+    .sheet__brand { display: flex; align-items: center; gap: 8px; color: var(--primary); }
+    .sheet__brand-icon {
+      width: 26px; height: 26px; border-radius: 6px; background: var(--primary);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+    }
+    .sheet__brand-name { font-size: 13px; font-weight: 700; letter-spacing: 0.3px; }
+
+    .r-name { font-size: 26px; font-weight: 800; color: var(--primary); margin: 0 0 4px; }
+    .r-headline { font-size: 14px; color: var(--accent); font-weight: 600; margin: 0 0 10px; }
+    .r-contact { font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 16px; }
+
+    .r-section { margin-top: 26px; }
+    .r-section__title {
+      font-size: 12.5px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+      color: var(--primary); border-bottom: 1.5px solid var(--border); padding-bottom: 6px; margin-bottom: 12px;
+    }
+    .r-about { font-size: 13px; line-height: 1.7; color: #374151; white-space: pre-wrap; }
+
+    .r-skills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .r-skill-chip {
+      background: rgba(26,54,93,0.08); color: var(--primary); font-size: 12px;
+      font-weight: 600; padding: 5px 12px; border-radius: 999px;
+    }
+
+    .r-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; font-size: 13px; }
+    .r-facts dt { color: var(--muted); font-weight: 600; }
+    .r-facts dd { margin: 2px 0 0; color: #1f2937; }
+
+    .r-edu-row { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .r-edu-row:last-child { border-bottom: none; }
+    .r-edu-title { font-size: 13.5px; font-weight: 700; color: #1f2937; }
+    .r-edu-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+    .sheet__footer {
+      margin-top: 34px; padding-top: 14px; border-top: 1px solid var(--border);
+      font-size: 10.5px; color: var(--muted); text-align: center;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .no-print { display: none !important; }
+      .sheet { box-shadow: none; margin: 0; padding: 0; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar no-print">
+    <a href="{% url 'candidates:downloads_list' %}" class="toolbar__back">← Back to Downloads</a>
+    <div class="toolbar__actions">
+      <button type="button" class="toolbar__btn toolbar__btn--outline" onclick="window.print()">⬇️ Download</button>
+      <button type="button" class="toolbar__btn toolbar__btn--primary" onclick="window.print()">🖨️ Print</button>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <div class="sheet__header">
+      <div class="sheet__brand">
+        <div class="sheet__brand-icon">{% include "_logo_mark.html" %}</div>
+        <span class="sheet__brand-name">BharatHub</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);">Generated {% now "M d, Y" %}</div>
+    </div>
+
+    <h1 class="r-name">{{ full_name }}</h1>
+    {% if candidate_profile.headline %}<p class="r-headline">{{ candidate_profile.headline }}</p>{% endif %}
+    <div class="r-contact">
+      <span>✉️ {{ candidate_profile.user.email }}</span>
+      {% if candidate_profile.location %}<span>📍 {{ candidate_profile.location }}</span>{% endif %}
+      {% if candidate_profile.linkedin_url %}<span>🔗 {{ candidate_profile.linkedin_url }}</span>{% endif %}
+      {% if candidate_profile.portfolio_url %}<span>🌐 {{ candidate_profile.portfolio_url }}</span>{% endif %}
+    </div>
+
+    {% if candidate_profile.about %}
+    <div class="r-section">
+      <div class="r-section__title">About</div>
+      <p class="r-about">{{ candidate_profile.about }}</p>
+    </div>
+    {% endif %}
+
+    <div class="r-section">
+      <div class="r-section__title">Key Details</div>
+      <dl class="r-facts">
+        <div><dt>Experience</dt><dd>{{ candidate_profile.get_experience_level_display }}</dd></div>
+        {% if candidate_profile.qualification %}<div><dt>Highest Qualification</dt><dd>{{ candidate_profile.qualification }}</dd></div>{% endif %}
+        {% if candidate_profile.current_ctc_lpa %}<div><dt>Current CTC</dt><dd>₹{{ candidate_profile.current_ctc_lpa }} LPA</dd></div>{% endif %}
+        {% if candidate_profile.expected_ctc_lpa %}<div><dt>Expected CTC</dt><dd>₹{{ candidate_profile.expected_ctc_lpa }} LPA</dd></div>{% endif %}
+      </dl>
+    </div>
+
+    {% if candidate_profile.skills_list %}
+    <div class="r-section">
+      <div class="r-section__title">Skills</div>
+      <div class="r-skills">
+        {% for skill in candidate_profile.skills_list %}<span class="r-skill-chip">{{ skill }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if education_entries %}
+    <div class="r-section">
+      <div class="r-section__title">Education</div>
+      {% for edu in education_entries %}
+        <div class="r-edu-row">
+          <div class="r-edu-title">{{ edu.degree_title }} — {{ edu.get_level_display }}</div>
+          <div class="r-edu-sub">
+            {{ edu.institution }}{% if edu.year_of_passing %} · {{ edu.year_of_passing }}{% endif %}{% if edu.score %} · {{ edu.score }}{% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="sheet__footer">
+      This resume was generated from the candidate's BharatHub profile · BharatHub ID: {{ candidate_profile.user.employee_profile.bharathub_id }}
+    </div>
+  </div>
+
+</body>
+</html>

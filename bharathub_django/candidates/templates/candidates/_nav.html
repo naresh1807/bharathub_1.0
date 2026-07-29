@@ -1,0 +1,200 @@
+{% load static %}
+{% load webmail_extras %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   candidates/_nav.html
+   Candidate (Employee) dashboard's top nav bar + left sidebar,
+   factored out into ONE shared partial so it isn't (re)built by hand
+   on every page that needs it -- same idea as employers/_nav.html
+   and vendor/_nav.html.
+
+   BUG THIS FIXES: messaging/candidate_messages.html used to hand-roll
+   its own 2-item topnav (Dashboard, Messages only) instead of the
+   real navigation -- so clicking "Messages" made every other nav
+   item (Profile, Videos, Job Matches, My Applications, Logout, ...)
+   disappear, because that page never rendered them in the first
+   place. Now candidate_messages.html includes this same partial that
+   candidate_dashboard.html uses, so all items are always present.
+
+   SAME BUG, FOUND AGAIN: jobs/job_browse.html and
+   jobs/my_applications.html had an identical problem -- they used
+   their own stripped-down jobs/_candidate_topbar.html (only
+   Dashboard / Job Matches / My Applications, no sidebar at all), so
+   clicking "Job Matches" or "Job Applied Status" made Profile,
+   Videos, Chat, Mail and Logout disappear on those pages too. Both
+   now include this same partial instead.
+
+   HOW TO USE:
+     {% include "candidates/_nav.html" with active="messages" %}
+
+   Two kinds of nav items, same convention as employers/_nav.html:
+     - Home / Profile / Videos / Mail still live TOGETHER as JS
+       show/hide tabs inside candidate_dashboard.html, so their
+       buttons call showSection(...) via onclick when you're already
+       on that page. From any OTHER page (like this messages page),
+       they fall back to a plain link back to the dashboard with
+       ?section=... so the right tab opens automatically once there
+       (candidate_dashboard.js reads that query param on load).
+     - Job Matches / My Applications / Messages are real, separate
+       pages, so those are always plain <a href> links.
+
+   `active` tells this partial which single item to highlight.
+   Recognised values: home, profile, videos, mail, messages,
+   browse (Job Matches), applications (My Applications / Job
+   Applied Status), downloads.
+
+   NOTE: this partial intentionally does NOT include the rich
+   profile card (photo / hire-status toggle / profile-completion
+   bar) that candidate_dashboard.html shows above its sidebar nav --
+   that widget needs extra context (profile_completion %, etc.) that
+   only the dashboard view computes. Here we show a simple ID badge
+   instead, built straight from request.user, so this partial works
+   unmodified on any candidate-facing page.
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+<nav class="topnav">
+  <button type="button" class="mobile-menu-btn" onclick="toggleMobileDrawer()" aria-label="Open menu">☰</button>
+  <a href="{% url 'home:bharathub_home' %}" class="topnav__brand">
+    <div class="topnav__brand-icon">{% include "_logo_mark.html" %}</div>
+    Bharat<span>Hub</span>
+  </a>
+
+  <div class="topnav__tabs">
+    {% if active == "home" %}
+      <button class="topnav__tab active" onclick="showSection('home',this)">🏠 Home</button>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'candidates:candidate_dashboard' %}?section=home">🏠 Home</a>
+    {% endif %}
+
+    {% if active == "profile" %}
+      <button class="topnav__tab active" onclick="showSection('profile',this)">👤 Profile</button>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'candidates:candidate_dashboard' %}?section=profile">👤 Profile</a>
+    {% endif %}
+
+    {% if active == "videos" %}
+      <button class="topnav__tab active" onclick="showSection('videos',this)">🎥 Videos</button>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'candidates:candidate_dashboard' %}?section=videos">🎥 Videos</a>
+    {% endif %}
+
+    <a class="topnav__tab{% if active == 'applications' %} active{% endif %}" href="{% url 'jobs:my_applications' %}">📊 Job Applied Status</a>
+
+    {% if active == "messages" %}
+      <span class="topnav__tab active">💬 Messages{% if unread_message_count %}<span class="bh-badge" style="background:var(--error,#dc2626);color:#fff;font-size:10px;border-radius:9px;padding:1px 6px;margin-left:4px;">{{ unread_message_count }}</span>{% endif %}</span>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'messaging:candidate_messages' %}">💬 Messages{% if unread_message_count %}<span class="bh-badge" style="background:var(--error,#dc2626);color:#fff;font-size:10px;border-radius:9px;padding:1px 6px;margin-left:4px;">{{ unread_message_count }}</span>{% endif %}</a>
+    {% endif %}
+
+    {% unread_mail_count request.user as mail_badge %}
+    {% if active == "mail" %}
+      <span class="topnav__tab active">📧 Mail{% if mail_badge %}<span class="bh-badge" style="background:var(--error,#dc2626);color:#fff;font-size:10px;border-radius:9px;padding:1px 6px;margin-left:4px;">{{ mail_badge }}</span>{% endif %}</span>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'webmail:candidate_mail' %}">📧 Mail{% if mail_badge %}<span class="bh-badge" style="background:var(--error,#dc2626);color:#fff;font-size:10px;border-radius:9px;padding:1px 6px;margin-left:4px;">{{ mail_badge }}</span>{% endif %}</a>
+    {% endif %}
+  </div>
+
+  <div class="topnav__right">
+    <div class="topnav__user">
+      <div class="topnav__avatar">
+        {% if request.user.employee_profile.profile_photo %}
+          <img src="{{ request.user.employee_profile.profile_photo.url }}" alt="{{ request.user.get_full_name }}">
+        {% else %}
+          {{ request.user.get_full_name|default:request.user.username|slice:":1"|upper }}
+        {% endif %}
+      </div>
+      <div class="topnav__userinfo">
+        <div class="topnav__username">{{ request.user.get_full_name|default:request.user.username }}</div>
+        <div class="topnav__userid">{{ request.user.employee_profile.bharathub_id }}</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+{% comment %} ══ LAYOUT ══ (caller closes this </div> after their own <main>) {% endcomment %}
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="sidebar__profile">
+      <div class="sidebar__avatar">
+        {% if request.user.employee_profile.profile_photo %}
+          <img src="{{ request.user.employee_profile.profile_photo.url }}" alt="{{ request.user.get_full_name }}" style="width:100%;height:100%;object-fit:cover;">
+        {% else %}
+          {{ request.user.get_full_name|default:request.user.username|slice:":1"|upper }}
+        {% endif %}
+      </div>
+      <div class="sidebar__name">{{ request.user.get_full_name|default:request.user.username }}</div>
+      <div class="sidebar__id">{{ request.user.employee_profile.bharathub_id }}</div>
+    </div>
+
+    <nav class="sidebar__nav">
+      {% if active == "home" %}
+        <button class="sidebar__nav-item active" onclick="showSection('home',null,this)">
+          <span class="nav-icon">🏠</span> Dashboard
+        </button>
+      {% else %}
+        <a class="sidebar__nav-item" href="{% url 'candidates:candidate_dashboard' %}?section=home">
+          <span class="nav-icon">🏠</span> Dashboard
+        </a>
+      {% endif %}
+
+      {% if active == "profile" %}
+        <button class="sidebar__nav-item active" onclick="showSection('profile',null,this)">
+          <span class="nav-icon">👤</span> My Profile
+        </button>
+      {% else %}
+        <a class="sidebar__nav-item" href="{% url 'candidates:candidate_dashboard' %}?section=profile">
+          <span class="nav-icon">👤</span> My Profile
+        </a>
+      {% endif %}
+
+      {% if active == "videos" %}
+        <button class="sidebar__nav-item active" onclick="showSection('videos',null,this)">
+          <span class="nav-icon">🎥</span> Videos
+        </button>
+      {% else %}
+        <a class="sidebar__nav-item" href="{% url 'candidates:candidate_dashboard' %}?section=videos">
+          <span class="nav-icon">🎥</span> Videos
+        </a>
+      {% endif %}
+
+      {% if active == "messages" %}
+        <span class="sidebar__nav-item active">
+          <span class="nav-icon">⚡</span> Chat
+          {% if unread_message_count %}<span class="nav-badge">{{ unread_message_count }}</span>{% endif %}
+        </span>
+      {% else %}
+        <a class="sidebar__nav-item" href="{% url 'messaging:candidate_messages' %}" style="text-decoration:none;">
+          <span class="nav-icon">⚡</span> Chat
+          {% if unread_message_count %}<span class="nav-badge">{{ unread_message_count }}</span>{% endif %}
+        </a>
+      {% endif %}
+
+      {% if active == "mail" %}
+        <span class="sidebar__nav-item active">
+          <span class="nav-icon">📧</span> Mail
+          {% if mail_badge %}<span class="nav-badge">{{ mail_badge }}</span>{% endif %}
+        </span>
+      {% else %}
+        <a class="sidebar__nav-item" href="{% url 'webmail:candidate_mail' %}" style="text-decoration:none;">
+          <span class="nav-icon">📧</span> Mail
+          {% if mail_badge %}<span class="nav-badge">{{ mail_badge }}</span>{% endif %}
+        </a>
+      {% endif %}
+
+      <a class="sidebar__nav-item{% if active == 'browse' %} active{% endif %}" href="{% url 'jobs:job_browse' %}">
+        <span class="nav-icon">💼</span> Job Matches
+      </a>
+      <a class="sidebar__nav-item{% if active == 'applications' %} active{% endif %}" href="{% url 'jobs:my_applications' %}">
+        <span class="nav-icon">📊</span> My Applications
+        {% if applications_total_count %}<span class="nav-badge">{{ applications_total_count }}</span>{% endif %}
+      </a>
+      <a class="sidebar__nav-item{% if active == 'downloads' %} active{% endif %}" href="{% url 'candidates:downloads_list' %}">
+        <span class="nav-icon">📥</span> Downloads
+      </a>
+      <form method="post" action="{% url 'accounts:logout' %}" style="display:contents;">
+        {% csrf_token %}
+        <button type="submit" class="sidebar__nav-item" style="margin-top:auto;color:var(--error);" onclick="return confirm('Do you want to logout?');">
+          <span class="nav-icon">🚪</span> Logout
+        </button>
+      </form>
+    </nav>
+  </aside>

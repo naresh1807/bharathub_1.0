@@ -48,7 +48,7 @@
     pushToggleBtn.addEventListener("click", async () => {
       if (!vapidKey) {
         // అడ్మిన్ ఇంకా VAPID కీలు సెట్ చేయలేదు (settings.py నోట్ చూడండి).
-        alert("Push notifications ఇంకా సర్వర్‌లో సెటప్ కాలేదు. ఈమెయిల్ నోటిఫికేషన్లు మాత్రం పనిచేస్తాయి.");
+        alert("Push notifications are not yet set up on the server. Email notifications will still work.");
         return;
       }
       try {
@@ -190,9 +190,29 @@
       case "presence.snapshot":
         (data.members || []).forEach((m) => setPresence(m.user_id, m.is_online, m.last_seen));
         break;
+      case "call.started":
+        showCallBanner(data);
+        break;
       default:
         break;
     }
+  }
+
+  // ------------------------------------------------------------------
+  // 📹 Video call banner -- meetings app broadcasts "call.started" to
+  // this same chat WebSocket group (see meetings/views.py
+  // StartConversationCallView) when someone taps the 📹 button in the
+  // chat header. Everyone else with this chat open sees a live "Join
+  // Call" banner instantly, no page reload needed.
+  // ------------------------------------------------------------------
+  function showCallBanner(data) {
+    const banner = document.getElementById("bh-call-banner");
+    const text = document.getElementById("bh-call-banner-text");
+    const joinLink = document.getElementById("bh-call-banner-join");
+    if (!banner || !text || !joinLink) return;
+    text.textContent = "📹 " + (data.started_by_name || "Someone") + " started a video call";
+    joinLink.href = data.room_url;
+    banner.style.display = "flex";
   }
 
   function setPresence(userId, isOnline, lastSeen) {
@@ -279,7 +299,7 @@
 
   function renderSearchResults(results, query) {
     if (!results.length) {
-      searchResults.innerHTML = `<div style="padding:8px;color:#888;font-size:12px;">ఫలితాలు లేవు</div>`;
+      searchResults.innerHTML = `<div style="padding:8px;color:#888;font-size:12px;">No results</div>`;
       return;
     }
     searchResults.innerHTML = results
@@ -564,7 +584,7 @@
       e.stopPropagation();
       openEditBox(editBtn);
     } else if (deleteBtn) {
-      if (window.confirm("ఈ సందేశాన్ని అందరి కోసం తొలగించాలా?")) {
+      if (window.confirm("Delete this message for everyone?")) {
         send({ type: "message.delete", message_id: parseInt(deleteBtn.dataset.id, 10) });
       }
     } else if (reactBtn) {
@@ -633,12 +653,12 @@
       });
       const data = await resp.json();
       if (!resp.ok) {
-        window.alert(data.error || "అప్‌లోడ్ విఫలమైంది.");
+        window.alert(data.error || "Upload failed.");
         return;
       }
       send({ type: "message.attachment_sent", message_id: data.message.id });
     } catch (err) {
-      window.alert("అప్‌లోడ్ విఫలమైంది.");
+      window.alert("Upload failed.");
     } finally {
       fileInput.value = "";
     }

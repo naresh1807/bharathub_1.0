@@ -12,9 +12,8 @@
 {% endblock %}
 
 {% block content %}
-{% include "jobs/_candidate_topbar.html" with active="applications" %}
+{% include "candidates/_nav.html" with active="applications" %}
 
-<div class="layout" style="grid-template-columns:1fr;">
   <main class="main" style="padding:24px;">
     <div class="page-header" style="margin-bottom:16px;">
       <h1>📊 My Applications</h1>
@@ -25,7 +24,7 @@
       <div class="card__body" style="overflow-x:auto;">
         <table class="app-table">
           <thead>
-            <tr><th>Job</th><th>Company</th><th>Applied On</th><th>Status</th></tr>
+            <tr><th>Job</th><th>Company</th><th>Applied On</th><th>Status</th><th>Interview Details</th></tr>
           </thead>
           <tbody>
             {% for app in applications %}
@@ -34,9 +33,23 @@
                 <td>{{ app.job.employer.company_name }}</td>
                 <td>{{ app.applied_at|date:"d M Y" }}</td>
                 <td><span class="status-badge status-badge--{{ app.status }}">{{ app.get_status_display }}</span></td>
+                <td>
+                  {% if app.status == "interview" and app.interview_datetime %}
+                    <div style="font-size:12px;font-weight:600;color:#6366f1;">📅 {{ app.interview_datetime|date:"d M Y, h:i A" }}</div>
+                    {% if app.interview_mode == "video" %}
+                      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">{{ app.get_interview_mode_display }}</div>
+                      <a href="{{ app.interview_location }}" target="_blank" class="btn btn--sm btn--accent" style="font-size:11px;padding:5px 12px;">🎥 Join Video Interview</a>
+                    {% else %}
+                      <div style="font-size:11px;color:var(--muted);">{{ app.get_interview_mode_display }}{% if app.interview_location %} · {{ app.interview_location }}{% endif %}</div>
+                    {% endif %}
+                    {% if app.interview_notes %}<div style="font-size:11px;color:var(--muted);margin-top:2px;">📝 {{ app.interview_notes }}</div>{% endif %}
+                  {% else %}
+                    <span style="color:var(--muted);font-size:12px;">—</span>
+                  {% endif %}
+                </td>
               </tr>
             {% empty %}
-              <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px;">మీరు ఇంకా ఏ ఉద్యోగానికి apply చేయలేదు. <a href="{% url 'jobs:job_browse' %}">Browse jobs →</a></td></tr>
+              <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;">You haven't applied to any jobs yet. <a href="{% url 'jobs:job_browse' %}">Browse jobs →</a></td></tr>
             {% endfor %}
           </tbody>
         </table>

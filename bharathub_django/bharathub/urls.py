@@ -21,7 +21,9 @@ urlpatterns = [
     path("jobs/", include("jobs.urls")),
     path("shop/", include("shopping.urls")),
     path("messages/", include("messaging.urls")),
+    path("mail/", include("webmail.urls")),
     path("videos/", include("videos.urls")),
+    path("meetings/", include("meetings.urls")),
 ]
 
 if settings.DEBUG:

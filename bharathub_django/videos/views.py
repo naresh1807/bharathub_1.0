@@ -26,7 +26,7 @@ from .utils import REACTION_EMOJI, display_identity, published_videos_for
 def _get_employer_profile_or_403(request):
     employer_profile = getattr(request.user, "employer_profile", None)
     if employer_profile is None:
-        raise PermissionDenied("వీడియో అప్‌లోడ్/డిలీట్ చేయడం Employer ఖాతాలకి మాత్రమే.")
+        raise PermissionDenied("Uploading/deleting videos is for Employer accounts only.")
     return employer_profile
 
 
@@ -47,14 +47,14 @@ class UploadVideoView(View):
             video.save()
             messages.success(
                 request,
-                f"🎥 '{video.title}' ఫీడ్‌కి పబ్లిష్ అయింది! ఇది Home పేజీలో మరియు "
-                f"Candidate డాష్‌బోర్డ్ లో కూడా వెంటనే కనిపిస్తుంది.",
+                f"🎥 '{video.title}' published to the feed! It will now appear on the Home page and "
+                f"the Candidate dashboard as well.",
             )
         else:
             error_text = " ".join(
                 f"{field}: {', '.join(errs)}" for field, errs in form.errors.items()
             )
-            messages.error(request, f"⚠️ వీడియో అప్‌లోడ్ విఫలమైంది — {error_text}")
+            messages.error(request, f"⚠️ Video upload failed — {error_text}")
 
         return redirect(
             reverse("employers:employer_dashboard") + "?section=videos",
@@ -74,11 +74,11 @@ class DeleteVideoView(View):
         video = get_object_or_404(Video, pk=pk)
 
         if video.employer_id != employer.id:
-            raise PermissionDenied("మీరు ఈ వీడియో ని డిలీట్ చేయలేరు.")
+            raise PermissionDenied("You cannot delete this video.")
 
         title = video.title
         video.delete()
-        messages.success(request, f"🗑️ '{title}' తీసివేయబడింది.")
+        messages.success(request, f"🗑️ '{title}' removed.")
         return redirect(
             reverse("employers:employer_dashboard") + "?section=videos",
         )
@@ -127,7 +127,7 @@ def add_comment(request, pk):
     video = get_object_or_404(Video, pk=pk, is_published=True)
     text = (request.POST.get("text") or "").strip()
     if not text:
-        return JsonResponse({"error": "ఖాళీ కామెంట్ పోస్ట్ చేయలేరు."}, status=400)
+        return JsonResponse({"error": "Cannot post an empty comment."}, status=400)
 
     comment = VideoComment.objects.create(video=video, user=request.user, text=text[:500])
     name, initials = display_identity(request.user)

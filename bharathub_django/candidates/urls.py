@@ -28,4 +28,24 @@ urlpatterns = [
         views.HireRequestRespondView.as_view(),
         name="hire_request_respond",
     ),
+
+    # ── Downloads: Resume + employment letters (candidate_dashboard.html
+    # sidebar లోని కొత్త "Downloads" నావ్ ఐటమ్) ────────────────────────
+    path("candidate/downloads/", views.DownloadsListView.as_view(), name="downloads_list"),
+    path("candidate/downloads/resume/", views.ResumeDocumentView.as_view(), name="download_resume"),
+    path(
+        "candidate/downloads/appointment-letter/<int:pk>/",
+        views.AppointmentLetterView.as_view(),
+        name="download_appointment_letter",
+    ),
+    path(
+        "candidate/downloads/employment-letter/<int:pk>/<str:letter_type>/",
+        views.EmploymentLetterView.as_view(),
+        name="download_employment_letter",
+    ),
+    path(
+        "candidate/downloads/offer-letter/<int:pk>/",
+        views.OfferLetterView.as_view(),
+        name="download_offer_letter",
+    ),
 ]

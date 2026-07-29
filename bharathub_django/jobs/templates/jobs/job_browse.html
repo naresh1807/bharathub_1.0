@@ -15,9 +15,8 @@
 {% endblock %}
 
 {% block content %}
-{% include "jobs/_candidate_topbar.html" with active="browse" %}
+{% include "candidates/_nav.html" with active="browse" %}
 
-<div class="layout" style="grid-template-columns:1fr;">
   <main class="main" style="padding:24px;">
 
     {% if messages %}
@@ -60,7 +59,7 @@
           </div>
         </a>
       {% empty %}
-        <p style="color:var(--muted);">ప్రస్తుతం ఏ ఉద్యోగాలు అందుబాటులో లేవు{% if query %} — "{{ query }}" కి ఏమీ దొరకలేదు{% endif %}.</p>
+        <p style="color:var(--muted);">No jobs are currently available{% if query %} — nothing found for "{{ query }}"{% endif %}.</p>
       {% endfor %}
     </div>
 

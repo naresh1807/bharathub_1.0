@@ -1,0 +1,155 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% comment %}
+jobs/my_hires.html -- Employer dashboard లోని "My Hires" పేజీ -- ఎంత మంది,
+ఏ డిపార్ట్‌మెంట్‌లో పని చేస్తున్నారు, జీతం, జాయినింగ్ డేట్ లాంటి ఎంప్లాయీ
+వివరాలు ఇక్కడ స్పష్టంగా కనిపిస్తాయి (jobs/views.py: MyHiresView). "Mark as
+Hired" చేసినప్పుడు (MarkAsHiredView) ఇక్కడే కొత్త ఎంట్రీ కనిపిస్తుంది.
+ప్రతి ఉద్యోగి పక్కనే Message/Mail బటన్లు ఉంటాయి, నేరుగా వాళ్ళతో మాట్లాడటానికి.
+Resignation requests వచ్చినవాటికి ఇక్కడి నుండే Accept/Decline (ResignationRespondView).
+{% endcomment %}
+
+{% block title %}BharatHub — My Hires{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'employers/css/employer_dashboard.css' %}">
+<style>
+  .hire-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+  }
+  .hire-row:last-child { border-bottom: none; }
+  .hire-row__name { font-weight: 700; font-size: 14px; color: var(--primary); }
+  .hire-row__meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .hire-status-chip { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+  .hire-status-chip--active { background: rgba(22,163,74,0.12); color: var(--success); }
+  .hire-status-chip--resignation_requested { background: rgba(255,153,0,0.12); color: var(--accent); }
+  .hire-status-chip--relieved { background: #f3f4f6; color: var(--muted); }
+
+  .summary-strip { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+  .summary-chip {
+    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 16px; font-size: 13px; color: var(--primary); font-weight: 600;
+  }
+  .summary-chip strong { font-size: 16px; }
+  .summary-chip--total { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  .hire-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .hire-table th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px;
+    color: var(--muted); padding: 10px 16px; border-bottom: 1.5px solid var(--border);
+  }
+  .hire-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .hire-table tr:last-child td { border-bottom: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% include "employers/_nav.html" with active="hires" %}
+
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <h1>👥 My Hires</h1>
+        <p>Everyone you've hired through BharatHub — department, salary, joining date, and quick contact</p>
+      </div>
+    </div>
+
+    {% comment %} ── "ఎంత మంది ఏ డిపార్ట్‌మెంట్ లో పని చేస్తున్నారు" సమ్మరీ ── {% endcomment %}
+    <div class="summary-strip">
+      <div class="summary-chip summary-chip--total"><strong>{{ current_employees|length }}</strong> currently employed</div>
+      {% for dept, count in department_counts %}
+        <div class="summary-chip">{{ dept }}: <strong>{{ count }}</strong></div>
+      {% endfor %}
+    </div>
+
+    {% if pending_resignations %}
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card__header"><div class="card__title">📤 Pending Resignation Requests</div></div>
+      <div class="card__body" style="padding:0;">
+        {% for emp in pending_resignations %}
+        <div class="hire-row">
+          <div>
+            <div class="hire-row__name">{{ emp.candidate.user.get_full_name|default:emp.candidate.user.username }}</div>
+            <div class="hire-row__meta">{{ emp.designation }} · joined {{ emp.joining_date|date:"M d, Y" }} · requested {{ emp.resignation_requested_at|date:"M d, Y" }}</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <form method="post" action="{% url 'jobs:resignation_respond' emp.pk %}" onsubmit="return confirm('Accept this resignation and relieve {{ emp.candidate.user.get_full_name|default:emp.candidate.user.username }}?');">
+              {% csrf_token %}<input type="hidden" name="action" value="accept">
+              <button type="submit" class="btn btn--sm btn--success">✅ Accept</button>
+            </form>
+            <form method="post" action="{% url 'jobs:resignation_respond' emp.pk %}">
+              {% csrf_token %}<input type="hidden" name="action" value="decline">
+              <button type="submit" class="btn btn--sm btn--outline">Decline</button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% comment %} ── ప్రస్తుత ఉద్యోగుల డైరెక్టరీ -- పేరు, డిపార్ట్‌మెంట్, డిజిగ్నేషన్,
+       జీతం, జాయినింగ్ డేట్, Message/Mail అన్నీ ఒకే చోట ── {% endcomment %}
+    <div class="card">
+      <div class="card__header"><div class="card__title">Current Employees</div></div>
+      <div class="card__body" style="padding:0;overflow-x:auto;">
+        <table class="hire-table">
+          <thead>
+            <tr>
+              <th>Name</th><th>BharatHub ID</th><th>Department</th><th>Designation</th>
+              <th>Salary (LPA)</th><th>Joining Date</th><th>Offer</th><th>Status</th><th>Contact</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for emp in current_employees %}
+            <tr>
+              <td><strong style="color:var(--primary);">{{ emp.candidate.user.get_full_name|default:emp.candidate.user.username }}</strong></td>
+              <td style="color:var(--accent);font-weight:600;">{{ emp.candidate.user.employee_profile.bharathub_id }}</td>
+              <td>{{ emp.job.get_department_display|default:"—" }}</td>
+              <td>{{ emp.designation }}</td>
+              <td>₹{{ emp.salary_lpa }}</td>
+              <td>{{ emp.joining_date|date:"M d, Y" }}</td>
+              <td>
+                {% if emp.offer_status == "accepted" %}
+                  <span style="color:var(--success);font-weight:600;font-size:12px;">✅ Accepted</span>
+                {% else %}
+                  <span style="color:var(--accent);font-weight:600;font-size:12px;">Pending</span>
+                {% endif %}
+              </td>
+              <td><span class="hire-status-chip hire-status-chip--{{ emp.status }}">{{ emp.get_status_display }}</span></td>
+              <td>
+                <div style="display:flex;gap:4px;">
+                  <a class="btn btn--sm btn--outline" href="{% url 'messaging:employer_messages' %}" title="Message">💬</a>
+                  <a class="btn btn--sm btn--outline" href="{% url 'webmail:employer_mail' %}?compose_to={{ emp.candidate.user.mail_address.address|default:'' }}&subject=Regarding your role at {{ emp.employer.company_name|urlencode }}" title="Mail">✉️</a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px;">No one hired yet — mark a candidate as Hired from the Applications page once you've sent them an offer.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if relieved_employees %}
+    <div class="card" style="margin-top:20px;">
+      <div class="card__header"><div class="card__title">Past Employees</div></div>
+      <div class="card__body" style="padding:0;">
+        {% for emp in relieved_employees %}
+        <div class="hire-row">
+          <div>
+            <div class="hire-row__name">{{ emp.candidate.user.get_full_name|default:emp.candidate.user.username }}</div>
+            <div class="hire-row__meta">{{ emp.designation }} · {{ emp.joining_date|date:"M d, Y" }} – {{ emp.relieving_date|date:"M d, Y" }}</div>
+          </div>
+          <span class="hire-status-chip hire-status-chip--relieved">Relieved</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

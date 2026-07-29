@@ -132,7 +132,8 @@ body{font-family:var(--font);background:var(--light-bg);color:#1a1a2e;font-size:
 .photo-area{display:flex;align-items:center;gap:16px;}
 .photo-prev{width:72px;height:72px;border-radius:50%;background:rgba(26,54,93,.1);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;overflow:hidden;}
 .photo-prev img{width:100%;height:100%;object-fit:cover;}
-@media(max-width:600px){.row{grid-template-columns:1fr}.sec-layers{grid-template-columns:1fr}.page-wrap{padding:0 12px 40px}.fcard__body{padding:18px}}
+@media(max-width:600px){.row{grid-template-columns:1fr}.sec-layers{grid-template-columns:1fr}.page-wrap{padding:0 12px 40px}.fcard__body{padding:18px}.header{padding:0 16px}.logo-name{font-size:17px}.page-title h1{font-size:22px}.sub-area{flex-direction:column;align-items:stretch}.btn-sub,.btn-bk{min-width:0;width:100%}.mopt{min-width:100px;padding:10px 12px;font-size:13px}}
+@media(max-width:420px){.otp-inputs{gap:6px}.odig{width:38px;height:46px;font-size:17px}.otp-modal{padding:28px 20px}.s-id{font-size:17px;padding:8px 14px;letter-spacing:1px}}
 
 /* ── TERMS MODAL ─────────────────────────────── */
 .terms-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(5px); z-index:999; align-items:center; justify-content:center; padding:20px; }

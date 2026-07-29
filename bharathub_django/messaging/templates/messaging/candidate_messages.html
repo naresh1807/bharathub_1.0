@@ -15,18 +15,11 @@
 {% endblock %}
 
 {% block content %}
-<nav class="topnav">
-  <a href="{% url 'home:bharathub_home' %}" class="topnav__brand">
-    <div class="topnav__brand-icon">BH</div>
-    Bharat<span>Hub</span>
-  </a>
-  <div class="topnav__tabs">
-    <a class="topnav__tab" href="{% url 'candidates:candidate_dashboard' %}">🏠 Dashboard</a>
-    <a class="topnav__tab active" href="{% url 'messaging:candidate_messages' %}">💬 Messages</a>
-  </div>
-</nav>
 
-<main class="main" style="padding:24px;max-width:1100px;margin:0 auto;">
+{% include "candidates/_nav.html" with active="messages" %}
+
+  <main class="main" style="padding:24px;max-width:1100px;margin:0 auto;">
 {% include "messaging/_messages_body.html" %}
-</main>
+  </main>
+</div>
 {% endblock %}

@@ -1,0 +1,72 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   jobs/mark_as_hired.html
+   Employer confirms designation/joining date (prefilled from the job
+   posting/today, editable) and enters the actual salary offered. Saving
+   this creates the Employment record, sets JobApplication.status =
+   "hired", and CandidateProfile.hire_status = HIRED (see jobs/views.py::
+   MarkAsHiredView). This salary/designation/joining date is what shows
+   up in the employer's "My Hires" employee directory. ══════════════ {% endcomment %}
+
+{% block title %}BharatHub — Mark as Hired{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'employers/css/employer_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include "employers/_nav.html" with active="applications" %}
+
+<main class="main" style="padding:24px;max-width:560px;margin:0 auto;">
+  <a href="{% url 'jobs:applications' %}" style="font-size:13px;color:var(--muted);text-decoration:none;">← Back to Applications</a>
+
+  <div class="card" style="margin-top:12px;">
+    <div class="card__header">
+      <div class="card__title">🎉 Mark as Hired</div>
+    </div>
+    <div class="card__body" style="padding:20px;">
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+        <div class="candidate-avatar">{{ application.candidate.user.first_name|default:application.candidate.user.username|slice:":2"|upper }}</div>
+        <div>
+          <div style="font-weight:700;color:var(--primary);">{{ application.candidate.user.get_full_name|default:application.candidate.user.username }}</div>
+          <div style="font-size:12px;color:var(--muted);">Applied for: {{ application.job.title }}</div>
+        </div>
+      </div>
+
+      {% if form.non_field_errors %}
+      <div style="background:#fee2e2;color:#991b1b;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px;">⚠️ {% for error in form.non_field_errors %}{{ error }}{% endfor %}</div>
+      {% endif %}
+
+      <form method="post">
+        {% csrf_token %}
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">{{ form.designation.label }} <span style="color:var(--error);">*</span></label>
+          {{ form.designation }}
+          {% if form.designation.errors %}<div style="color:var(--error);font-size:12px;margin-top:4px;">⚠️ {{ form.designation.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">{{ form.joining_date.label }} <span style="color:var(--error);">*</span></label>
+          {{ form.joining_date }}
+          {% if form.joining_date.errors %}<div style="color:var(--error);font-size:12px;margin-top:4px;">⚠️ {{ form.joining_date.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">{{ form.salary_lpa.label }} <span style="color:var(--error);">*</span></label>
+          {{ form.salary_lpa }}
+          {% if form.salary_lpa.errors %}<div style="color:var(--error);font-size:12px;margin-top:4px;">⚠️ {{ form.salary_lpa.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:12px;color:var(--muted);margin-bottom:18px;">
+          ℹ️ Once confirmed, {{ application.candidate.user.get_full_name|default:application.candidate.user.username }} will stop receiving new job offers on BharatHub and will appear in your <strong>My Hires</strong> directory.
+        </div>
+
+        <button type="submit" class="btn btn--accent" style="width:100%;padding:11px;">✅ Confirm Hire</button>
+      </form>
+    </div>
+  </div>
+</main>
+{% endblock %}

@@ -22,7 +22,7 @@
 {% block header %}
 <header class="header">
   <a href="{% url 'home:bharathub_home' %}" class="logo">
-    <div class="logo-icon">BH</div>
+    <div class="logo-icon">{% include "_logo_mark.html" %}</div>
     <span class="logo-name">Bharat<span>Hub</span></span>
   </a>
   <a href="{% url 'accounts:employee_login' %}" class="back-link">← Back to Login</a>
@@ -83,7 +83,7 @@
       </div>
 
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#4b5563;margin:16px 0;">
-        <input type="checkbox" required> I agree to the <a href="#" style="color:var(--primary);">Terms of Service</a> and <a href="#" style="color:var(--primary);">Privacy Policy</a>
+        <input type="checkbox" required> I agree to the <a href="{% url 'home:terms' %}" target="_blank" style="color:var(--primary);">Terms of Service</a> and <a href="{% url 'home:privacy' %}" target="_blank" style="color:var(--primary);">Privacy Policy</a>
       </label>
 
       <button type="submit" class="btn-sub" style="width:100%;">✅ Complete Registration</button>
