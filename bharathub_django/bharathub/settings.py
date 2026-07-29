@@ -188,23 +188,23 @@ ASGI_APPLICATION = "bharathub.asgi.application"
 # injection. Never build raw SQL by string-concatenating user input;
 # if you ever need .raw() or connection.cursor(), always pass values
 # via the params=[...] argument, never f-strings/% formatting.
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
-# }
-
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'bharathub',
-        'USER': 'root',
-        'PASSWORD': 'Thanvika@1816',
-        'HOST': 'localhost',
-        'PORT': '3306',
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'bharathub',
+#         'USER': 'root',
+#         'PASSWORD': 'Thanvika@1816',
+#         'HOST': 'localhost',
+#         'PORT': '3306',
+#     }
+# }
 
 # ═══════════════════════════════════════════════════════════════════
 # ── PASSWORD STRENGTH RULES (checked on every registration/change) ─
