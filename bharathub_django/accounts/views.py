@@ -1,13 +1,14 @@
 import json
 
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, logout
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.generic import TemplateView, View
 
-from . import password_reset
+from . import otp_auth, password_reset
 from .forms import (
     EmployeeRegistrationForm, EmployeeLoginForm,
     EmployerRegistrationForm, EmployerLoginForm,
@@ -35,33 +36,36 @@ class EmployeeRegistrationView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.setdefault("form", EmployeeRegistrationForm())
+        # RegistrationOTPView.post() (OTP సరిచూసుకున్న తర్వాత, User+
+        # EmployeeProfile క్రియేట్ అయిన వెంటనే) ఇక్కడ ఒక session flag
+        # పెడుతుంది -- దాన్ని ఇక్కడ చదివి (ఒక్కసారే వాడేసి తీసేసి),
+        # "మీ BharatHub ID ఇది" popup చూపిస్తాం.
+        registered_id = self.request.session.pop("just_registered_id", None)
+        registered_role = self.request.session.pop("just_registered_role", None)
+        if registered_id and registered_role == "employee":
+            context["registered_id"] = registered_id
         return context
 
     def post(self, request, *args, **kwargs):
-        # request.FILES కూడా పంపాలి -- ఎందుకంటే ఫారమ్ లో ప్రొఫైల్ ఫోటో
-        # (ImageField / <input type="file">) ఉంది. ఫైల్ డేటా request.POST
-        # లో కాదు, request.FILES లో వేరేగా వస్తుంది.
+        # request.FILES కూడా పంపాలి -- ఫారమ్ వాలిడేషన్ కి (ఐచ్ఛిక
+        # profile_photo ఫీల్డ్ ఉంది) అవసరం, కానీ OTP-గేటెడ్ ఫ్లో లో
+        # ఫైల్ ని ఇక్కడే సేవ్ చేయం (కింద నోట్ చూడండి).
         form = EmployeeRegistrationForm(request.POST, request.FILES)
         if form.is_valid():
-            user, profile = form.save()
-            # ఇక్కడ auto-login చేయడం లేదు -- రిజిస్ట్రేషన్ అయిన వెంటనే
-            # సెషన్ లాగిన్ చేసేస్తే, popup లోని "Continue to Login" బటన్
-            # నొక్కినప్పుడు యూజర్ ఇప్పటికే authenticated గా ఉంటారు, దాంతో
-            # ProfileCompletionMiddleware వెంటనే వాళ్ళని లాగిన్ పేజీ నుండి
-            # నేరుగా "Complete Your Profile" ఫారమ్ కి పంపించేస్తుంది --
-            # యూజర్ తన లాగిన్ ఐడీ/పాస్‌వర్డ్ తో నిజంగా లాగిన్ అవ్వకుండానే.
-            # దాన్ని నివారించడానికి, రిజిస్ట్రేషన్ తర్వాత సెషన్ ని
-            # అన్‌అథెంటికేటెడ్ గానే ఉంచుతాం -- "Continue to Login" నొక్కి,
-            # అసలైన లాగిన్ ఫారమ్ లో ఐడీ/పాస్‌వర్డ్ ఇచ్చాకే ప్రొఫైల్
-            # ఫారమ్ కి వెళ్తారు.
-            send_bharathub_id_email(user, profile.bharathub_id, "BharatHub ID")
-            # redirect చేయకుండా, ఇదే పేజీని (ఖాళీ ఫారమ్ తో, వెనుక) +
-            # registered_id popup తో రెండరింగ్ చేస్తాం -- popup లోని
-            # "Continue to Login" బటన్ నొక్కేదాకా యూజర్ ఇక్కడే ఉండి,
-            # తన BharatHub ID ని చూసి, కాపీ చేసుకోగలరు.
-            context = self.get_context_data(form=EmployeeRegistrationForm())
-            context["registered_id"] = profile.bharathub_id
-            return self.render_to_response(context)
+            # ⚠️ ఇప్పుడు ఇక్కడే form.save() పిలవం -- ముందు OTP పంపి,
+            # OTP సరిచూసుకున్న తర్వాతే (RegistrationOTPView లో) అసలైన
+            # User+EmployeeProfile క్రియేట్ అవుతుంది.
+            #
+            # గమనిక: ఐచ్ఛిక profile_photo ఫైల్ అప్‌లోడ్ ఈ OTP-గేటెడ్
+            # ఫ్లో లో సపోర్ట్ చేయం (ఫైల్ డేటాని session లో పెట్టడం
+            # సురక్షితం కాదు) -- ఫోటో పెట్టి ఉంటే ఇక్కడ స్కిప్ అవుతుంది,
+            # యూజర్ దాన్ని లాగిన్ అయిన తర్వాత "Complete Your Profile"
+            # లో జోడించుకోగలరు.
+            form_data = request.POST.dict()
+            otp_auth.send_registration_otp(
+                request, email=form.cleaned_data["email"], role="employee", form_data=form_data,
+            )
+            return redirect("accounts:otp_register")
 
         # వాలిడేషన్ ఫెయిల్ అయితే, ఎర్రర్స్ తో ఫారమ్‌ని మళ్ళీ చూపిస్తాం.
         return self.render_to_response(self.get_context_data(form=form))
@@ -123,33 +127,17 @@ class EmployeeLoginView(TemplateView):
 
             if user is not None:
                 clear_attempts(user)
-                login(request, user)
-                # "Remember Me" చెక్‌బాక్స్ తీసేస్తే, బ్రౌజర్ మూసేసిన
-                # వెంటనే సెషన్ ముగిసేలా (0 అంటే browser-session cookie).
-                if not form.cleaned_data.get("remember_me"):
-                    request.session.set_expiry(0)
-                messages.success(request, "✅ Login successful!")
-
-                # ఇంతకుముందు ఇక్కడ "home:bharathub_home" కి redirect
-                # అయ్యేది -- అందుకే candidate login అయ్యాక తిరిగి Home
-                # పేజీ కే వెళ్ళిపోయేది (dashboard కి కాదు). ఇప్పుడు
-                # నేరుగా candidate dashboard కి పంపిస్తుంది.
-                #
-                # "next" పరామితి: candidates dashboard వంటి
-                # LoginRequiredMixin పేజీ ని లాగిన్ అవ్వకుండా నేరుగా
-                # URL టైప్ చేసి తెరిస్తే, Django ఆటోమేటిక్‌గా ఇక్కడికి
-                # "?next=..." పంపిస్తుంది -- login అయ్యాక అక్కడికే
-                # తీసుకెళ్ళాలి. url_has_allowed_host_and_scheme() తో
-                # ఈ "next" విలువ మన సైట్ లోపలిదేనా అని నిర్ధారించుకున్న
-                # తర్వాతే వాడతాం (లేకపోతే ఎవరైనా
-                # "?next=https://evil.com" తో phishing సైట్ కి
-                # redirect చేయించే Open Redirect దాడి సాధ్యమవుతుంది).
-                next_url = request.POST.get("next") or request.GET.get("next")
-                if next_url and url_has_allowed_host_and_scheme(
-                    url=next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure(),
-                ):
-                    return redirect(next_url)
-                return redirect("candidates:candidate_dashboard")
+                # ⚠️ ఇక్కడ ఇక నేరుగా login() పిలవం -- పాస్‌వర్డ్ సరైనదని
+                # తెలిశాక, ఇప్పుడు OTP పంపి, verify అయిన తర్వాతే
+                # (LoginOTPView లో) అసలైన login() జరుగుతుంది.
+                next_url = request.POST.get("next") or request.GET.get("next") or ""
+                otp_auth.send_login_otp(
+                    request, user,
+                    remember_me=bool(form.cleaned_data.get("remember_me")),
+                    next_url=next_url,
+                    redirect_name="candidates:candidate_dashboard",
+                )
+                return redirect("accounts:otp_login")
 
             # -------------------------------------------------------------
             # భద్రతా గమనిక: "ID లేదు" vs "పాస్‌వర్డ్ తప్పు" అని వేరుగా
@@ -199,18 +187,20 @@ class EmployerRegistrationView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.setdefault("form", EmployerRegistrationForm())
+        registered_id = self.request.session.pop("just_registered_id", None)
+        registered_role = self.request.session.pop("just_registered_role", None)
+        if registered_id and registered_role == "employer":
+            context["registered_id"] = registered_id
         return context
 
     def post(self, request, *args, **kwargs):
         form = EmployerRegistrationForm(request.POST)
         if form.is_valid():
-            user, profile = form.save()
-            # auto-login చేయడం లేదు -- కారణం EmployeeRegistrationView లో
-            # ఇచ్చిన కామెంట్ చూడండి (login page bypass అవ్వకుండా).
-            send_bharathub_id_email(user, profile.employer_id, "Employer ID")
-            context = self.get_context_data(form=EmployerRegistrationForm())
-            context["registered_id"] = profile.employer_id
-            return self.render_to_response(context)
+            otp_auth.send_registration_otp(
+                request, email=form.cleaned_data["corporate_email"], role="employer",
+                form_data=request.POST.dict(),
+            )
+            return redirect("accounts:otp_register")
         return self.render_to_response(self.get_context_data(form=form))
 
 
@@ -256,11 +246,12 @@ class EmployerLoginView(TemplateView):
             user = authenticate(request, username=username, password=form.cleaned_data["password"]) if username else None
             if user is not None:
                 clear_attempts(user)
-                login(request, user)
-                if not form.cleaned_data.get("remember_me"):
-                    request.session.set_expiry(0)
-                messages.success(request, "✅ Login successful!")
-                return redirect("employers:employer_dashboard")
+                otp_auth.send_login_otp(
+                    request, user,
+                    remember_me=bool(form.cleaned_data.get("remember_me")),
+                    next_url="", redirect_name="employers:employer_dashboard",
+                )
+                return redirect("accounts:otp_login")
 
             if resolved_user is not None:
                 attempts = record_failed_attempt(resolved_user)
@@ -418,3 +409,177 @@ class EmployerProfileCompletionView(View):
             messages.success(request, "✅ Your profile is complete! You now have full access.")
             return redirect("employers:employer_dashboard")
         return render(request, self.template_name, {"form": form})
+
+
+# ============================================================================
+# OTP VERIFICATION -- Login & Registration (Employee/Employer/Vendor మూడు
+# రోల్స్‌కీ ఒకే రెండు షేర్డ్ views).
+#
+# ఈ views.py Login OTP కి "role-agnostic" గా పనిచేస్తుంది -- session
+# లో ఇప్పటికే user_id/redirect_name అన్నీ ఉన్నాయి (accounts/otp_auth.py:
+# send_login_otp() చూడండి), కాబట్టి ఇక్కడ మళ్ళీ role గురించి ఆలోచించే
+# అవసరం లేదు. Registration OTP కి మాత్రం, ఏ Form క్లాస్ వాడాలో role
+# బట్టే నిర్ణయించాలి కాబట్టి ROLE_CONFIG dict వాడతాం.
+# ============================================================================
+
+class LoginOTPView(View):
+    """Employee/Employer/Vendor మూడు లాగిన్ ఫారాలూ, పాస్‌వర్డ్ సరైన
+    తర్వాత ఇక్కడికే redirect చేస్తాయి. django login() ఇక్కడ,
+    verify_login_otp() సక్సెస్ అయిన తర్వాతే జరుగుతుంది."""
+
+    def get(self, request, *args, **kwargs):
+        email = otp_auth.peek_login_email(request)
+        if not email:
+            messages.info(request, "ℹ️ No pending login found. Please log in again.")
+            return redirect("home:bharathub_home")
+        return render(request, "accounts/otp_entry.html", {
+            "otp_purpose": "login",
+            "otp_email": email,
+            "verify_url": reverse("accounts:otp_login"),
+            "resend_url": reverse("accounts:otp_login_resend"),
+            "cancel_url": reverse("accounts:otp_login_cancel"),
+        })
+
+    def post(self, request, *args, **kwargs):
+        otp = (request.POST.get("otp") or "").strip()
+        result = otp_auth.verify_login_otp(request, otp)
+        if result is None:
+            messages.error(request, "⚠️ OTP is incorrect or has expired. Please try again or resend.")
+            return redirect("accounts:otp_login")
+
+        messages.success(request, "✅ Login successful!")
+        next_url = result.get("next")
+        if next_url and url_has_allowed_host_and_scheme(
+            url=next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure(),
+        ):
+            return redirect(next_url)
+        return redirect(result["redirect_name"])
+
+
+class LoginOTPResendView(View):
+    def post(self, request, *args, **kwargs):
+        from django.contrib.auth import get_user_model
+        state = request.session.get(otp_auth.LOGIN_SESSION_KEY)
+        if not state:
+            messages.error(request, "⚠️ Session expired. Please log in again.")
+            return redirect("home:bharathub_home")
+        User = get_user_model()
+        try:
+            user = User.objects.get(pk=state["user_id"])
+        except User.DoesNotExist:
+            return redirect("home:bharathub_home")
+        otp_auth.send_login_otp(
+            request, user, remember_me=state.get("remember_me", False),
+            next_url=state.get("next", ""), redirect_name=state.get("redirect_name"),
+        )
+        messages.success(request, "📧 A new OTP has been sent.")
+        return redirect("accounts:otp_login")
+
+
+class LoginOTPCancelView(View):
+    def get(self, request, *args, **kwargs):
+        otp_auth.cancel_login_otp(request)
+        return redirect("home:bharathub_home")
+
+
+class RegistrationOTPView(View):
+    """Employee/Employer/Vendor మూడు రిజిస్ట్రేషన్ ఫారాలూ, వాలిడ్ అయిన
+    తర్వాత (form.save() కి ముందే) ఇక్కడికే redirect చేస్తాయి. OTP
+    సరైతేనే అసలైన User+Profile ఇక్కడ క్రియేట్ అవుతుంది."""
+
+    ROLE_CONFIG = {
+        "employee": {
+            "form_module": "accounts.forms", "form_class": "EmployeeRegistrationForm",
+            "email_field": "email", "id_field": "bharathub_id", "id_label": "BharatHub ID",
+            "registration_url": "accounts:employee_registration",
+        },
+        "employer": {
+            "form_module": "accounts.forms", "form_class": "EmployerRegistrationForm",
+            "email_field": "corporate_email", "id_field": "employer_id", "id_label": "Employer ID",
+            "registration_url": "accounts:employer_registration",
+        },
+        "vendor": {
+            # vendor.forms ని ఇక్కడే (function లోపల) దిగుమతి చేస్తాం --
+            # module లెవెల్ లో దిగుమతి చేస్తే circular-import ప్రమాదం
+            # (vendor/views.py ఇప్పటికే accounts నుండి దిగుమతి చేస్తుంది,
+            # password_reset.py లో కూడా ఇదే పద్ధతి వాడాం).
+            "form_module": "vendor.forms", "form_class": "VendorRegistrationForm",
+            "email_field": "vendor_email", "id_field": "vendor_id", "id_label": "Vendor ID",
+            "registration_url": "vendor:vendor_registration",
+        },
+    }
+
+    def _get_form_class(self, role):
+        import importlib
+        config = self.ROLE_CONFIG[role]
+        module = importlib.import_module(config["form_module"])
+        return getattr(module, config["form_class"])
+
+    def get(self, request, *args, **kwargs):
+        role = otp_auth.peek_registration_role(request)
+        if not role:
+            messages.info(request, "ℹ️ No pending registration found. Please register again.")
+            return redirect("home:bharathub_home")
+        state = request.session.get(otp_auth.REGISTER_SESSION_KEY) or {}
+        email_field = self.ROLE_CONFIG[role]["email_field"]
+        email = (state.get("form_data") or {}).get(email_field, "")
+        return render(request, "accounts/otp_entry.html", {
+            "otp_purpose": "register",
+            "otp_email": email,
+            "verify_url": reverse("accounts:otp_register"),
+            "resend_url": reverse("accounts:otp_register_resend"),
+            "cancel_url": reverse("accounts:otp_register_cancel"),
+        })
+
+    def post(self, request, *args, **kwargs):
+        otp = (request.POST.get("otp") or "").strip()
+        role, form_data = otp_auth.verify_registration_otp(request, otp)
+        if role is None:
+            messages.error(request, "⚠️ OTP is incorrect or has expired. Please try again or resend.")
+            return redirect("accounts:otp_register")
+
+        config = self.ROLE_CONFIG[role]
+        form_class = self._get_form_class(role)
+        form = form_class(form_data)
+        if not form.is_valid():
+            # ఇది సాధారణంగా జరగకూడదు (ఇంతకుముందే ఒకసారి వాలిడేట్
+            # అయ్యింది) -- కానీ OTP వేచి ఉన్న సమయంలో మరొకరు అదే మొబైల్/
+            # ఇమెయిల్ తో వేరే ఖాతా క్రియేట్ చేసేస్తే ఇది జరగొచ్చు.
+            # సురక్షితంగా విఫలం అవ్వాలి.
+            messages.error(
+                request,
+                "⚠️ Something changed since you registered (this mobile/email may now be in "
+                "use) — please register again.",
+            )
+            return redirect(config["registration_url"])
+
+        user, profile = form.save()
+        id_value = getattr(profile, config["id_field"])
+        send_bharathub_id_email(user, id_value, config["id_label"])
+
+        # EmployeeRegistrationView/EmployerRegistrationView/
+        # VendorRegistrationView.get_context_data() ఈ రెండు session
+        # flags ని చదివి "మీ ID ఇది" popup చూపిస్తుంది.
+        request.session["just_registered_id"] = id_value
+        request.session["just_registered_role"] = role
+        return redirect(config["registration_url"])
+
+
+class RegistrationOTPResendView(View):
+    def post(self, request, *args, **kwargs):
+        state = request.session.get(otp_auth.REGISTER_SESSION_KEY)
+        if not state:
+            messages.error(request, "⚠️ Session expired. Please register again.")
+            return redirect("home:bharathub_home")
+        role = state["role"]
+        email_field = RegistrationOTPView.ROLE_CONFIG[role]["email_field"]
+        email = state["form_data"].get(email_field, "")
+        otp_auth.send_registration_otp(request, email=email, role=role, form_data=state["form_data"])
+        messages.success(request, "📧 A new OTP has been sent.")
+        return redirect("accounts:otp_register")
+
+
+class RegistrationOTPCancelView(View):
+    def get(self, request, *args, **kwargs):
+        otp_auth.cancel_registration_otp(request)
+        return redirect("home:bharathub_home")

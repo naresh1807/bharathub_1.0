@@ -1,0 +1,58 @@
+{% extends "accounts/employee_base.html" %}
+{% comment %}
+accounts/otp_entry.html
+Login మరియు Registration -- రెండిటికీ ఒకే OTP ఎంటర్ పేజీ. Context:
+  otp_purpose: "login" | "register"
+  otp_email: OTP పంపిన ఇమెయిల్ (ఇక్కడ partly masked గా చూపిస్తాం)
+  verify_url, resend_url, cancel_url: {% url %} స్ట్రింగ్‌లు (view.py నుండి)
+{% endcomment %}
+
+{% block title %}BharatHub — Enter OTP{% endblock %}
+
+{% block content %}
+<div style="min-height:80vh;display:flex;align-items:center;justify-content:center;padding:24px;">
+  <div style="max-width:420px;width:100%;background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,0.08);padding:32px;font-family:'Poppins',sans-serif;">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:32px;">🔐</div>
+      <h2 style="margin:8px 0 4px;">
+        {% if otp_purpose == "register" %}Verify your registration{% else %}Verify your login{% endif %}
+      </h2>
+      <p style="color:#666;font-size:14px;margin:0;">
+        We've sent a 6-digit code to <strong>{{ otp_email }}</strong>. Enter it below
+        {% if otp_purpose == "register" %}to complete your registration{% else %}to finish logging in{% endif %}.
+      </p>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div style="background:#fee2e2;color:#991b1b;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;">⚠️ {{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" action="{{ verify_url }}">
+      {% csrf_token %}
+      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:18px;">
+        <input type="text" name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
+               placeholder="••••••" required autofocus
+               style="width:100%;max-width:220px;text-align:center;letter-spacing:8px;font-size:20px;
+                      padding:12px;border:1.5px solid #ddd;border-radius:8px;font-family:'Poppins',sans-serif;">
+      </div>
+      <button type="submit" style="width:100%;padding:12px;border:none;border-radius:8px;background:#4f46e5;color:#fff;font-weight:600;font-size:15px;cursor:pointer;">
+        Verify &amp; Continue
+      </button>
+    </form>
+
+    <div style="display:flex;justify-content:space-between;margin-top:16px;font-size:13px;">
+      <form method="post" action="{{ resend_url }}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" style="border:none;background:none;color:#4f46e5;cursor:pointer;font-size:13px;padding:0;">Resend code</button>
+      </form>
+      <a href="{{ cancel_url }}" style="color:#888;text-decoration:none;">Cancel</a>
+    </div>
+
+    <p style="color:#aaa;font-size:11px;margin-top:18px;text-align:center;">
+      Code expires in 10 minutes. Didn't get it? Check spam, or tap "Resend code".
+    </p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% comment %} ══════════════════════════════════════════════════════════════════
+   meetings/_meeting_list_body.html
+   "🎥 Meetings" పేజీ యొక్క షేర్డ్ బాడీ -- messaging/webmail యాప్‌లలో
+   వాడిన అదే పద్ధతి: ఒక్కో రోల్ (candidate_meetings.html/
+   employer_meetings.html) తన సొంత నావ్ + CSS లోడ్ చేసుకుని ఇదే
+   బాడీ ని include చేస్తుంది. mail_url_name/messages_url_name
+   (meetings/views.py::_MeetingListMixin) ఏ రోల్ కైతే ఆ రోల్ యొక్క
+   సొంత Mail/Messages పేజీకి "✉️ Email It"/"💬 Send via Messages"
+   లింకులు వెళ్ళేలా చూస్తాయి.
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+
+<div class="page-header">
+  <div>
+    <h1>🎥 Meetings</h1>
+    <p>Start an instant video meeting or schedule one — powered by BharatHub Meet (our own video call, no external app needed)</p>
+  </div>
+</div>
+
+{% if messages %}
+  <div style="margin-bottom:16px;">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert--error{% else %}alert--success{% endif %}" style="display:block;">
+        {% if message.tags == 'error' %}⚠️{% else %}✅{% endif %} {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% comment %} ── Personal Meeting Room: ఒక్కసారి క్రియేట్ అయితే ఎప్పటికీ
+ఇదే లింక్ (Zoom యొక్క "Personal Meeting ID" తరహాలో). {% endcomment %}
+{% with personal_url=room_base_url|add:personal_room.room_code|add:"/" %}
+<div class="card" style="padding:20px;margin-bottom:20px;background:rgba(26,54,93,0.03);">
+  <h2 style="margin:0 0 4px;">🔗 My Personal Link</h2>
+  <p style="font-size:12.5px;color:var(--muted);margin:0 0 14px;">Always the same link — share it once, reuse it anytime for a quick call.</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <code style="flex:1;min-width:220px;background:#fff;border:1px solid rgba(26,54,93,0.15);border-radius:8px;padding:9px 12px;font-size:12.5px;color:var(--primary);">{{ personal_url }}</code>
+    <button type="button" class="btn btn--outline" style="font-size:12px;padding:7px 12px;" onclick="bhCopyMeetingLink('{{ personal_url }}', this)">📋 Copy</button>
+    <a class="btn btn--accent" style="font-size:12px;padding:7px 16px;text-decoration:none;" href="{% url 'meetings:my_personal_room' %}">🚀 Start Now</a>
+  </div>
+  <form method="post" action="{% url 'meetings:send_meeting_link' %}" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+    {% csrf_token %}
+    <input type="hidden" name="room_code" value="{{ personal_room.room_code }}">
+    <input type="text" name="bharathub_id" placeholder="📩 Send to a person — enter their BharatHub ID" class="form-input" style="flex:1;min-width:220px;" required>
+    <button type="submit" class="btn btn--outline" style="font-size:12px;padding:7px 16px;">Send</button>
+  </form>
+</div>
+{% endwith %}
+
+<div class="card" style="padding:20px;margin-bottom:20px;">
+  <h2 style="margin:0 0 4px;">➕ New Group Meeting</h2>
+  <p style="font-size:12.5px;color:var(--muted);margin:0 0 14px;">Generates a fresh link each time — good for a scheduled or one-off group call.</p>
+  <div style="display:flex;gap:24px;flex-wrap:wrap;">
+    <form method="post" action="{% url 'meetings:start_instant' %}" style="flex:1;min-width:220px;">
+      {% csrf_token %}
+      <input type="hidden" name="title" value="Instant Meeting">
+      <button type="submit" class="btn btn--accent" style="width:100%;padding:14px;font-size:15px;">🚀 Start Instant Meeting</button>
+      <p style="font-size:12px;color:var(--muted);margin-top:8px;">Opens a live room right now — share the link with anyone.</p>
+    </form>
+
+    <form method="post" action="{% url 'meetings:start_instant' %}" style="flex:2;min-width:280px;display:flex;flex-direction:column;gap:10px;">
+      {% csrf_token %}
+      <input type="text" name="title" placeholder="Meeting title (e.g. Weekly Sync)" class="form-input" required>
+      {% comment %} మొబైల్ బగ్ ఫిక్స్ (employer_meetings.html నుండి అదే
+      పద్ధతి): date + time విడిగా -- datetime-local చాలా మొబైల్
+      బ్రౌజర్లలో టైమ్ పికర్ తెరవదు. {% endcomment %}
+      <div style="display:flex;gap:10px;">
+        <input type="date" name="scheduled_date" class="form-input" required style="flex:1;">
+        <input type="time" name="scheduled_time" class="form-input" required style="flex:1;">
+      </div>
+      <button type="submit" class="btn btn--outline">📅 Schedule Meeting</button>
+    </form>
+  </div>
+</div>
+
+<div class="card" style="padding:20px;">
+  <h2 style="margin:0 0 14px;">📋 Your Meetings</h2>
+  {% for meeting in meetings %}
+  <div style="display:flex;align-items:center;gap:14px;padding:12px 0;flex-wrap:wrap;{% if not forloop.last %}border-bottom:1px solid rgba(26,54,93,0.08);{% endif %}">
+    <div style="width:44px;height:44px;border-radius:10px;background:rgba(26,54,93,0.08);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">
+      {% if meeting.status == "live" %}🟢{% elif meeting.status == "ended" %}⚪{% else %}🕓{% endif %}
+    </div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:14px;font-weight:700;color:var(--primary);">{{ meeting.title }}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+        {% if meeting.scheduled_at %}📅 {{ meeting.scheduled_at|date:"d M Y, g:i A" }} · {% endif %}
+        {{ meeting.get_status_display }} · Room: {{ meeting.room_code }}
+      </div>
+    </div>
+    {% if meeting.status != "ended" %}
+    {% with meeting_url=room_base_url|add:meeting.room_code|add:"/" %}
+    {% with share_text="Join our meeting: "|add:meeting.title|add:" — "|add:meeting_url %}
+    <div class="meeting-share" style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <button type="button" class="btn btn--outline" style="font-size:12px;padding:7px 12px;"
+                onclick="bhCopyMeetingLink('{{ meeting_url }}', this)">📋 Copy Link</button>
+        <a class="btn btn--outline" style="font-size:12px;padding:7px 12px;text-decoration:none;"
+           href="{% url mail_url_name %}?subject={{ meeting.title|urlencode }}&body={{ share_text|urlencode }}">✉️ Email It</a>
+        <a class="btn btn--outline" style="font-size:12px;padding:7px 12px;text-decoration:none;"
+           href="{% url messages_url_name %}">💬 Send via Messages</a>
+        <a class="btn btn--accent" style="font-size:12px;padding:7px 16px;flex-shrink:0;" href="{% url 'meetings:room' meeting.room_code %}">Join →</a>
+      </div>
+      <form method="post" action="{% url 'meetings:send_meeting_link' %}" style="display:flex;gap:6px;flex-wrap:wrap;">
+        {% csrf_token %}
+        <input type="hidden" name="room_code" value="{{ meeting.room_code }}">
+        <input type="text" name="bharathub_id" placeholder="📩 Send directly — BharatHub ID" class="form-input" style="flex:1;min-width:180px;font-size:12px;padding:6px 10px;" required>
+        <button type="submit" class="btn btn--outline" style="font-size:12px;padding:6px 12px;">Send</button>
+      </form>
+    </div>
+    {% endwith %}
+    {% endwith %}
+    {% endif %}
+  </div>
+  {% empty %}
+  <p style="color:var(--muted);font-size:13px;">No group meetings yet — click "Start Instant Meeting" above to begin one.</p>
+  {% endfor %}
+</div>
+
+<script>
+// 📋 Copy Link: మీటింగ్ URL ని క్లిప్‌బోర్డ్ కి కాపీ చేస్తుంది.
+function bhCopyMeetingLink(url, btn) {
+  navigator.clipboard.writeText(url).then(function () {
+    const original = btn.textContent;
+    btn.textContent = "✅ Copied!";
+    setTimeout(function () { btn.textContent = original; }, 1500);
+  }).catch(function () {
+    window.prompt("Copy this link:", url);
+  });
+}
+</script>

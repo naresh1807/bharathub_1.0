@@ -8,10 +8,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   {% comment %}
   shopping/invoice.html -- ఒక Order యొక్క B2B ఇన్వాయిస్ (shopping/views.py:
-  InvoiceView). Vendor (Seller) మరియు Employer (Buyer) ఇద్దరి GST నెంబర్లు,
-  డెలివరీ అడ్రస్, లైన్ ఐటమ్స్ అన్నీ ఇక్కడ. Print/Download రెండూ బ్రౌజర్
-  ప్రింట్ డైలాగ్ నే వాడతాయి (candidates/document_resume.html లో ఉన్న అదే
-  కారణంతో -- సర్వర్-సైడ్ PDF లైబ్రరీ ఏదీ ఈ ప్రాజెక్ట్ లో లేదు).
+  InvoiceView) -- ఇది కేవలం ఆన్‌స్క్రీన్ ప్రివ్యూ/ప్రింట్ పేజీ. అసలైన
+  "Download" బటన్ ఇప్పుడు shopping/pdf_invoice.py::generate_invoice_pdf()
+  ద్వారా ReportLab తో సర్వర్ లోనే జనరేట్ అయిన నిజమైన PDF ఫైల్ ని
+  డౌన్‌లోడ్ చేస్తుంది (shopping:invoice_pdf) -- బ్రౌజర్ print dialog
+  మీద ఇక ఆధారపడదు. "Print" బటన్ మాత్రమే ఇప్పటికీ బ్రౌజర్ ప్రింట్
+  డైలాగ్ వాడుతుంది (ఆన్-స్క్రీన్ చూసి నేరుగా ప్రింట్ చేయడానికి).
   {% endcomment %}
   <style>
     :root { --primary:#1a365d; --accent:#ff8c00; --muted:#6b7280; --border:#e5e7eb; --success:#16a34a; }
@@ -94,7 +96,7 @@
   <div class="toolbar no-print">
     <a href="javascript:history.back()" class="toolbar__back">← Back</a>
     <div class="toolbar__actions">
-      <button type="button" class="toolbar__btn toolbar__btn--outline" onclick="window.print()">⬇️ Download</button>
+      <a href="{% url 'shopping:invoice_pdf' order.pk %}" class="toolbar__btn toolbar__btn--outline" style="text-decoration:none;display:inline-block;">⬇️ Download PDF</a>
       <button type="button" class="toolbar__btn toolbar__btn--primary" onclick="window.print()">🖨️ Print</button>
     </div>
   </div>

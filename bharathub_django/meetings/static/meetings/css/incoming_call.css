@@ -1,0 +1,90 @@
+/*
+meetings/static/meetings/css/incoming_call.css
+వాట్సాప్ తరహా "incoming call" ఓవర్‌లే -- ఏ పేజీ మీద అయినా టాప్‌మోస్ట్
+z-index తో కనిపిస్తుంది (incoming_call.js దీన్ని బాడీ చివర్లో
+జోడిస్తుంది).
+*/
+.bh-incoming-call {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 99999;
+  animation: bhSlideIn 0.3s ease-out;
+}
+
+@keyframes bhSlideIn {
+  from { transform: translateX(120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.bh-incoming-call__card {
+  background: #1a365d;
+  color: #fff;
+  border-radius: 14px;
+  padding: 18px 20px;
+  width: 260px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  font-family: 'Poppins', sans-serif;
+  text-align: center;
+}
+
+.bh-incoming-call__pulse {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  background: #ff8c00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  animation: bhPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes bhPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 140, 0, 0.55); }
+  50% { box-shadow: 0 0 0 12px rgba(255, 140, 0, 0); }
+}
+
+.bh-incoming-call__title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.bh-incoming-call__subtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 2px;
+  margin-bottom: 14px;
+}
+
+.bh-incoming-call__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.bh-incoming-call__btn {
+  flex: 1;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 0;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.bh-incoming-call__btn--join {
+  background: #16a34a;
+  color: #fff;
+}
+
+.bh-incoming-call__btn--reject {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+@media (max-width: 480px) {
+  .bh-incoming-call { top: 10px; right: 10px; left: 10px; }
+  .bh-incoming-call__card { width: auto; }
+}

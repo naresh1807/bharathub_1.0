@@ -11,6 +11,7 @@ urlpatterns = [
     path("orders/<int:pk>/cancel/", views.EmployerOrderCancelView.as_view(), name="order_cancel"),
     path("orders/<int:pk>/mark_delivered/", views.EmployerOrderMarkDeliveredView.as_view(), name="order_mark_delivered"),
     path("orders/<int:pk>/invoice/", views.InvoiceView.as_view(), name="invoice"),
+    path("orders/<int:pk>/invoice/download/", views.InvoicePDFDownloadView.as_view(), name="invoice_pdf"),
 
     # Seller (vendor) side
     path("vendor_products.html", views.VendorProductsView.as_view(), name="vendor_products"),

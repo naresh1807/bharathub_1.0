@@ -12,6 +12,10 @@ from jobs.models import Employment, JobApplication
 from messaging.views import unread_total_for
 from videos.utils import published_videos_for
 from .forms import CandidateEducationForm, CandidateProfileForm
+from .pdf_documents import (
+    generate_appointment_letter_pdf, generate_employment_letter_pdf,
+    generate_offer_letter_pdf, generate_resume_pdf,
+)
 from .models import CandidateEducation, CandidateProfile
 
 # Candidates app: candidate details, profile & applied-jobs info.
@@ -477,3 +481,65 @@ class OfferLetterView(LoginRequiredMixin, TemplateView):
         context["employment"] = employment
         context["full_name"] = self.request.user.get_full_name() or self.request.user.username
         return context
+
+
+# ============================================================================
+# PDF Download views
+#
+# పైన ఉన్న ResumeDocumentView/AppointmentLetterView/EmploymentLetterView/
+# OfferLetterView అన్నీ ఇంతకుముందు బ్రౌజర్ ప్రింట్ డైలాగ్ (window.print())
+# మీద ఆధారపడే HTML ప్రివ్యూ పేజీలు మాత్రమే ఇచ్చేవి. ఇప్పుడు ప్రతిదానికీ
+# పక్కన ఒక నిజమైన PDF డౌన్‌లోడ్ వ్యూ జోడించాం (candidates/pdf_documents.py
+# ద్వారా ReportLab తో సర్వర్ లోనే జనరేట్ అవుతుంది) -- ఓనర్‌షిప్/అందుబాటు
+# చెక్‌లు పైన ఉన్న ఆయా HTML వ్యూలలో ఉన్నవే, exact గా అవే మళ్ళీ ఇక్కడ.
+# ============================================================================
+class ResumePDFDownloadView(LoginRequiredMixin, View):
+    login_url = "accounts:employee_login"
+
+    def get(self, request, *args, **kwargs):
+        candidate_profile = get_object_or_404(CandidateProfile, user=request.user)
+        full_name = request.user.get_full_name() or request.user.username
+        return generate_resume_pdf(
+            candidate_profile, candidate_profile.education_entries.all(), full_name,
+        )
+
+
+class AppointmentLetterPDFDownloadView(LoginRequiredMixin, View):
+    login_url = "accounts:employee_login"
+
+    def get(self, request, pk, *args, **kwargs):
+        hire_request = get_object_or_404(
+            HireRequest.objects.select_related("employer", "job", "candidate__user"),
+            pk=pk, candidate__user=request.user,
+            status=HireRequest.Status.ACCEPTED, job__isnull=False,
+        )
+        full_name = request.user.get_full_name() or request.user.username
+        return generate_appointment_letter_pdf(hire_request, full_name)
+
+
+class EmploymentLetterPDFDownloadView(LoginRequiredMixin, View):
+    login_url = "accounts:employee_login"
+    VALID_TYPES = {"joining", "relieving", "experience"}
+
+    def get(self, request, pk, letter_type, *args, **kwargs):
+        if letter_type not in self.VALID_TYPES:
+            raise Http404("Unknown letter type.")
+        employment = get_object_or_404(
+            Employment.objects.select_related("application__job__employer", "candidate__user"),
+            pk=pk, candidate__user=request.user,
+            status=Employment.Status.RELIEVED,
+        )
+        full_name = request.user.get_full_name() or request.user.username
+        return generate_employment_letter_pdf(employment, letter_type, full_name)
+
+
+class OfferLetterPDFDownloadView(LoginRequiredMixin, View):
+    login_url = "accounts:employee_login"
+
+    def get(self, request, pk, *args, **kwargs):
+        employment = get_object_or_404(
+            Employment.objects.select_related("application__job__employer", "candidate__user"),
+            pk=pk, candidate__user=request.user,
+        )
+        full_name = request.user.get_full_name() or request.user.username
+        return generate_offer_letter_pdf(employment, full_name)

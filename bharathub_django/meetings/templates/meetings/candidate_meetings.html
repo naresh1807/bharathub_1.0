@@ -1,0 +1,25 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   meetings/candidate_meetings.html
+   Candidate-facing "🎥 Meetings" wrapper -- employer_meetings.html తో
+   అదే _meeting_list_body.html share చేస్తుంది, నావ్ + CSS మాత్రమే
+   candidate-specific.
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+
+{% block title %}BharatHub — My Meetings{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'candidates/css/candidate_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'meetings/css/meetings.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% include "candidates/_nav.html" with active="meetings" %}
+
+  <main class="main" style="padding:24px;max-width:1000px;margin:0 auto;">
+{% include "meetings/_meeting_list_body.html" %}
+  </main>
+</div>
+{% endblock %}

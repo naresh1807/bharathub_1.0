@@ -8,12 +8,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   {% comment %}
   candidates/document_resume.html -- CandidateProfile + CandidateEducation లోని
-  నిజమైన డేటా తో ఆటోమేటిక్‌గా జనరేట్ అయ్యే రెజ్యూమ్ పేజీ. Print/Download రెండూ
-  బ్రౌజర్ ప్రింట్ డైలాగ్ నే వాడతాయి (window.print()) -- అక్కడ యూజర్
-  "Save as PDF" ఎంచుకుంటే అదే డౌన్లోడ్ అవుతుంది. ఈ ప్రాజెక్ట్ లో సర్వర్-సైడ్
-  PDF లైబ్రరీ ఏదీ లేదు కాబట్టి, కొత్త heavy dependency యాడ్ చేయకుండా ప్రతి
-  బ్రౌజర్ లోనూ నమ్మకంగా పనిచేసే ఈ పద్ధతినే వాడాం. .no-print క్లాస్ ఉన్నవన్నీ
-  ప్రింట్/PDF అవుట్‌పుట్ లో కనిపించవు (కింద @media print రూల్ చూడండి).
+  నిజమైన డేటా తో ఆటోమేటిక్‌గా జనరేట్ అయ్యే రెజ్యూమ్ ప్రివ్యూ పేజీ. అసలైన
+  "Download" బటన్ ఇప్పుడు candidates/pdf_documents.py::generate_resume_pdf()
+  ద్వారా ReportLab తో సర్వర్ లోనే జనరేట్ అయిన నిజమైన PDF ఫైల్ ని
+  డౌన్‌లోడ్ చేస్తుంది (candidates:download_resume_pdf). "Print" బటన్
+  మాత్రమే ఇప్పటికీ బ్రౌజర్ ప్రింట్ డైలాగ్ వాడుతుంది (ఆన్-స్క్రీన్
+  చూసి నేరుగా ప్రింట్ చేయడానికి). .no-print క్లాస్ ఉన్నవన్నీ ఆ ప్రింట్
+  అవుట్‌పుట్ లో కనిపించవు (కింద @media print రూల్ చూడండి).
   {% endcomment %}
   <style>
     :root { --primary:#1a365d; --accent:#ff8c00; --muted:#6b7280; --border:#e5e7eb; }
@@ -94,7 +95,7 @@
   <div class="toolbar no-print">
     <a href="{% url 'candidates:downloads_list' %}" class="toolbar__back">← Back to Downloads</a>
     <div class="toolbar__actions">
-      <button type="button" class="toolbar__btn toolbar__btn--outline" onclick="window.print()">⬇️ Download</button>
+      <a href="{% url 'candidates:download_resume_pdf' %}" class="toolbar__btn toolbar__btn--outline" style="text-decoration:none;display:inline-block;">⬇️ Download PDF</a>
       <button type="button" class="toolbar__btn toolbar__btn--primary" onclick="window.print()">🖨️ Print</button>
     </div>
   </div>

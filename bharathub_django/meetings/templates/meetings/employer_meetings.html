@@ -1,0 +1,26 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% comment %} ══════════════════════════════════════════════════════════════════
+   meetings/employer_meetings.html
+   Employer-facing "🎥 Meetings" wrapper -- messaging/webmail యాప్‌ల
+   లోనే వాడిన షేర్డ్-ఫీచర్ పద్ధతి: ఈ ఫైల్ కేవలం నావ్ + CSS మాత్రమే
+   role-specific గా అందిస్తుంది, అసలు కంటెంట్ మొత్తం
+   _meeting_list_body.html లో (candidate_meetings.html తో షేర్ అవుతుంది).
+   ══════════════════════════════════════════════════════════════════ {% endcomment %}
+
+{% block title %}BharatHub — Company Meetings{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'employers/css/employer_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'meetings/css/meetings.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% include "employers/_nav.html" with active="meetings" %}
+
+  <main class="main">
+{% include "meetings/_meeting_list_body.html" %}
+  </main>
+</div>
+{% endblock %}

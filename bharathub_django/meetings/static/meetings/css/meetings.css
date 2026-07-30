@@ -1,0 +1,25 @@
+/* meetings/meetings.css
+   ══════════════════════════════════════════════════════════════════
+   "🎥 Meetings" పేజీ (_meeting_list_body.html) .btn / .btn--accent /
+   .btn--outline క్లాసులు విస్తృతంగా వాడుతుంది. employer/vendor
+   dashboard CSS లలో ఇవి ఇప్పటికే ఉన్నాయి, కానీ candidate_dashboard.css
+   లో లేవు (అక్కడ బదులుగా .btn-sm వాడతారు) -- messaging/webmail యాప్‌ల
+   లోనే ఇంతకుముందు ఇదే గ్యాప్ వల్ల బగ్ వచ్చింది (ఒక రోల్ CSS లో లేని
+   క్లాస్ మీద షేర్డ్ ఫీచర్ ఆధారపడటం), కాబట్టి ఇప్పుడు ఈ ఫీచర్ కి
+   సొంత, స్వయం-సమృద్ధి (self-contained) CSS ఫైల్ -- ఏ రోల్ dashboard
+   CSS లోడ్ అయినా (:root లో ఇప్పటికే మూడు రోల్స్‌లోనూ ఒకేలా ఉన్న
+   --primary/--accent/--border/--muted వేరియబుల్స్ ఉపయోగించి) ఇక్కడి
+   బటన్లు ఎప్పుడూ సరిగ్గా కనిపిస్తాయి.
+   ══════════════════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 18px; border-radius: 8px;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; transition: all 0.2s; text-decoration: none;
+}
+.btn--primary { background: var(--primary); color: white; }
+.btn--primary:hover { opacity: 0.92; }
+.btn--accent { background: var(--accent); color: white; box-shadow: 0 3px 10px rgba(255,153,0,0.3); }
+.btn--accent:hover { opacity: 0.92; transform: translateY(-1px); }
+.btn--outline { background: none; border: 1.5px solid var(--border); color: var(--muted); }
+.btn--outline:hover { border-color: var(--primary); color: var(--primary); }

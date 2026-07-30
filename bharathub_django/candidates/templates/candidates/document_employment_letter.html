@@ -82,7 +82,7 @@
   <div class="toolbar no-print">
     <a href="{% url 'candidates:downloads_list' %}" class="toolbar__back">← Back to Downloads</a>
     <div class="toolbar__actions">
-      <button type="button" class="toolbar__btn toolbar__btn--outline" onclick="window.print()">⬇️ Download</button>
+      <a href="{% url 'candidates:download_employment_letter_pdf' employment.pk letter_type %}" class="toolbar__btn toolbar__btn--outline" style="text-decoration:none;display:inline-block;">⬇️ Download PDF</a>
       <button type="button" class="toolbar__btn toolbar__btn--primary" onclick="window.print()">🖨️ Print</button>
     </div>
   </div>
