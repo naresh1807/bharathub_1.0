@@ -38,7 +38,7 @@
        pages, so those are always plain <a href> links.
 
    `active` tells this partial which single item to highlight.
-   Recognised values: home, profile, videos, mail, messages,
+   Recognised values: home, profile, videos, mail, messages, meetings,
    browse (Job Matches), applications (My Applications / Job
    Applied Status), downloads.
 
@@ -89,6 +89,12 @@
       <span class="topnav__tab active">📧 Mail{% if mail_badge %}<span class="bh-badge" style="background:var(--error,#dc2626);color:#fff;font-size:10px;border-radius:9px;padding:1px 6px;margin-left:4px;">{{ mail_badge }}</span>{% endif %}</span>
     {% else %}
       <a class="topnav__tab" href="{% url 'webmail:candidate_mail' %}">📧 Mail{% if mail_badge %}<span class="bh-badge" style="background:var(--error,#dc2626);color:#fff;font-size:10px;border-radius:9px;padding:1px 6px;margin-left:4px;">{{ mail_badge }}</span>{% endif %}</a>
+    {% endif %}
+
+    {% if active == "meetings" %}
+      <span class="topnav__tab active">🎥 Meetings</span>
+    {% else %}
+      <a class="topnav__tab" href="{% url 'meetings:candidate_meeting_list' %}">🎥 Meetings</a>
     {% endif %}
   </div>
 
@@ -177,6 +183,16 @@
         <a class="sidebar__nav-item" href="{% url 'webmail:candidate_mail' %}" style="text-decoration:none;">
           <span class="nav-icon">📧</span> Mail
           {% if mail_badge %}<span class="nav-badge">{{ mail_badge }}</span>{% endif %}
+        </a>
+      {% endif %}
+
+      {% if active == "meetings" %}
+        <span class="sidebar__nav-item active">
+          <span class="nav-icon">🎥</span> Meetings
+        </span>
+      {% else %}
+        <a class="sidebar__nav-item" href="{% url 'meetings:candidate_meeting_list' %}" style="text-decoration:none;">
+          <span class="nav-icon">🎥</span> Meetings
         </a>
       {% endif %}
 

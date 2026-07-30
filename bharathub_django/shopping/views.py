@@ -8,7 +8,6 @@ from django.views.generic import TemplateView
 
 from .forms import ProductForm
 from .models import Order, OrderItem, Product
-from .pdf_invoice import generate_invoice_pdf
 
 # Shopping app: the B2B marketplace.
 #   - Buyer (employer) side: browse products, track orders.
@@ -313,27 +312,3 @@ class InvoiceView(LoginRequiredMixin, TemplateView):
 
         context["order"] = order
         return context
-
-
-class InvoicePDFDownloadView(LoginRequiredMixin, View):
-    """InvoiceView (HTML ప్రివ్యూ) పక్కన ఉన్న 'Download' లింక్ ఇక్కడికే
-    వెళ్తుంది -- ఇది ఇక బ్రౌజర్ ప్రింట్ డైలాగ్ ని తెరవదు, బదులుగా
-    shopping/pdf_invoice.py::generate_invoice_pdf() ద్వారా ఒక నిజమైన
-    PDF ఫైల్ ని నేరుగా డౌన్‌లోడ్ చేస్తుంది. ఓనర్‌షిప్ చెక్ InvoiceView
-    లో ఉన్నదే -- ఇక్కడ కూడా అదే తప్పనిసరి (ఈ URL నేరుగా ఎవరైనా టైప్
-    చేసినా ఇతరుల ఇన్‌వాయిస్ చూడకుండా)."""
-
-    login_url = "accounts:employer_login"
-
-    def get(self, request, pk, *args, **kwargs):
-        order = get_object_or_404(
-            Order.objects.select_related("buyer__user", "vendor__user").prefetch_related("items__product"),
-            pk=pk,
-        )
-        buyer_profile = getattr(request.user, "employer_profile", None)
-        vendor_profile = getattr(request.user, "vendor_profile", None)
-        is_buyer = buyer_profile is not None and order.buyer_id == buyer_profile.pk
-        is_seller = vendor_profile is not None and order.vendor_id == vendor_profile.pk
-        if not (is_buyer or is_seller):
-            raise PermissionDenied("This invoice does not belong to you.")
-        return generate_invoice_pdf(order)

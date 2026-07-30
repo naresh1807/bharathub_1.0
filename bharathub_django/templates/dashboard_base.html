@@ -41,6 +41,14 @@
   మీడియా-క్వెరీ రూల్స్ ప్రతి dashboard CSS లో ఉన్న పాత
   ".sidebar{display:none}" రూల్ ని override చేయాలి. {% endcomment %}
   <link rel="stylesheet" href="{% static 'shared/css/mobile_nav.css' %}">
+
+  {% comment %} వాట్సాప్ తరహా "incoming video call" ఓవర్‌లే -- ప్రతి
+  లాగిన్ అయిన పేజీలోనూ లోడ్ అవుతుంది (meetings/consumers.py::
+  IncomingCallConsumer తో గ్లోబల్‌గా కనెక్ట్ అయ్యి, ఏ పేజీలో ఉన్నా
+  కాల్ వచ్చినప్పుడు స్క్రీన్ పైన కనిపిస్తుంది). లాగిన్ కాని యూజర్
+  కి (login/register పేజీలు ఈ base టెంప్లేట్ వాడవు కాబట్టి) ఇది
+  ఎప్పుడూ లోడ్ కాదు. {% endcomment %}
+  <link rel="stylesheet" href="{% static 'meetings/css/incoming_call.css' %}">
 </head>
 <body>
 
@@ -51,6 +59,7 @@
 {% block content %}{% endblock %}
 
 <script src="{% static 'shared/js/mobile_nav.js' %}"></script>
+<script src="{% static 'meetings/js/incoming_call.js' %}"></script>
 {% block page_js %}{% endblock %}
 </body>
 </html>

@@ -33,16 +33,10 @@ urlpatterns = [
     # sidebar లోని కొత్త "Downloads" నావ్ ఐటమ్) ────────────────────────
     path("candidate/downloads/", views.DownloadsListView.as_view(), name="downloads_list"),
     path("candidate/downloads/resume/", views.ResumeDocumentView.as_view(), name="download_resume"),
-    path("candidate/downloads/resume/pdf/", views.ResumePDFDownloadView.as_view(), name="download_resume_pdf"),
     path(
         "candidate/downloads/appointment-letter/<int:pk>/",
         views.AppointmentLetterView.as_view(),
         name="download_appointment_letter",
-    ),
-    path(
-        "candidate/downloads/appointment-letter/<int:pk>/pdf/",
-        views.AppointmentLetterPDFDownloadView.as_view(),
-        name="download_appointment_letter_pdf",
     ),
     path(
         "candidate/downloads/employment-letter/<int:pk>/<str:letter_type>/",
@@ -50,18 +44,8 @@ urlpatterns = [
         name="download_employment_letter",
     ),
     path(
-        "candidate/downloads/employment-letter/<int:pk>/<str:letter_type>/pdf/",
-        views.EmploymentLetterPDFDownloadView.as_view(),
-        name="download_employment_letter_pdf",
-    ),
-    path(
         "candidate/downloads/offer-letter/<int:pk>/",
         views.OfferLetterView.as_view(),
         name="download_offer_letter",
-    ),
-    path(
-        "candidate/downloads/offer-letter/<int:pk>/pdf/",
-        views.OfferLetterPDFDownloadView.as_view(),
-        name="download_offer_letter_pdf",
     ),
 ]

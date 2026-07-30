@@ -74,15 +74,33 @@ def send_push_notification(self, recipient_id, conversation_id, message_id):
 
     from pywebpush import WebPushException, webpush
 
+    from django.contrib.auth import get_user_model
+    from django.urls import reverse
+
     from .models import Message, PushSubscription
+
+    User = get_user_model()
 
     try:
         message = Message.objects.select_related("sender").get(pk=message_id)
-    except Message.DoesNotExist:
+        recipient = User.objects.get(pk=recipient_id)
+    except (Message.DoesNotExist, User.DoesNotExist):
         return
 
     sender_name = message.sender.get_full_name() or message.sender.username
     preview = (message.body or "📎 Attachment")[:120]
+
+    # BUG FIX: ఇంతకుముందు ఇక్కడ URL పంపేవాళ్ళం కాదు -- service worker
+    # ఎప్పుడూ హోమ్‌పేజీనే తెరిచేది, ఆ సంభాషణ లోకి నేరుగా తీసుకెళ్ళేది
+    # కాదు. యూజర్ role (Employee/Employer/Vendor) బట్టి సరైన messaging
+    # పేజీ URL కి ?c=<conversation_id> జోడించి పంపుతున్నాం.
+    if hasattr(recipient, "employer_profile"):
+        base_url = reverse("messaging:employer_messages")
+    elif hasattr(recipient, "vendor_profile"):
+        base_url = reverse("messaging:vendor_messages")
+    else:
+        base_url = reverse("messaging:candidate_messages")
+    conversation_url = f"{settings.SITE_BASE_URL}{base_url}?c={conversation_id}"
 
     subscriptions = PushSubscription.objects.filter(user_id=recipient_id)
     for subscription in subscriptions:
@@ -101,6 +119,7 @@ def send_push_notification(self, recipient_id, conversation_id, message_id):
                     "title": f"BharatHub — {sender_name}",
                     "body": preview,
                     "conversation_id": conversation_id,
+                    "url": conversation_url,
                 }),
                 vapid_private_key=settings.VAPID_PRIVATE_KEY,
                 vapid_claims={"sub": settings.VAPID_CLAIM_EMAIL},
@@ -111,6 +130,56 @@ def send_push_notification(self, recipient_id, conversation_id, message_id):
             # క్లియర్ చేశారు) -- ఆ రికార్డ్ ని తీసేస్తాం, retry
             # అవసరం లేదు. మిగతా ఎర్రర్‌లకి (503 వంటివి) retry
             # చేయడం అర్థవంతం.
+            status_code = getattr(exc.response, "status_code", None)
+            if status_code in (404, 410):
+                subscription.delete()
+            else:
+                raise self.retry(exc=exc)
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=10)
+def send_call_push_notification(self, recipient_id, room_url, started_by_name):
+    """
+    📹 వీడియో కాల్ మొదలైనప్పుడు రెండో యూజర్‌కి పంపే push notification.
+
+    ఎందుకు ఇది కావాలి: "call.started" WebSocket event ఇంతకుముందు
+    ఆ నిర్దిష్ట conversation ఓపెన్ చేసి, ఆ ఛానల్‌కి live గా కనెక్ట్
+    అయి ఉన్న యూజర్‌కి మాత్రమే చేరేది -- మిగతా ఏ పేజీలోనైనా ఉంటే
+    (లేదా టాబ్ మూసేసి ఉంటే) ఏమీ తెలిసేది కాదు, కాల్ మొదలైందని
+    తెలియకుండానే మిస్ అయ్యేది (ఇదే "నా వైపు మాత్రమే కెమెరా ఆన్
+    అయ్యింది, అవతలి యూజర్ కి ఏమీ కనిపించలేదు" అనే బగ్ కి అసలు కారణం).
+
+    ఇప్పుడు StartConversationCallView, WebSocket broadcast తో పాటు
+    ఇదే push notification కూడా పంపుతుంది -- browser tab మూసేసినా,
+    వేరే పేజీలో ఉన్నా, OS-level నోటిఫికేషన్ (room లింక్ తో సహా)
+    వస్తుంది.
+    """
+    if not settings.VAPID_PRIVATE_KEY:
+        return
+
+    from pywebpush import WebPushException, webpush
+
+    from .models import PushSubscription
+
+    subscriptions = PushSubscription.objects.filter(user_id=recipient_id)
+    for subscription in subscriptions:
+        if not subscription.is_endpoint_safe():
+            continue
+        try:
+            webpush(
+                subscription_info={
+                    "endpoint": subscription.endpoint,
+                    "keys": {"p256dh": subscription.p256dh, "auth": subscription.auth},
+                },
+                data=json.dumps({
+                    "title": f"📹 {started_by_name} started a video call",
+                    "body": "Tap to join the call now",
+                    "url": room_url,
+                }),
+                vapid_private_key=settings.VAPID_PRIVATE_KEY,
+                vapid_claims={"sub": settings.VAPID_CLAIM_EMAIL},
+            )
+        except WebPushException as exc:
             status_code = getattr(exc.response, "status_code", None)
             if status_code in (404, 410):
                 subscription.delete()

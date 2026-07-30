@@ -62,10 +62,30 @@ ALLOWED_HOSTS = (
     ["*"] if DEBUG else os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
 )
 
+# SITE_BASE_URL: Celery టాస్క్‌లకి (ఉదా: messaging/tasks.py పుష్
+# నోటిఫికేషన్‌లు) request object ఉండదు కాబట్టి, absolute URL
+# కట్టడానికి ఇది కావాలి (request.build_absolute_uri() ఇక్కడ పని
+# చేయదు). production లో నిజమైన డొమైన్‌కి సెట్ చేయాలి, ఉదా:
+# DJANGO_SITE_BASE_URL=https://www.bharathub.in
+SITE_BASE_URL = os.environ.get("DJANGO_SITE_BASE_URL", "http://localhost:8000")
+
 # ═══════════════════════════════════════════════════════════════════
 # ── APPLICATIONS ─────────────────────────────────────────────────
 # ═══════════════════════════════════════════════════════════════════
 INSTALLED_APPS = [
+    # BUG FIX: "daphne" ఇక్కడ ఇంతకుముందు లేదు! requirements.txt లో
+    # daphne డిపెండెన్సీ గా ఉంది, పైన కామెంట్ కూడా "ఇది runserver ని
+    # ఆటోమేటిక్‌గా ASGI మోడ్ లోకి మారుస్తుంది" అని చెప్తుంది -- కానీ
+    # అది జరగాలంటే "daphne" INSTALLED_APPS లో మొదటి ఐటమ్ గా ఉండాలి
+    # (Django/Channels డాక్యుమెంటేషన్ ప్రకారం, django.contrib.
+    # staticfiles కన్నా ముందు). ఇది లేకపోతే `manage.py runserver`
+    # మామూలు WSGI dev సర్వర్ నే వాడుతుంది -- అది WebSocket కనెక్షన్
+    # లనే ఏర్పాటు చేయలేదు! అంటే ఏ చాట్ మెసేజ్ కూడా WS ద్వారా లైవ్‌గా
+    # చేరదు (సైలెంట్ గా ఫెయిల్ అవుతుంది, JS లో fallback ద్వారా
+    # పంపేవాళ్ళకి కనిపించొచ్చు, కానీ అవతలి వ్యక్తికి పేజీ రిఫ్రెష్
+    # చేసేదాకా కనిపించదు) -- సరిగ్గా ఈ బగ్ రిపోర్ట్ కి కారణం ఇదే.
+    "daphne",
+
     "django.contrib.admin",          # /admin/ backoffice
     "django.contrib.auth",           # login system, password hashing (PBKDF2)
     "django.contrib.contenttypes",   # required by auth/admin
@@ -194,17 +214,6 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'bharathub',
-#         'USER': 'root',
-#         'PASSWORD': 'Thanvika@1816',
-#         'HOST': 'localhost',
-#         'PORT': '3306',
-#     }
-# }
 
 # ═══════════════════════════════════════════════════════════════════
 # ── PASSWORD STRENGTH RULES (checked on every registration/change) ─
@@ -500,16 +509,9 @@ CELERY_TASK_ALWAYS_EAGER = os.environ.get("CELERY_TASK_ALWAYS_EAGER", "True") ==
 # "from" అడ్రస్. DEBUG=True లో నిజంగా ఈమెయిల్ పంపకుండా, కేవలం
 # కన్సోల్ లో ప్రింట్ చేస్తుంది (console backend) -- production లో
 # EMAIL_BACKEND ని SMTP కి మార్చాలి.
-# DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "no-reply@bharathub.local")
-# if DEBUG:
-#    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'bharathubproject1@gmail.com'
-EMAIL_HOST_PASSWORD = 'rjrdlzghnxwfiddo'
-DEFAULT_FROM_EMAIL = 'bharathubproject1@gmail.com'
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "no-reply@bharathub.local")
+if DEBUG:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # ═══════════════════════════════════════════════════════════════════
 # ── WEB PUSH NOTIFICATIONS (browser desktop notifications) ─────────
@@ -533,4 +535,3 @@ DEFAULT_FROM_EMAIL = 'bharathubproject1@gmail.com'
 VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
 VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
 VAPID_CLAIM_EMAIL = os.environ.get("VAPID_CLAIM_EMAIL", "mailto:admin@bharathub.local")
-

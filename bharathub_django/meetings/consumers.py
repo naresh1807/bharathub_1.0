@@ -180,3 +180,46 @@ class MeetingConsumer(AsyncJsonWebsocketConsumer):
         if log:
             log.left_at = timezone.now()
             log.save(update_fields=["left_at"])
+
+
+class IncomingCallConsumer(AsyncJsonWebsocketConsumer):
+    """
+    సైట్ మొత్తం మీద ఒకే ఒక్క గ్లోబల్ ఛానల్ -- MeetingConsumer లా కాకుండా,
+    ఇది ఏదో ఒక నిర్దిష్ట మీటింగ్ రూమ్ కి పరిమితం కాదు. dashboard_base.html
+    లో లాగిన్ అయిన ప్రతి యూజర్ (ఏ పేజీలో ఉన్నా సరే -- Dashboard,
+    Applications, Shopping ఏదైనా) ఈ ఛానల్ కి ఆటోమేటిక్‌గా కనెక్ట్
+    అవుతారు (incoming_call.js). దీని వల్లే వాట్సాప్ లో లాగే "ఏ tab లో
+    ఉన్నా, కాల్ వచ్చినప్పుడు స్క్రీన్ పైన ఓవర్‌లే కనిపించి, Join/Reject
+    బటన్లు రావడం" సాధ్యమవుతుంది -- ఇంతకుముందు call.started event
+    కేవలం ఆ conversation పేజీ తెరిచున్న యూజర్‌కి మాత్రమే చేరేది,
+    మిగతా వాళ్ళకి push notification మీదే ఆధారపడేవాళ్ళం (అది browser
+    permission మీద ఆధారపడుతుంది, యూజర్‌కి అర్థం కాకపోవచ్చు).
+
+    ప్రతి యూజర్ తన సొంత గ్రూప్ (f"user_{user.id}") లోకి చేరతారు --
+    meetings/views.py లోని SendMeetingLinkView/StartConversationCallView
+    ఈ గ్రూప్ కి 'incoming_call' event పంపిస్తే, ఆ యూజర్ తెరిచున్న ప్రతి
+    ట్యాబ్ లోనూ ఓవర్‌లే కనిపిస్తుంది.
+    """
+
+    async def connect(self):
+        self.user = self.scope["user"]
+        if not self.user.is_authenticated:
+            await self.close(code=4001)
+            return
+        self.group_name = f"user_{self.user.id}"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        if getattr(self, "group_name", None):
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def receive_json(self, content, **kwargs):
+        # ఈ ఛానల్ ద్వారా క్లయింట్ నుండి సర్వర్ కి ఏమీ పంపము (one-way,
+        # సర్వర్ -> క్లయింట్ notify మాత్రమే) -- 'call.reject' లాంటివి
+        # కూడా సాధారణ HTTP POST (DeclineCallView) ద్వారానే వెళ్తాయి,
+        # దీనికి రిప్లై అవసరం లేదు కాబట్టి ఇక్కడ ఏమీ హ్యాండిల్ చేయం.
+        pass
+
+    async def broadcast_event(self, event):
+        await self.send_json(event["payload"])

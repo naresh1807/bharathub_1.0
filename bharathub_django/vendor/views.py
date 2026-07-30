@@ -2,7 +2,7 @@ import json
 import math
 
 from django.contrib import messages
-from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -10,7 +10,6 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from shopping.models import Order
-from accounts import otp_auth
 from accounts.login_throttle import (
     MAX_FAILED_ATTEMPTS, is_locked_out, record_failed_attempt, clear_attempts,
 )
@@ -28,23 +27,20 @@ class VendorRegistrationView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.setdefault("form", VendorRegistrationForm())
-        registered_id = self.request.session.pop("just_registered_id", None)
-        registered_role = self.request.session.pop("just_registered_role", None)
-        if registered_id and registered_role == "vendor":
-            context["registered_id"] = registered_id
         return context
 
     def post(self, request, *args, **kwargs):
-        # request.FILES: shop_photo ఫైల్ అప్‌లోడ్ కోసం (ఫారమ్ వాలిడేషన్
-        # కి అవసరం) -- కానీ OTP-గేటెడ్ ఫ్లో లో ఫైల్ ని సేవ్ చేయం
-        # (accounts/otp_auth.py డాక్‌స్ట్రింగ్ లో కారణం చూడండి).
+        # request.FILES: shop_photo ఫైల్ అప్‌లోడ్ కోసం.
         form = VendorRegistrationForm(request.POST, request.FILES)
         if form.is_valid():
-            otp_auth.send_registration_otp(
-                request, email=form.cleaned_data["vendor_email"], role="vendor",
-                form_data=request.POST.dict(),
-            )
-            return redirect("accounts:otp_register")
+            user, profile = form.save()
+            # auto-login చేయడం లేదు -- accounts/views.py లోని
+            # EmployeeRegistrationView కామెంట్ చూడండి (login page bypass
+            # అవ్వకుండా ఉండటానికి).
+            send_bharathub_id_email(user, profile.vendor_id, "Vendor ID")
+            context = self.get_context_data(form=VendorRegistrationForm())
+            context["registered_id"] = profile.vendor_id
+            return self.render_to_response(context)
         return self.render_to_response(self.get_context_data(form=form))
 
 
@@ -89,12 +85,11 @@ class VendorLoginView(TemplateView):
             user = authenticate(request, username=username, password=form.cleaned_data["password"]) if username else None
             if user is not None:
                 clear_attempts(user)
-                otp_auth.send_login_otp(
-                    request, user,
-                    remember_me=bool(form.cleaned_data.get("remember_me")),
-                    next_url="", redirect_name="vendor:vendor_dashboard",
-                )
-                return redirect("accounts:otp_login")
+                login(request, user)
+                if not form.cleaned_data.get("remember_me"):
+                    request.session.set_expiry(0)
+                messages.success(request, "✅ Login successful!")
+                return redirect("vendor:vendor_dashboard")
 
             # ఇక్కడ కూడా "ID దొరకలేదు" vs "పాస్‌వర్డ్ తప్పు" అని
             # వేరుగా చెప్పడం లేదు (user-enumeration దాడులు ఆపడానికి).
