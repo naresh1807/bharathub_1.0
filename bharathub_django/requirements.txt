@@ -1,40 +1,60 @@
-Django>=4.2,<5.0
-
-# ImageField (profile photo uploads in accounts/candidates apps) needs
-# Pillow to validate that an uploaded file is actually a real image.
-Pillow>=10.0
-
-# messaging app: Chat సందేశాలు DB లో save అయ్యే ముందు encrypt
-# చేయడానికి (Fernet symmetric encryption) -- messaging/fields.py చూడండి.
-cryptography>=42.0
-
-# ── Real-time chat (WebSockets) ──────────────────────────────────
-# Django Channels: HTTP పాటు WebSocket ప్రోటోకాల్ ని కూడా Django
-# ద్వారా హ్యాండిల్ చేయడానికి. daphne ఒక ASGI సర్వర్ (runserver ని
-# ఆటోమేటిక్‌గా ASGI మోడ్ లోకి మారుస్తుంది, dev కి ఇది సరిపోతుంది;
-# production లో daphne/uvicorn ప్రత్యేకంగా రన్ చేయాలి).
-channels>=4.0
-daphne>=4.1
-# channels-redis: బహుళ సర్వర్ ప్రాసెస్‌ల మధ్య (లేదా బహుళ workers
-# మధ్య) WebSocket గ్రూప్ మెసేజ్‌లని బ్రాడ్‌కాస్ట్ చేయడానికి Redis ని
-# "channel layer" గా వాడతాం. లోకల్ dev లో Redis లేకపోతే settings.py
-# ఆటోమేటిక్‌గా InMemoryChannelLayer కి fallback అవుతుంది (కానీ అది
-# ఒకే ప్రాసెస్ లోపలే పని చేస్తుంది -- production కి REDIS_URL అవసరం).
-channels-redis>=4.2
-redis>=5.0
-
-# ── Background tasks (offline notification emails) ──────────────
-celery>=5.4
-
-# ── Web Push notifications (browser desktop notifications) ──────
-# offline యూజర్‌కి కొత్త మెసేజ్ వచ్చినప్పుడు, ఈమెయిల్ తో పాటు బ్రౌజర్
-# push నోటిఫికేషన్ కూడా పంపడానికి (VAPID కీలు అవసరం -- settings.py
-# లోని VAPID_* కామెంట్లు చూడండి).
-pywebpush>=2.0
-
-# Uncomment when connecting to PostgreSQL in production:
-# psycopg2-binary>=2.9
-
-# Uncomment when connecting to MySQL instead of the default SQLite:
-# mysqlclient>=2.2
-
+aiohappyeyeballs==2.7.1
+aiohttp==3.14.3
+aiosignal==1.4.0
+amqp==5.3.1
+asgiref==3.12.1
+attrs==26.1.0
+autobahn==26.7.1
+Automat==25.4.16
+billiard==4.2.4
+cbor2==6.1.3
+celery==5.6.3
+certifi==2026.7.22
+cffi==2.1.0
+channels==4.3.2
+channels_redis==4.3.0
+charset-normalizer==3.4.9
+click==8.4.2
+click-didyoumean==0.3.1
+click-plugins==1.1.1.2
+click-repl==0.3.0
+colorama==0.4.6
+constantly==23.10.4
+cryptography==49.0.0
+daphne==4.2.3
+Django==4.2.30
+frozenlist==1.8.0
+gunicorn==26.0.0
+http_ece==1.2.1
+hyperlink==21.0.0
+idna==3.18
+Incremental==24.11.0
+kombu==5.6.2
+msgpack==1.2.1
+multidict==6.7.1
+mysqlclient==2.2.8
+packaging==26.2
+pillow==12.3.0
+prompt_toolkit==3.0.53
+propcache==0.5.2
+py-vapid==1.9.4
+pycparser==3.0
+pyOpenSSL==26.3.0
+python-dateutil==2.9.0.post0
+pywebpush==2.3.0
+redis==8.0.1
+requests==2.34.2
+service-identity==26.1.0
+six==1.17.0
+sqlparse==0.5.5
+Twisted==26.4.0
+txaio==26.6.1
+typing_extensions==4.16.0
+tzdata==2026.3
+tzlocal==5.4.4
+ujson==5.13.0
+urllib3==2.7.0
+vine==5.1.0
+wcwidth==0.8.2
+yarl==1.24.5
+zope.interface==8.5

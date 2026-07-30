@@ -48,7 +48,7 @@ function verifyIdentity() {
     return;
   }
 
-  fetch('/accounts/password/forgot/verify/', {
+  fetch('/password/forgot/verify/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
     body: JSON.stringify({ role: 'employee', email, mobile, dob }),
@@ -89,7 +89,7 @@ function verifyForgotOTP() {
   hideError('otpError');
   if (otp.length < 6) { showError('otpError', 'Please enter the complete 6-digit OTP!'); return; }
 
-  fetch('/accounts/password/forgot/otp/', {
+  fetch('/password/forgot/otp/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
     body: JSON.stringify({ otp }),
@@ -144,7 +144,7 @@ function resetPassword() {
   if (p1 !== p2) { alert('Passwords do not match!'); return; }
   if (p1.length < 8) { alert('Password must be at least 8 characters!'); return; }
 
-  fetch('/accounts/password/forgot/set/', {
+  fetch('/password/forgot/set/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
     body: JSON.stringify({ password: p1, confirm_password: p2 }),

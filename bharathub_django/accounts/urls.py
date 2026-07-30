@@ -22,6 +22,15 @@ urlpatterns = [
     path("password/forgot/otp/", views.ForgotPasswordOtpVerifyView.as_view(), name="password_forgot_otp"),
     path("password/forgot/set/", views.ForgotPasswordSetView.as_view(), name="password_forgot_set"),
 
+    # OTP verification -- Login & Registration (Employee/Employer/Vendor
+    # మూడు రోల్స్‌కీ ఒకే షేర్డ్ views, accounts/views.py చూడండి).
+    path("otp/login/", views.LoginOTPView.as_view(), name="otp_login"),
+    path("otp/login/resend/", views.LoginOTPResendView.as_view(), name="otp_login_resend"),
+    path("otp/login/cancel/", views.LoginOTPCancelView.as_view(), name="otp_login_cancel"),
+    path("otp/register/", views.RegistrationOTPView.as_view(), name="otp_register"),
+    path("otp/register/resend/", views.RegistrationOTPResendView.as_view(), name="otp_register_resend"),
+    path("otp/register/cancel/", views.RegistrationOTPCancelView.as_view(), name="otp_register_cancel"),
+
     # రిజిస్ట్రేషన్ తర్వాత లాగిన్ అయిన Employer, మిగిలిన కంపెనీ
     # వివరాలు (PAN/GST/CIN/HQ) పూర్తి చేసుకునే పేజీ.
     path("employer/complete-profile/", views.EmployerProfileCompletionView.as_view(), name="employer_complete_profile"),

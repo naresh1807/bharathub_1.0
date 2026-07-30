@@ -38,7 +38,7 @@
        pages, so those are always plain <a href> links.
 
    `active` tells this partial which single item to highlight.
-   Recognised values: home, profile, videos, mail, messages, meetings,
+   Recognised values: home, profile, videos, mail, messages,
    browse (Job Matches), applications (My Applications / Job
    Applied Status), downloads.
 
@@ -89,12 +89,6 @@
       <span class="topnav__tab active">📧 Mail{% if mail_badge %}<span class="bh-badge" style="background:var(--error,#dc2626);color:#fff;font-size:10px;border-radius:9px;padding:1px 6px;margin-left:4px;">{{ mail_badge }}</span>{% endif %}</span>
     {% else %}
       <a class="topnav__tab" href="{% url 'webmail:candidate_mail' %}">📧 Mail{% if mail_badge %}<span class="bh-badge" style="background:var(--error,#dc2626);color:#fff;font-size:10px;border-radius:9px;padding:1px 6px;margin-left:4px;">{{ mail_badge }}</span>{% endif %}</a>
-    {% endif %}
-
-    {% if active == "meetings" %}
-      <span class="topnav__tab active">🎥 Meetings</span>
-    {% else %}
-      <a class="topnav__tab" href="{% url 'meetings:candidate_meeting_list' %}">🎥 Meetings</a>
     {% endif %}
   </div>
 
@@ -186,16 +180,6 @@
         </a>
       {% endif %}
 
-      {% if active == "meetings" %}
-        <span class="sidebar__nav-item active">
-          <span class="nav-icon">🎥</span> Meetings
-        </span>
-      {% else %}
-        <a class="sidebar__nav-item" href="{% url 'meetings:candidate_meeting_list' %}" style="text-decoration:none;">
-          <span class="nav-icon">🎥</span> Meetings
-        </a>
-      {% endif %}
-
       <a class="sidebar__nav-item{% if active == 'browse' %} active{% endif %}" href="{% url 'jobs:job_browse' %}">
         <span class="nav-icon">💼</span> Job Matches
       </a>
@@ -214,3 +198,26 @@
       </form>
     </nav>
   </aside>
+
+{% comment %} ══ MOBILE BOTTOM NAV ══
+   ⚠️ ఫిక్స్: candidate_dashboard.html కి దాని సొంత (ఇదే మార్కప్)
+   బాటమ్ నావ్ బార్ ఇప్పటికే ఉంది (ఆ పేజీ ఈ _nav.html partial ని
+   వాడదు కాబట్టి). కానీ Applications/Messages/Mail/Downloads లాంటి
+   వేరే candidate పేజీలు ఈ partial నే వాడతాయి, వాటికి బాటమ్ నావ్
+   బార్ అస్సలు లేకుండా పోయింది -- అదే ఈ ఫిక్స్. {% endcomment %}
+<nav class="mobile-nav-bar" style="display:none;">
+  {% if active == "home" %}
+    <button class="mobile-nav-item active" onclick="mobileNav('home',this)"><span class="nav-icon">🏠</span>Home</button>
+  {% else %}
+    <a class="mobile-nav-item" href="{% url 'candidates:candidate_dashboard' %}?section=home"><span class="nav-icon">🏠</span>Home</a>
+  {% endif %}
+  {% if active == "profile" %}
+    <button class="mobile-nav-item active" onclick="mobileNav('profile',this)"><span class="nav-icon">👤</span>Profile</button>
+  {% else %}
+    <a class="mobile-nav-item" href="{% url 'candidates:candidate_dashboard' %}?section=profile"><span class="nav-icon">👤</span>Profile</a>
+  {% endif %}
+  <a class="mobile-nav-item" href="{% url 'jobs:my_applications' %}" style="text-decoration:none;"><span class="nav-icon">📊</span>Applied</a>
+  <a class="mobile-nav-item" href="{% url 'messaging:candidate_messages' %}" style="text-decoration:none;"><span class="nav-icon">⚡</span>Chat</a>
+  <a class="mobile-nav-item" href="{% url 'webmail:candidate_mail' %}" style="text-decoration:none;"><span class="nav-icon">📧</span>Mail</a>
+  <button class="mobile-nav-item mobile-nav-item--more" onclick="toggleMobileDrawer()"><span class="nav-icon">☰</span>More</button>
+</nav>

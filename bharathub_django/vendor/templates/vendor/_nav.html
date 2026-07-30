@@ -154,3 +154,24 @@
     </nav>
   </aside>
 
+{% comment %} ══ MOBILE BOTTOM NAV ══ ఇంతకుముందు ఇది vendor_dashboard.html
+   లో మాత్రమే ఉండేది -- Products/Orders/Messages లాంటి వేరే పేజీలకి
+   వెళ్ళగానే మాయమయ్యేది. ఇప్పుడు షేర్డ్ _nav.html లో పెట్టడం వల్ల
+   ప్రతి పేజీ లోనూ కనిపిస్తుంది. {% endcomment %}
+<nav class="mobile-nav-bar" style="display:none;">
+  {% if active == "home" %}
+    <button class="mobile-nav-item active" onclick="mobileNav('home',this)"><span class="nav-icon">🏠</span>Home</button>
+  {% else %}
+    <a class="mobile-nav-item" href="{% url 'vendor:vendor_dashboard' %}?section=home"><span class="nav-icon">🏠</span>Home</a>
+  {% endif %}
+  <a class="mobile-nav-item" href="{% url 'shopping:vendor_products' %}" style="text-decoration:none;"><span class="nav-icon">📦</span>Products</a>
+  <a class="mobile-nav-item" href="{% url 'shopping:vendor_orders' %}" style="text-decoration:none;"><span class="nav-icon">📝</span>Orders</a>
+  <a class="mobile-nav-item" href="{% url 'messaging:vendor_messages' %}" style="text-decoration:none;"><span class="nav-icon">💬</span>Messages</a>
+  {% if active == "analytics" %}
+    <button class="mobile-nav-item active" onclick="mobileNav('analytics',this)"><span class="nav-icon">📊</span>Analytics</button>
+  {% else %}
+    <a class="mobile-nav-item" href="{% url 'vendor:vendor_dashboard' %}?section=analytics"><span class="nav-icon">📊</span>Analytics</a>
+  {% endif %}
+  <button class="mobile-nav-item mobile-nav-item--more" onclick="toggleMobileDrawer()"><span class="nav-icon">☰</span>More</button>
+</nav>
+

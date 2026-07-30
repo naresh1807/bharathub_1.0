@@ -1,4 +1,5 @@
 {% extends "accounts/employee_base.html" %}
+{% load static %}
 {% comment %}
 accounts/otp_entry.html
 Login మరియు Registration -- రెండిటికీ ఒకే OTP ఎంటర్ పేజీ. Context:
@@ -8,6 +9,18 @@ Login మరియు Registration -- రెండిటికీ ఒకే OTP 
 {% endcomment %}
 
 {% block title %}BharatHub — Enter OTP{% endblock %}
+
+{% block page_css %}
+{% comment %} ⚠️ ఫిక్స్: ఇంతకుముందు ఈ బ్లాక్ ని అస్సలు override చేయలేదు --
+   employee_base.html లో దీని డిఫాల్ట్ ఖాళీగా ఉంటుంది (ప్రతి పేజీ దాని
+   సొంత CSS ని ఇక్కడే లింక్ చేయాలని ఉద్దేశం), కాబట్టి ఈ పేజీ కి ఏ CSS
+   నే లోడ్ అవ్వలేదు -- టాప్ నావ్ బార్ (.top-bar క్లాసులు) తో సహా
+   మొత్తం పేజీ అన్‌స్టైల్డ్ గా కనిపించేది. employee_login.css లోనే
+   .top-bar స్టైల్స్ + సాధారణ టైపోగ్రఫీ ఇప్పటికే ఉన్నాయి కాబట్టి
+   దాన్నే ఇక్కడ లింక్ చేస్తున్నాం (OTP పేజీ కార్డ్ దాని సొంత inline
+   స్టైల్స్ వాడుతుంది, మిగతా వాటికి ఇది సరిపోతుంది). {% endcomment %}
+<link rel="stylesheet" href="{% static 'accounts/css/employee_login.css' %}">
+{% endblock %}
 
 {% block content %}
 <div style="min-height:80vh;display:flex;align-items:center;justify-content:center;padding:24px;">
@@ -45,14 +58,39 @@ Login మరియు Registration -- రెండిటికీ ఒకే OTP 
     <div style="display:flex;justify-content:space-between;margin-top:16px;font-size:13px;">
       <form method="post" action="{{ resend_url }}" style="display:inline;">
         {% csrf_token %}
-        <button type="submit" style="border:none;background:none;color:#4f46e5;cursor:pointer;font-size:13px;padding:0;">Resend code</button>
+        <button type="submit" id="bhResendBtn" style="border:none;background:none;color:#4f46e5;cursor:pointer;font-size:13px;padding:0;">Resend code</button>
       </form>
       <a href="{{ cancel_url }}" style="color:#888;text-decoration:none;">Cancel</a>
     </div>
 
     <p style="color:#aaa;font-size:11px;margin-top:18px;text-align:center;">
-      Code expires in 10 minutes. Didn't get it? Check spam, or tap "Resend code".
+      Code expires in 5 minutes. Didn't get it? Check spam, or tap "Resend code" (max 3 resends, 45s apart).
     </p>
   </div>
 </div>
+
+<script>
+// చిన్న client-side cooldown -- UX కోసం మాత్రమే (బటన్ 45 సెకన్ల
+// వరకూ డిజేబుల్ గా చూపిస్తుంది). నిజమైన పరిమితి ఎప్పుడూ సర్వర్
+// సైడ్ లోనే (accounts/otp_auth.py: resend_login_otp/
+// resend_registration_otp) అమలవుతుంది -- ఇక్కడ JS లేకపోయినా/
+// bypass చేసినా భద్రతకి ఢోకా లేదు.
+(function () {
+  var btn = document.getElementById("bhResendBtn");
+  if (!btn) return;
+  var seconds = 45;
+  var original = btn.textContent;
+  btn.disabled = true;
+  var timer = setInterval(function () {
+    seconds -= 1;
+    if (seconds <= 0) {
+      clearInterval(timer);
+      btn.disabled = false;
+      btn.textContent = original;
+    } else {
+      btn.textContent = "Resend code (" + seconds + "s)";
+    }
+  }, 1000);
+})();
+</script>
 {% endblock %}

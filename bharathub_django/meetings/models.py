@@ -3,8 +3,6 @@ import secrets
 from django.conf import settings
 from django.db import models
 
-from .utils import display_name_for
-
 # ============================================================================
 # meetings/models.py
 #
@@ -51,14 +49,6 @@ class Meeting(models.Model):
     title = models.CharField(max_length=150, default="Video Meeting")
     meeting_type = models.CharField(max_length=15, choices=MeetingType.choices, default=MeetingType.COMPANY)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.SCHEDULED)
-    # Personal Meeting Room -- ప్రతి యూజర్ కి ఎప్పటికీ ఒకటే permanent
-    # లింక్ (Zoom యొక్క "Personal Meeting ID" తరహాలో). ఒక్కో host కి
-    # is_personal_room=True ఉన్న Meeting ఒక్కటే ఉంటుంది
-    # (get_or_create_personal_room చూడండి) -- ప్రతిసారీ కొత్త లింక్
-    # జనరేట్ చేసుకునే అవసరం లేకుండా, ఎప్పుడైనా షేర్ చేసుకోవడానికి.
-    # "Group Link" కి విరుద్ధంగా -- అది StartInstantMeetingView తో
-    # ప్రతిసారీ కొత్తగా క్రియేట్ అవుతుంది (is_personal_room=False).
-    is_personal_room = models.BooleanField(default=False)
 
     host = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="hosted_meetings",
@@ -136,20 +126,6 @@ class Meeting(models.Model):
         return cls.objects.create(
             title=title, meeting_type=cls.MeetingType.CHAT_CALL,
             host=host, conversation=conversation, status=cls.Status.LIVE,
-        )
-
-    @classmethod
-    def get_or_create_personal_room(cls, host):
-        """ఈ యూజర్ యొక్క శాశ్వతమైన Personal Meeting Room -- ఒక్కసారి
-        క్రియేట్ అయితే, ఆ లింకే ఎప్పటికీ చెల్లుబాటు అవుతుంది (Group
-        Meeting లింక్‌ల లాగా ప్రతిసారీ కొత్తది కాదు)."""
-        existing = cls.objects.filter(host=host, is_personal_room=True).first()
-        if existing:
-            return existing
-        return cls.objects.create(
-            title=f"{display_name_for(host)}'s Personal Room",
-            meeting_type=cls.MeetingType.COMPANY,
-            host=host, is_personal_room=True, status=cls.Status.SCHEDULED,
         )
 
 

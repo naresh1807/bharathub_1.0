@@ -251,3 +251,28 @@
       </form>
     </nav>
   </aside>
+
+{% comment %} ══ MOBILE BOTTOM NAV ══
+   ⚠️ ఫిక్స్: ఇంతకుముందు ఇది employer_dashboard.html లో మాత్రమే
+   ఉండేది -- కాబట్టి Applications/Shopping/Messages లాంటి వేరే
+   పేజీలకి వెళ్ళగానే మొబైల్ బాటమ్ నావ్ బార్ మాయమయ్యేది. ఇప్పుడు
+   ఇక్కడ (షేర్డ్ _nav.html లో) పెట్టడం వల్ల, ఈ partial ని include
+   చేసే ప్రతి పేజీ లోనూ కనిపిస్తుంది. Home/Post a Job -- పైన
+   topnav/sidebar లో లాగే -- డాష్‌బోర్డ్ పేజీ మీద ఉంటే JS ట్యాబ్‌గా,
+   వేరే పేజీ మీద ఉంటే ?section= లింక్‌గా పనిచేస్తాయి. {% endcomment %}
+<nav class="mobile-nav-bar" style="display:none;">
+  {% if active == "home" %}
+    <button class="mobile-nav-item active" onclick="mobileNav('home',this)"><span class="nav-icon">🏠</span>Home</button>
+  {% else %}
+    <a class="mobile-nav-item" href="{% url 'employers:employer_dashboard' %}?section=home"><span class="nav-icon">🏠</span>Home</a>
+  {% endif %}
+  {% if active == "postjob" %}
+    <button class="mobile-nav-item active" onclick="mobileNav('postjob',this)"><span class="nav-icon">💼</span>Post Job</button>
+  {% else %}
+    <a class="mobile-nav-item" href="{% url 'employers:employer_dashboard' %}?section=postjob"><span class="nav-icon">💼</span>Post Job</a>
+  {% endif %}
+  <a class="mobile-nav-item" href="{% url 'messaging:employer_messages' %}" style="text-decoration:none;"><span class="nav-icon">💬</span>Messages</a>
+  <a class="mobile-nav-item" href="{% url 'shopping:shop' %}" style="text-decoration:none;"><span class="nav-icon">🛍️</span>Shop</a>
+  <a class="mobile-nav-item" href="{% url 'shopping:my_orders' %}" style="text-decoration:none;"><span class="nav-icon">📦</span>Orders</a>
+  <button class="mobile-nav-item mobile-nav-item--more" onclick="toggleMobileDrawer()"><span class="nav-icon">☰</span>More</button>
+</nav>

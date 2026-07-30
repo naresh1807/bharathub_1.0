@@ -96,7 +96,7 @@ class _RoleMailMixin(LoginRequiredMixin):
         # ?compose_to=<mail_address>&subject=<...>&body=<...> ఉంటే,
         # పేజీ లోడ్ అయిన వెంటనే compose ప్యానెల్ ఆ recipient/subject/
         # body తో ముందే నింపి తెరవాలి (jobs/_applications_body.html
-        # లోని "✉️ Mail" బటన్, meetings/_meeting_list_body.html లోని
+        # లోని "✉️ Mail" బటన్, meetings/meeting_list.html లోని
         # "✉️ Email It" లింక్ ఇలా లింక్ చేస్తాయి -- ఇక్కడ నుండి వచ్చిన
         # దాన్నే వాడతాం).
         context["compose_to"] = self.request.GET.get("compose_to", "")

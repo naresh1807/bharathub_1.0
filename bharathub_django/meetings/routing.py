@@ -13,8 +13,4 @@ websocket_urlpatterns = [
         r"^ws/meetings/room/(?P<room_code>[\w-]+)/$",
         consumers.MeetingConsumer.as_asgi(),
     ),
-    re_path(
-        r"^ws/meetings/notify/$",
-        consumers.IncomingCallConsumer.as_asgi(),
-    ),
 ]

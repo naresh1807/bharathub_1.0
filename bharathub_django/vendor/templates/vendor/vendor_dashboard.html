@@ -254,14 +254,9 @@
 
 
 {% comment %} MOBILE BOTTOM NAV {% endcomment %}
-<nav class="mobile-nav-bar" style="display:none;">
-  <button class="mobile-nav-item active" onclick="mobileNav('home',this)"><span class="nav-icon">🏠</span>Home</button>
-  <button class="mobile-nav-item" onclick="window.location.href='{% url 'shopping:vendor_products' %}'"><span class="nav-icon">📦</span>Products</button>
-  <button class="mobile-nav-item" onclick="window.location.href='{% url 'shopping:vendor_orders' %}'"><span class="nav-icon">📝</span>Orders</button>
-  <button class="mobile-nav-item" onclick="window.location.href='{% url 'messaging:vendor_messages' %}'"><span class="nav-icon">💬</span>Messages</button>
-  <button class="mobile-nav-item" onclick="mobileNav('analytics',this)"><span class="nav-icon">📊</span>Analytics</button>
-  <button class="mobile-nav-item mobile-nav-item--more" onclick="toggleMobileDrawer()"><span class="nav-icon">☰</span>More</button>
-</nav>{% endblock %}
+{% comment %} Mobile bottom nav now lives in vendor/_nav.html (shared
+   across all vendor-facing pages) -- see the fix note there. {% endcomment %}
+{% endblock %}
 
 {% block page_js %}
 <script>
